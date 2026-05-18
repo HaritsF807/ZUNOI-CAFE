@@ -1,0 +1,43 @@
+/.phpunit.cache
+/bootstrap/ssr
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/vendor
+
+# Databases
+*.sqlite
+
+# Environments and credentials
+.env
+.env.*
+!.env.example
+/auth.json
+
+# Laravel Framework Cache and Temp
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# OS Files & IDEs
+.DS_Store
+Thumbs.db
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+Homestead.json
+Homestead.yaml
+.phpactor.json
+.phpunit.result.cache
