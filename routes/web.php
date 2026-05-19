@@ -56,6 +56,9 @@ Route::get('/order/success/{secure_key}', [OrderController::class, 'success'])->
 
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/cashier', [OrderController::class, 'cashierIndex'])->name('cashier.index');
+    Route::post('/api/orders/cashier', [OrderController::class, 'storeCashierOrder'])->name('orders.cashier.store');
+
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
     Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');
 

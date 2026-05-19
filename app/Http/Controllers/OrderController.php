@@ -252,4 +252,78 @@ class OrderController extends Controller
 
         return inertia('Customer/Success', ['order' => $order]);
     }
+
+    // Halaman Kasir POS
+    public function cashierIndex()
+    {
+        $products = \App\Models\Product::with(['category', 'addons'])->where('is_available', true)->get();
+        $categories = \App\Models\Category::orderBy('name', 'asc')->get();
+        $tables = \App\Models\Table::orderBy('table_name', 'asc')->get();
+
+        return inertia('Cashier', [
+            'products' => $products,
+            'categories' => $categories,
+            'tables' => $tables,
+        ]);
+    }
+
+    // Proses Simpan Pesanan Kasir POS
+    public function storeCashierOrder(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'order_type' => 'required|in:dine_in,takeaway',
+            'table_id' => 'required_if:order_type,dine_in|nullable|exists:tables,id',
+            'payment_method' => 'required|in:cash,qris_manual,qris_tokopay',
+            'cart_items' => 'required|array|min:1',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Hitung total harga
+        $totalPrice = 0;
+        foreach ($validated['cart_items'] as $item) {
+            $totalPrice += ($item['price'] * $item['quantity']);
+        }
+
+        // Tentukan status awal
+        // Jika bayar tunai (cash), otomatis Lunas (paid) dan langsung Diproses (processing)
+        $paymentStatus = 'pending';
+        $orderStatus = 'pending';
+
+        if ($validated['payment_method'] === 'cash') {
+            $paymentStatus = 'paid';
+            $orderStatus = 'processing';
+        }
+
+        // Buat Order
+        $order = Order::create([
+            'table_id' => $validated['order_type'] === 'dine_in' ? $validated['table_id'] : null,
+            'customer_name' => $validated['customer_name'],
+            'customer_phone' => $validated['customer_phone'] ?? '-',
+            'total_price' => $totalPrice,
+            'order_type' => $validated['order_type'],
+            'payment_method' => $validated['payment_method'] === 'cash' ? 'cashier' : $validated['payment_method'],
+            'payment_status' => $paymentStatus,
+            'order_status' => $orderStatus,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        // Simpan Items
+        foreach ($validated['cart_items'] as $item) {
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $item['id'],
+                'quantity' => $item['quantity'],
+                'price_at_sale' => $item['price'],
+                'notes' => $item['notes'] ?? null,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesanan kasir berhasil dibuat!',
+            'order' => $order->load(['table', 'items.product']),
+        ]);
+    }
 }

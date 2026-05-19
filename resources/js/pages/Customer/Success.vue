@@ -180,9 +180,7 @@ onUnmounted(() => {
                                 >
                                     {{ item.quantity }}x &bull; Rp
                                     {{
-                                        (
-                                            item.basePrice || item.price
-                                        ).toLocaleString('id-ID')
+                                        Number(item.price_at_sale || item.price || item.basePrice || 0).toLocaleString('id-ID')
                                     }}
                                 </p>
                                 <span

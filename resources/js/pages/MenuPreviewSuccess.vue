@@ -205,9 +205,7 @@ const mockOrderId = computed(() => {
                                 >
                                     {{ item.quantity }}x &bull; Rp
                                     {{
-                                        (
-                                            item.basePrice || item.price
-                                        ).toLocaleString('id-ID')
+                                        Number(item.price || item.basePrice || 0).toLocaleString('id-ID')
                                     }}
                                 </p>
                                 <span
