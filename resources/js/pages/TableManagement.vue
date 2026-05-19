@@ -4,6 +4,12 @@ import { Head, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 
+const triggerToast = (message, type = 'success') => {
+    window.dispatchEvent(new CustomEvent('zunoi-toast', {
+        detail: { message, type }
+    }));
+};
+
 const user = usePage().props.auth.user;
 const tables = ref([]);
 const newTableName = ref('');
@@ -11,6 +17,26 @@ const newTableName = ref('');
 // State Modal QR Code HD
 const showQrModal = ref(false);
 const selectedTableForQr = ref(null);
+
+// State Custom Confirm Modal
+const showConfirmModal = ref(false);
+const confirmTitle = ref('');
+const confirmMessage = ref('');
+const confirmCallback = ref(null);
+
+const triggerConfirm = (title, message, callback) => {
+    confirmTitle.value = title;
+    confirmMessage.value = message;
+    confirmCallback.value = callback;
+    showConfirmModal.value = true;
+};
+
+const handleConfirmYes = () => {
+    if (confirmCallback.value) {
+        confirmCallback.value();
+    }
+    showConfirmModal.value = false;
+};
 
 // Get Dynamic Base URL
 const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -30,27 +56,29 @@ const addTable = async () => {
         await axios.post('/api/tables', { table_name: newTableName.value });
         newTableName.value = '';
         fetchTables(); // Refresh list meja
-        alert("Meja baru berhasil ditambahkan!");
+        triggerToast("Meja baru berhasil ditambahkan!", "success");
     } catch (error) {
         console.error("Gagal tambah meja", error);
     }
 };
-
-const deleteTable = async (id, tableName) => {
-    if(!confirm(`Apakah Anda yakin ingin menghapus meja "${tableName}"? QR Code meja ini tidak akan bisa discan lagi oleh pelanggan!`)) return;
-    try {
-        const response = await axios.delete(`/api/tables/${id}`);
-        if(response.data.success) {
-            alert("Meja berhasil dihapus!");
-            fetchTables(); // Refresh list meja
+const deleteTable = (id, tableName) => {
+    triggerConfirm(
+        'Hapus Meja',
+        `Apakah Anda yakin ingin menghapus meja "${tableName}"? QR Code meja ini tidak akan bisa discan lagi oleh pelanggan!`,
+        async () => {
+            try {
+                const response = await axios.delete(`/api/tables/${id}`);
+                if(response.data.success) {
+                    triggerToast("Meja berhasil dihapus!", "success");
+                    fetchTables(); // Refresh list meja
+                }
+            } catch (error) {
+                console.error("Gagal menghapus meja", error);
+                triggerToast("Gagal menghapus meja.", "error");
+            }
         }
-    } catch (error) {
-        console.error("Gagal menghapus meja", error);
-        alert("Gagal menghapus meja.");
-    }
-};
-
-// Fitur Unduh QR Code sebagai PNG asli
+    );
+};// Fitur Unduh QR Code sebagai PNG asli
 const downloadQr = async (table) => {
     try {
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${appUrl}/meja/${table.secure_token}`;
@@ -67,7 +95,7 @@ const downloadQr = async (table) => {
         window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
         console.error("Gagal mengunduh QR Code", error);
-        alert("Gagal mengunduh QR Code. Silakan klik kanan pada gambar untuk menyimpannya.");
+        triggerToast("Gagal mengunduh QR Code. Silakan klik kanan pada gambar untuk menyimpannya.", "error");
     }
 };
 
@@ -220,6 +248,42 @@ onMounted(() => {
                       <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                     Unduh Gambar QR (.png)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM CONFIRMATION MODAL -->
+    <div v-if="showConfirmModal" 
+         class="fixed inset-0 bg-[#3B2314]/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        
+        <div class="bg-white rounded-[32px] border border-[#D4A373]/30 shadow-2xl max-w-sm w-full overflow-hidden transform scale-100 transition-all duration-300">
+            <div class="bg-[#3B2314] text-[#FAEDCD] p-5 text-center relative border-b border-[#D4A373]/20">
+                <button @click="showConfirmModal = false" class="absolute right-4 top-4 text-gray-300 hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h3 class="font-extrabold text-md">{{ confirmTitle }}</h3>
+                <p class="text-[9px] text-[#D4A373] font-bold tracking-widest uppercase">Konfirmasi Aksi</p>
+            </div>
+
+            <div class="p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <p class="text-xs font-bold text-gray-600 leading-relaxed">{{ confirmMessage }}</p>
+            </div>
+
+            <div class="p-6 bg-gray-50 border-t flex justify-center gap-3">
+                <button @click="showConfirmModal = false" class="px-5 py-2 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">
+                    Batal
+                </button>
+                <button @click="handleConfirmYes" 
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition">
+                    Ya, Hapus
                 </button>
             </div>
         </div>

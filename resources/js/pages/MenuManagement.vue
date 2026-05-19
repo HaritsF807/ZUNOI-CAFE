@@ -4,6 +4,12 @@ import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 
+const triggerToast = (message, type = 'success') => {
+    window.dispatchEvent(new CustomEvent('zunoi-toast', {
+        detail: { message, type }
+    }));
+};
+
 const props = defineProps({
     categories: Array,
     products: Array
@@ -22,6 +28,26 @@ const showProductModal = ref(false);
 const showCategoryModal = ref(false);
 const isEditingProduct = ref(false);
 const isEditingCategory = ref(false);
+
+// State Custom Confirm Modal
+const showConfirmModal = ref(false);
+const confirmTitle = ref('');
+const confirmMessage = ref('');
+const confirmCallback = ref(null);
+
+const triggerConfirm = (title, message, callback) => {
+    confirmTitle.value = title;
+    confirmMessage.value = message;
+    confirmCallback.value = callback;
+    showConfirmModal.value = true;
+};
+
+const handleConfirmYes = () => {
+    if (confirmCallback.value) {
+        confirmCallback.value();
+    }
+    showConfirmModal.value = false;
+};
 
 // Image Source Selector & Files
 const imageInputType = ref('file'); // 'file' or 'url'
@@ -83,36 +109,41 @@ const saveCategory = async () => {
         if (isEditingCategory.value) {
             const response = await axios.put(`/api/categories/${categoryForm.value.id}`, { name: categoryForm.value.name });
             if (response.data.success) {
-                alert("Kategori berhasil diperbarui!");
+                triggerToast("Kategori berhasil diperbarui!", "success");
                 showCategoryModal.value = false;
                 syncData();
             }
         } else {
             const response = await axios.post('/api/categories', { name: categoryForm.value.name });
             if (response.data.success) {
-                alert("Kategori berhasil ditambahkan!");
+                triggerToast("Kategori berhasil ditambahkan!", "success");
                 showCategoryModal.value = false;
                 syncData();
             }
         }
     } catch (error) {
         console.error("Gagal menyimpan kategori", error);
-        alert(error.response?.data?.message || "Gagal menyimpan kategori.");
+        triggerToast(error.response?.data?.message || "Gagal menyimpan kategori.", "error");
     }
 };
 
-const deleteCategory = async (id, categoryName) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus Kategori "${categoryName}"? Seluruh menu di bawah kategori ini juga akan terhapus!`)) return;
-    try {
-        const response = await axios.delete(`/api/categories/${id}`);
-        if (response.data.success) {
-            alert(response.data.message);
-            syncData();
+const deleteCategory = (id, categoryName) => {
+    triggerConfirm(
+        'Hapus Kategori',
+        `Apakah Anda yakin ingin menghapus Kategori "${categoryName}"? Seluruh menu di bawah kategori ini juga akan terhapus!`,
+        async () => {
+            try {
+                const response = await axios.delete(`/api/categories/${id}`);
+                if (response.data.success) {
+                    triggerToast(response.data.message, "success");
+                    syncData();
+                }
+            } catch (error) {
+                console.error("Gagal menghapus kategori", error);
+                triggerToast("Gagal menghapus kategori.", "error");
+            }
         }
-    } catch (error) {
-        console.error("Gagal menghapus kategori", error);
-        alert("Gagal menghapus kategori.");
-    }
+    );
 };
 
 // --- CRUD PRODUK ---
@@ -150,7 +181,7 @@ const openEditProduct = (product) => {
 
 const saveProduct = async () => {
     if (!productForm.value.name || !productForm.value.price || !productForm.value.category_id) {
-        alert("Mohon isi field wajib (Nama, Harga, Kategori)!");
+        triggerToast("Mohon isi field wajib (Nama, Harga, Kategori)!", "error");
         return;
     }
     
@@ -178,7 +209,7 @@ const saveProduct = async () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             if (response.data.success) {
-                alert("Produk berhasil diperbarui!");
+                triggerToast("Produk berhasil diperbarui!", "success");
                 showProductModal.value = false;
                 syncData();
             }
@@ -187,29 +218,34 @@ const saveProduct = async () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             if (response.data.success) {
-                alert("Produk berhasil ditambahkan!");
+                triggerToast("Produk berhasil ditambahkan!", "success");
                 showProductModal.value = false;
                 syncData();
             }
         }
     } catch (error) {
         console.error("Gagal menyimpan produk", error);
-        alert("Gagal menyimpan produk. Periksa kembali inputan Anda.");
+        triggerToast("Gagal menyimpan produk. Periksa kembali inputan Anda.", "error");
     }
 };
 
-const deleteProduct = async (id, productName) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus menu "${productName}"?`)) return;
-    try {
-        const response = await axios.delete(`/api/products/${id}`);
-        if (response.data.success) {
-            alert("Produk berhasil dihapus!");
-            syncData();
+const deleteProduct = (id, productName) => {
+    triggerConfirm(
+        'Hapus Menu',
+        `Apakah Anda yakin ingin menghapus menu "${productName}"?`,
+        async () => {
+            try {
+                const response = await axios.delete(`/api/products/${id}`);
+                if (response.data.success) {
+                    triggerToast("Produk berhasil dihapus!", "success");
+                    syncData();
+                }
+            } catch (error) {
+                console.error("Gagal menghapus produk", error);
+                triggerToast("Gagal menghapus produk.", "error");
+            }
         }
-    } catch (error) {
-        console.error("Gagal menghapus produk", error);
-        alert("Gagal menghapus produk.");
-    }
+    );
 };
 
 // Toggle Availability Instan (Tanpa modal, reaktif!)
@@ -222,7 +258,7 @@ const toggleAvailability = async (product) => {
         // Rollback if failed
         product.is_available = !product.is_available;
         console.error("Gagal memperbarui status ketersediaan", error);
-        alert("Koneksi gagal, status tidak dapat diperbarui.");
+        triggerToast("Koneksi gagal, status tidak dapat diperbarui.", "error");
     }
 };
 
@@ -601,6 +637,42 @@ const filteredProducts = computed(() => {
                 <button @click="saveCategory" 
                         class="bg-[#3B2314] hover:bg-[#25150c] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition">
                     Simpan Kategori
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM CONFIRMATION MODAL -->
+    <div v-if="showConfirmModal" 
+         class="fixed inset-0 bg-[#3B2314]/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        
+        <div class="bg-white rounded-[32px] border border-[#D4A373]/30 shadow-2xl max-w-sm w-full overflow-hidden transform scale-100 transition-all duration-300">
+            <div class="bg-[#3B2314] text-[#FAEDCD] p-5 text-center relative border-b border-[#D4A373]/20">
+                <button @click="showConfirmModal = false" class="absolute right-4 top-4 text-gray-300 hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h3 class="font-extrabold text-md">{{ confirmTitle }}</h3>
+                <p class="text-[9px] text-[#D4A373] font-bold tracking-widest uppercase">Konfirmasi Aksi</p>
+            </div>
+
+            <div class="p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <p class="text-xs font-bold text-gray-600 leading-relaxed">{{ confirmMessage }}</p>
+            </div>
+
+            <div class="p-6 bg-gray-50 border-t flex justify-center gap-3">
+                <button @click="showConfirmModal = false" class="px-5 py-2 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">
+                    Batal
+                </button>
+                <button @click="handleConfirmYes" 
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition">
+                    Ya, Hapus
                 </button>
             </div>
         </div>

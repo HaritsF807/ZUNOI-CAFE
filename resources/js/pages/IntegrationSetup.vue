@@ -3,6 +3,12 @@ import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 import { Head, usePage, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
+const triggerToast = (message, type = 'success') => {
+    window.dispatchEvent(new CustomEvent('zunoi-toast', {
+        detail: { message, type }
+    }));
+};
+
 const props = defineProps({
     settings: Object
 });
@@ -16,20 +22,6 @@ const form = useForm({
     tokopay_merchant_id: props.settings?.tokopay_merchant_id || '',
     tokopay_secret: props.settings?.tokopay_secret || '',
 });
-
-// State Custom Toast Notification
-const showToast = ref(false);
-const toastMessage = ref('');
-const toastType = ref('success');
-
-const triggerToast = (message, type = 'success') => {
-    toastMessage.value = message;
-    toastType.value = type;
-    showToast.value = true;
-    setTimeout(() => {
-        showToast.value = false;
-    }, 4000);
-};
 
 const saveIntegration = () => {
     form.post('/api/settings', {
@@ -149,40 +141,5 @@ const saveIntegration = () => {
         </div>
 
         <!-- Custom Toast Notification Popup -->
-        <Transition
-            enter-active-class="transform ease-out duration-300 transition"
-            enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-            enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-            leave-active-class="transition ease-in duration-150"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
-        >
-            <div v-if="showToast" class="fixed top-6 right-6 z-50 flex w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 pointer-events-auto">
-                <div class="p-4 w-full flex items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <!-- Icon Success -->
-                        <div v-if="toastType === 'success'" class="p-2 rounded-xl bg-green-50 text-green-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg>
-                        </div>
-                        <!-- Icon Error -->
-                        <div v-if="toastType === 'error'" class="p-2 rounded-xl bg-red-50 text-red-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-black text-gray-800">{{ toastMessage }}</p>
-                        </div>
-                    </div>
-                    <button @click="showToast = false" class="text-gray-400 hover:text-gray-600 transition shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </Transition>
     </ZunoiAdminLayout>
 </template>

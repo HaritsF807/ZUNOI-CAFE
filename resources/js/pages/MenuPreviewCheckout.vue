@@ -37,27 +37,43 @@ const finalTotal = computed(() => {
     return cartTotal.value + taxTotal.value;
 });
 
+// State Custom Toast Notification
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastType = ref('success');
+
+const triggerToast = (message, type = 'success') => {
+    toastMessage.value = message;
+    toastType.value = type;
+    showToast.value = true;
+    setTimeout(() => {
+        showToast.value = false;
+    }, 4500);
+};
+
 const handleFileChange = (e) => {
     form.value.payment_proof = e.target.files[0];
 };
 
 const submitPreviewOrder = () => {
-    alert('Mode Preview: Pesanan berhasil dibuat secara simulasi! Anda akan diarahkan ke halaman invoice preview.');
+    triggerToast('Mode Preview: Pesanan berhasil dibuat! Anda akan dialihkan ke rincian invoice.', 'success');
     
     // Clear preview cart
     localStorage.removeItem('zunoi_preview_cart');
     
-    // Send to success preview route with simulated data
-    router.visit('/dashboard/menu-preview/success', {
-        method: 'get',
-        data: {
-            customer_name: form.value.customer_name || 'Pelanggan Demo',
-            order_type: form.value.order_type,
-            payment_method: form.value.payment_method,
-            total_price: finalTotal.value,
-            items: JSON.stringify(form.value.cart_items)
-        }
-    });
+    setTimeout(() => {
+        // Send to success preview route with simulated data
+        router.visit('/dashboard/menu-preview/success', {
+            method: 'get',
+            data: {
+                customer_name: form.value.customer_name || 'Pelanggan Demo',
+                order_type: form.value.order_type,
+                payment_method: form.value.payment_method,
+                total_price: finalTotal.value,
+                items: JSON.stringify(form.value.cart_items)
+            }
+        });
+    }, 1500);
 };
 </script>
 
@@ -255,6 +271,42 @@ const submitPreviewOrder = () => {
                     <img :src="qris_manual_url || 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
                     <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
                     <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
+                </div>
+            </div>
+        </Transition>
+        <!-- Custom Toast Notification Popup -->
+        <Transition
+            enter-active-class="transform ease-out duration-300 transition"
+            enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+            enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+            leave-active-class="transition ease-in duration-150"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="showToast" class="fixed top-6 right-6 z-50 flex w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 pointer-events-auto">
+                <div class="p-4 w-full flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <!-- Icon Success -->
+                        <div v-if="toastType === 'success'" class="p-2 rounded-xl bg-green-50 text-green-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </div>
+                        <!-- Icon Error -->
+                        <div v-if="toastType === 'error'" class="p-2 rounded-xl bg-red-50 text-red-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-gray-800">{{ toastMessage }}</p>
+                        </div>
+                    </div>
+                    <button @click="showToast = false" class="text-gray-400 hover:text-gray-600 transition shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </Transition>
