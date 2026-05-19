@@ -61,8 +61,8 @@ provide('triggerToast', triggerToast);
 <template>
     <div class="flex min-h-screen bg-[#FAEDCD] font-sans text-gray-800">
         <aside 
-            class="bg-[#3B2314] text-[#FAEDCD] w-64 h-screen sticky top-0 flex flex-col justify-between transition-all duration-300 z-30"
-            :class="{'w-64': isSidebarOpen, 'w-20 overflow-hidden': !isSidebarOpen}"
+            class="bg-[#3B2314] text-[#FAEDCD] h-screen sticky top-0 flex flex-col justify-between transition-all duration-300 z-30"
+            :class="isSidebarOpen ? 'w-64' : 'w-20 overflow-hidden'"
         >
             <div class="flex flex-col flex-1 overflow-y-auto">
                 <!-- Sidebar Header -->
@@ -335,9 +335,6 @@ provide('triggerToast', triggerToast);
 
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                        <p class="text-xs font-bold text-[#3B2314]">
-                            {{ user.name }}
-                        </p>
                         <p
                             class="font-mono text-[10px] font-bold tracking-widest text-gray-500 uppercase"
                         >

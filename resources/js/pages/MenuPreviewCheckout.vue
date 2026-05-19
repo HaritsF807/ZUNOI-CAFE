@@ -88,21 +88,21 @@ const defaultAdditions = [
 
 const getAdditionsForCartItem = (item) => {
     if (item.additions && item.additions.length > 0) {
-        return JSON.parse(JSON.stringify(item.additions));
+        return JSON.parse(JSON.stringify(item.additions)).map(a => {
+            if (a.selected === undefined) {
+                a.selected = (a.selection !== null && a.selection !== undefined);
+            }
+            return a;
+        });
     }
     // Fallback parsing from notes
     const parsedAdditions = defaultAdditions.map(a => {
-        let selection = null;
+        let selected = false;
         if (item.notes) {
-            // Check if notes contains addition name followed by selection
-            const regex = new RegExp(a.name + '\\s*\\((Less|Normal|Extra)\\)', 'i');
-            const match = item.notes.match(regex);
-            if (match) {
-                selection = match[1];
-                selection = selection.charAt(0).toUpperCase() + selection.slice(1);
-            }
+            const regex = new RegExp(a.name, 'i');
+            selected = regex.test(item.notes);
         }
-        return { ...a, selection };
+        return { ...a, selected };
     });
     return parsedAdditions;
 };
@@ -120,9 +120,8 @@ const computedTotalPrice = computed(() => {
     
     let addonsTotal = 0;
     additions.value.forEach(add => {
-        if (add.selection !== null) {
-            let mult = add.selection === 'Extra' ? 2 : 1;
-            addonsTotal += parseInt(add.price) * mult * selectedQuantity.value;
+        if (add.selected) {
+            addonsTotal += parseInt(add.price) * selectedQuantity.value;
         }
     });
     
@@ -153,21 +152,19 @@ const closeSelectionModal = () => {
 const saveCartItem = () => {
     if (editingIndex.value === -1) return;
     
-    const selectedAddons = additions.value.filter(a => a.selection !== null);
+    const selectedAddons = additions.value.filter(a => a.selected);
     
     let addonsTotal = 0;
     selectedAddons.forEach(add => {
-        let mult = add.selection === 'Extra' ? 2 : 1;
-        addonsTotal += parseInt(add.price) * mult;
+        addonsTotal += parseInt(add.price);
     });
 
     const basePrice = selectedProduct.value.price;
     const unitPrice = basePrice + addonsTotal;
 
     const notesStr = selectedAddons.length > 0 ? '+ ' + selectedAddons.map(a => {
-        let mult = a.selection === 'Extra' ? 2 : 1;
-        let priceText = a.price > 0 ? ` (+Rp ${(parseInt(a.price) * mult).toLocaleString('id-ID')})` : '';
-        return `${a.name} (${a.selection})${priceText}`;
+        let priceText = a.price > 0 ? ` (+Rp ${parseInt(a.price).toLocaleString('id-ID')})` : '';
+        return `${a.name}${priceText}`;
     }).join(', ') : null;
 
     // Update the item in cart_items
@@ -878,24 +875,29 @@ const submitPreviewOrder = () => {
                         <div v-if="additions && additions.length > 0" class="px-8 pb-8 pt-4 space-y-3">
                             <h5 class="text-sm font-extrabold tracking-wide text-[#3B2314]">Pilih Add-on</h5>
                             <div class="space-y-2.5">
-                                <div v-for="addition in additions" :key="addition.name" class="flex flex-col bg-white/30 px-4 py-3 rounded-2xl border border-white/40 shadow-sm backdrop-blur-md transition hover:bg-white/50">
-                                    <div class="flex items-center justify-between mb-2.5">
+                                <div v-for="addition in additions" :key="addition.name" 
+                                    @click="addition.selected = !addition.selected"
+                                    class="flex items-center justify-between bg-white/30 px-5 py-3.5 rounded-2xl border shadow-sm backdrop-blur-md transition-all duration-300 cursor-pointer select-none"
+                                    :class="addition.selected 
+                                        ? 'border-[#3B2314] bg-white/70 shadow-md translate-x-1' 
+                                        : 'border-white/40 hover:bg-white/50 hover:border-white/60'">
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <!-- Custom Checkbox -->
+                                        <div class="h-5 w-5 rounded-md border flex items-center justify-center transition-all duration-300 pointer-events-none"
+                                            :class="addition.selected 
+                                                ? 'bg-[#3B2314] border-[#3B2314]' 
+                                                : 'border-gray-300 bg-white'">
+                                            <svg v-if="addition.selected" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-3.5 w-3.5 text-white">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                            </svg>
+                                        </div>
                                         <span class="text-base font-bold text-[#3B2314]">{{ addition.name }}</span>
-                                        <span v-if="addition.price > 0" class="text-[11px] font-bold text-[#3B2314]/60">
-                                            +Rp {{ addition.selection === 'Extra' ? (addition.price * 2).toLocaleString('id-ID') : addition.price.toLocaleString('id-ID') }}
-                                        </span>
                                     </div>
                                     
-                                    <div class="flex items-center gap-1.5 bg-white/40 p-1 rounded-xl w-full">
-                                        <button v-for="option in ['Less', 'Normal', 'Extra']" :key="option"
-                                            @click="addition.selection = addition.selection === option ? null : option"
-                                            class="flex-1 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-300"
-                                            :class="addition.selection === option 
-                                                ? 'bg-[#3B2314] text-white shadow-md scale-[1.02]' 
-                                                : 'text-[#3B2314]/60 hover:bg-white/50 active:scale-95'">
-                                            {{ option }}
-                                        </button>
-                                    </div>
+                                    <span v-if="addition.price > 0" class="text-xs font-black text-[#D4A373]">
+                                        +Rp {{ addition.price.toLocaleString('id-ID') }}
+                                    </span>
                                 </div>
                             </div>
                         </div>

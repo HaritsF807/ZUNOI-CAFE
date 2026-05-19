@@ -19,7 +19,7 @@ Route::get('/scan-required', function () {
 
 Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
-        $products = \App\Models\Product::with('category')->get();
+        $products = \App\Models\Product::with(['category', 'addons'])->get();
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         return inertia('Customer/MenuList', [
             'products' => $products,
@@ -48,7 +48,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('table.management');
 
     Route::get('/dashboard/menu-preview', function () {
-        $products = \App\Models\Product::with('category')->get();
+        $products = \App\Models\Product::with(['category', 'addons'])->get();
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         return inertia('MenuPreview', [
             'products' => $products,
@@ -82,6 +82,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/products/{id}', [\App\Http\Controllers\MenuController::class, 'updateProduct']);
     Route::delete('/api/products/{id}', [\App\Http\Controllers\MenuController::class, 'deleteProduct']);
     Route::patch('/api/products/{id}/toggle-availability', [\App\Http\Controllers\MenuController::class, 'toggleProductAvailability']);
+    
+    // API Kelola Addon Menu
+    Route::post('/api/products/{product_id}/addons', [\App\Http\Controllers\MenuController::class, 'storeAddon']);
+    Route::post('/api/products/{product_id}/addons/default', [\App\Http\Controllers\MenuController::class, 'useDefaultAddons']);
+    Route::put('/api/product-addons/{id}', [\App\Http\Controllers\MenuController::class, 'updateAddon']);
+    Route::delete('/api/product-addons/{id}', [\App\Http\Controllers\MenuController::class, 'deleteAddon']);
     
     Route::post('/api/categories', [\App\Http\Controllers\MenuController::class, 'storeCategory']);
     Route::put('/api/categories/{id}', [\App\Http\Controllers\MenuController::class, 'updateCategory']);
