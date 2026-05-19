@@ -19,6 +19,7 @@ class TableController extends Controller
         // Set session
         $request->session()->put('active_table_id', $table->id);
         $request->session()->put('active_table_name', $table->table_name);
+        $request->session()->forget('order_placed_at');
 
         // Redirect to order page with clean URL
         return redirect()->route('order.index');

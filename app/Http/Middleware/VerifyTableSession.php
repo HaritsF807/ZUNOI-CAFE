@@ -19,6 +19,15 @@ class VerifyTableSession
             return redirect()->route('scan.required');
         }
 
+        // Cek jika pesanan terakhir dibuat lebih dari 5 menit (300 detik) yang lalu
+        if ($request->session()->has('order_placed_at')) {
+            $placedAt = $request->session()->get('order_placed_at');
+            if (time() - $placedAt > 300) {
+                $request->session()->forget(['active_table_id', 'active_table_name', 'order_placed_at']);
+                return redirect()->route('scan.required');
+            }
+        }
+
         return $next($request);
     }
 }
