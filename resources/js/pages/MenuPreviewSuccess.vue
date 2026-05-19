@@ -27,7 +27,7 @@ const mockOrderId = computed(() => {
     <Head title="Preview Pesanan Berhasil - Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
+    <div class="min-h-screen bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans flex flex-col relative">
         
         <!-- Preview Banner -->
         <div class="bg-red-500 text-white text-center py-1.5 text-xs font-black tracking-widest uppercase shadow-sm z-50">
@@ -89,8 +89,8 @@ const mockOrderId = computed(() => {
 
                 <!-- Right Column: Receipt Invoice Details -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-[#D4A373]/10 relative">
-                    <div class="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#FAEDCD] rounded-full"></div>
-                    <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#FAEDCD] rounded-full"></div>
+                    <div class="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full"></div>
+                    <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full"></div>
                     
                     <h3 class="font-extrabold text-[#3B2314] text-xs uppercase tracking-wider mb-4 pb-2 border-b border-dashed border-gray-200">
                         Rincian Tagihan (Preview)

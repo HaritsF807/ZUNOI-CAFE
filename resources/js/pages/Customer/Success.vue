@@ -10,7 +10,7 @@ defineProps({
     <Head title="Pesanan Berhasil" />
 
     <!-- Main Customer Area -->
-    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
+    <div class="min-h-screen bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans flex flex-col relative">
         
         <!-- Sticky Header -->
         <header class="bg-[#3B2314] text-[#FAEDCD] py-5 shadow-md sticky top-0 z-40">
@@ -67,8 +67,8 @@ defineProps({
 
                 <!-- Right Column: Receipt Invoice Details -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-[#D4A373]/10 relative">
-                    <div class="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#FAEDCD] rounded-full"></div>
-                    <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-[#FAEDCD] rounded-full"></div>
+                    <div class="absolute -left-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full"></div>
+                    <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full"></div>
                     
                     <h3 class="font-extrabold text-[#3B2314] text-xs uppercase tracking-wider mb-4 pb-2 border-b border-dashed border-gray-200">
                         Rincian Tagihan

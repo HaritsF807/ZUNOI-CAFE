@@ -65,7 +65,7 @@ const filteredProducts = computed(() => {
     <Head title="Menu Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
+    <div class="min-h-screen bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans flex flex-col relative">
         
         <!-- Sticky Header -->
         <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-[-1px] z-40">
