@@ -67,7 +67,7 @@ const filteredProducts = computed(() => {
     <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
         
         <!-- Sticky Header -->
-        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-0 z-40">
+        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-[-1px] z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center gap-4">
                 <div>
                     <h1 class="text-lg md:text-xl font-black tracking-wide">Zunoi Caffe</h1>

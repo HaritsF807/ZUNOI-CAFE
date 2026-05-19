@@ -49,7 +49,7 @@ const submitOrder = () => {
     <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
         
         <!-- Sticky Header -->
-        <header class="bg-[#3B2314] text-[#FAEDCD] py-5 shadow-md sticky top-0 z-40">
+        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-[-1px] z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-4">
                 <Link :href="'/order'" class="bg-[#FAEDCD] text-[#3B2314] p-2 rounded-lg hover:scale-105 active:scale-95 transition transform shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
@@ -101,7 +101,7 @@ const submitOrder = () => {
                             Detail Pesanan
                         </h2>
                         
-                        <div class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                        <div v-if="form.cart_items.length > 0" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                             <div v-for="item in form.cart_items" :key="item.id" class="flex justify-between items-center gap-3 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                                 <div class="flex items-center gap-2">
                                     <img :src="item.image" alt="Product" class="w-10 h-10 rounded-lg object-cover border">
@@ -112,6 +112,11 @@ const submitOrder = () => {
                                 </div>
                                 <span class="text-xs font-extrabold text-[#3B2314]">Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}</span>
                             </div>
+                        </div>
+                        <div v-else class="text-center py-6 px-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                            <p class="text-xs text-gray-400 font-semibold leading-relaxed">
+                                Keranjang belanja Anda masih kosong. Silakan pilih menu pesanan Anda terlebih dahulu.
+                            </p>
                         </div>
                     </div>
 
@@ -124,7 +129,7 @@ const submitOrder = () => {
                             Catatan untuk Barista
                         </h2>
                         <div>
-                            <textarea v-model="form.notes" placeholder="Contoh: Es batu sedikit saja, kopi agak manis, sendok 2..." rows="3" class="w-full text-xs rounded-xl border-gray-200 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
+                            <textarea v-model="form.notes" placeholder="Contoh: Es batu sedikit saja, kopi agak manis, sendok 2..." rows="2" class="w-full text-xs rounded-xl border-gray-200 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
                         </div>
                     </div>
                 </div>
