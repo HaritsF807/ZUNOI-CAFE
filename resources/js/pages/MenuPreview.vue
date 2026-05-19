@@ -69,7 +69,7 @@ const showPreviewAlert = () => {
     <Head title="Preview Menu QR - Zunoi Caffe" />
 
     <!-- Main Customer Area (Preview) -->
-    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
+    <div class="min-h-screen bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans flex flex-col relative">
         
         <!-- Preview Banner -->
         <div class="bg-red-500 text-white text-center py-1.5 text-xs font-black tracking-widest uppercase shadow-sm z-50">

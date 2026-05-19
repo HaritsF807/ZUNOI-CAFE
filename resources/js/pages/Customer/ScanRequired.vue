@@ -6,7 +6,7 @@ import { Head } from '@inertiajs/vue3';
     <Head title="Scan QR Meja Diperlukan - Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col items-center justify-center p-6 relative">
+    <div class="min-h-screen bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans flex flex-col items-center justify-center p-6 relative">
         <div class="bg-white p-8 rounded-2xl shadow-sm max-w-sm w-full border border-[#D4A373]/10 relative overflow-hidden text-center">
             <!-- Decorative circle -->
             <div class="absolute -right-12 -top-12 w-32 h-32 bg-[#FAEDCD]/40 rounded-full blur-xl"></div>
