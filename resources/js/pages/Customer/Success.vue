@@ -102,12 +102,6 @@ defineProps({
                     <span>Notifikasi WhatsApp akan dikirimkan otomatis jika pembayaran QRIS Anda sukses terkonfirmasi.</span>
                 </div>
 
-                <div v-if="order.payment_method === 'qris_manual'" class="bg-amber-50/50 text-[#3B2314] border border-[#D4A373]/20 p-4.5 rounded-[20px] text-[10px] font-black leading-relaxed flex items-start gap-2.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373] shrink-0 mt-0.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                    </svg>
-                    <span>Harap tunjukkan bukti transfer QRIS Anda ke meja Kasir agar pesanan segera dibuat.</span>
-                </div>
 
                 <!-- Back to Menu Button -->
                 <Link :href="'/order'" class="block w-full bg-[#3B2314] text-[#FAEDCD] py-4 rounded-2xl font-black text-center hover:scale-[1.02] active:scale-95 transition text-xs uppercase tracking-wider shadow-md">

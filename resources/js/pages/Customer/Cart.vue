@@ -6,6 +6,8 @@ const props = defineProps({
     qris_manual_url: String
 });
 
+const isQrZoomed = ref(false);
+
 const form = useForm({
     customer_name: '',
     customer_phone: '',
@@ -106,7 +108,16 @@ const submitOrder = () => {
                             </div>
                             <div v-if="form.payment_method === 'qris_manual'" class="mt-2 text-center bg-white p-3 rounded-xl border border-gray-100 space-y-3">
                                 <p class="text-[10px] text-gray-500 mb-1">Scan QR di bawah ini, lalu unggah bukti pembayaran.</p>
-                                <img :src="qris_manual_url" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl">
+                                
+                                <div class="relative group cursor-zoom-in inline-block" @click="isQrZoomed = true">
+                                    <img :src="qris_manual_url" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl transition hover:opacity-90">
+                                    <div class="absolute inset-0 bg-[#3B2314]/30 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-white">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637zM10.5 7.5v6m3-3h-6" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-[9px] text-gray-400 mt-1 font-semibold">Klik QR untuk memperbesar</p>
                                 
                                 <div class="text-left mt-3">
                                     <label class="block text-[10px] font-black text-gray-600 mb-1">Unggah Bukti Pembayaran (Struk/Screenshot)</label>
@@ -126,6 +137,20 @@ const submitOrder = () => {
                     </button>
                 </form>
             </main>
+
+            <!-- QR Code Zoom Modal -->
+            <div v-if="isQrZoomed" class="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 transition-all duration-300" @click.self="isQrZoomed = false">
+                <div class="bg-white p-5 rounded-[28px] max-w-[90%] shadow-2xl relative transition-transform duration-300 scale-100">
+                    <button type="button" @click="isQrZoomed = false" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-2 shadow-lg hover:scale-105 active:scale-95 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
+                    <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
+                    <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
+                </div>
+            </div>
         </div>
     </div>
 </template>
