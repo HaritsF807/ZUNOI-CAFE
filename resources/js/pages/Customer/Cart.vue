@@ -104,7 +104,7 @@ const submitOrder = () => {
                         <div v-if="form.cart_items.length > 0" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                             <div v-for="item in form.cart_items" :key="item.id" class="flex justify-between items-center gap-3 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                                 <div class="flex items-center gap-2">
-                                    <img :src="item.image" alt="Product" class="w-10 h-10 rounded-lg object-cover border">
+                                    <img :src="item.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'" alt="Product" class="w-10 h-10 rounded-lg object-cover border">
                                     <div class="text-left">
                                         <p class="text-xs font-bold text-gray-800">{{ item.name }}</p>
                                         <p class="text-[10px] text-gray-400 font-semibold">{{ item.quantity }}x &bull; Rp {{ item.price.toLocaleString('id-ID') }}</p>
@@ -117,6 +117,22 @@ const submitOrder = () => {
                             <p class="text-xs text-gray-400 font-semibold leading-relaxed">
                                 Keranjang belanja Anda masih kosong. Silakan pilih menu pesanan Anda terlebih dahulu.
                             </p>
+                        </div>
+
+                        <!-- Price Details Summary -->
+                        <div v-if="form.cart_items.length > 0" class="pt-3 border-t border-gray-100 space-y-2 text-xs">
+                            <div class="flex justify-between text-gray-500 font-medium">
+                                <span>Subtotal</span>
+                                <span>Rp {{ cartTotal.toLocaleString('id-ID') }}</span>
+                            </div>
+                            <div class="flex justify-between text-gray-500 font-medium">
+                                <span>Pajak (0%)</span>
+                                <span>Rp 0</span>
+                            </div>
+                            <div class="flex justify-between text-[#3B2314] font-extrabold text-sm pt-1.5 border-t border-dashed">
+                                <span>Total Pembayaran</span>
+                                <span>Rp {{ cartTotal.toLocaleString('id-ID') }}</span>
+                            </div>
                         </div>
                     </div>
 
