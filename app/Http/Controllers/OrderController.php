@@ -18,7 +18,8 @@ class OrderController extends Controller
             'order_type' => 'required|in:dine_in,takeaway',
             'payment_method' => 'required|in:cashier,qris_tokopay,qris_manual',
             'cart_items' => 'required|array',
-            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'notes' => 'nullable|string'
         ]);
 
         if ($validated['payment_method'] === 'qris_manual') {
@@ -38,18 +39,13 @@ class OrderController extends Controller
             $totalPrice += ($item['price'] * $item['quantity']);
         }
 
-        // Upload bukti pembayaran jika ada
+        // Simpan bukti pembayaran ke database sebagai Base64 jika ada
         $proofUrl = null;
         if ($request->hasFile('payment_proof')) {
             $file = $request->file('payment_proof');
-            $filename = time() . '_proof_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
-            if (!file_exists(public_path('uploads/proofs'))) {
-                mkdir(public_path('uploads/proofs'), 0777, true);
-            }
-            
-            $file->move(public_path('uploads/proofs'), $filename);
-            $proofUrl = '/uploads/proofs/' . $filename;
+            $imageData = file_get_contents($file->getRealPath());
+            $base64 = base64_encode($imageData);
+            $proofUrl = 'data:' . $file->getMimeType() . ';base64,' . $base64;
         }
 
         // Buat Order Induk
@@ -63,6 +59,7 @@ class OrderController extends Controller
             'payment_status' => 'pending',
             'order_status' => 'pending',
             'payment_proof' => $proofUrl,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         // Simpan Item Pesanan
@@ -82,8 +79,8 @@ class OrderController extends Controller
     // Endpoint API untuk Polling Dashboard Barista
     public function liveOrders()
     {
-        $orders = Order::with('table')
-            ->whereIn('order_status', ['pending', 'processing'])
+        $orders = Order::with(['table', 'items.product'])
+            ->whereIn('order_status', ['pending', 'processing', 'completed'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($order) {
@@ -97,7 +94,16 @@ class OrderController extends Controller
                     'payment_method' => $order->payment_method,
                     'payment_status' => $order->payment_status,
                     'payment_proof' => $order->payment_proof,
-                    'time' => $order->created_at->format('H:i')
+                    'notes' => $order->notes,
+                    'time' => $order->created_at->format('H:i'),
+                    'items' => $order->items->map(function ($item) {
+                        return [
+                            'name' => $item->product->name ?? 'Produk Terhapus',
+                            'quantity' => $item->quantity,
+                            'price' => (float) $item->price_at_sale,
+                            'notes' => $item->notes
+                        ];
+                    })
                 ];
             });
 

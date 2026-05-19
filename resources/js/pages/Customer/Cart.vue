@@ -14,7 +14,8 @@ const form = useForm({
     order_type: 'dine_in',
     payment_method: 'qris_tokopay',
     cart_items: [],
-    payment_proof: null
+    payment_proof: null,
+    notes: ''
 });
 
 onMounted(() => {
@@ -87,6 +88,42 @@ const submitOrder = () => {
                         </div>
                     </div>
 
+                    <!-- Detail Pesanan -->
+                    <div class="bg-white p-5 rounded-[24px] shadow-sm space-y-3 border border-[#D4A373]/10">
+                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                            Detail Pesanan
+                        </h2>
+                        
+                        <div class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                            <div v-for="item in form.cart_items" :key="item.id" class="flex justify-between items-center gap-3 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <img :src="item.image" alt="Product" class="w-10 h-10 rounded-lg object-cover border">
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold text-gray-800">{{ item.name }}</p>
+                                        <p class="text-[10px] text-gray-400 font-semibold">{{ item.quantity }}x &bull; Rp {{ item.price.toLocaleString('id-ID') }}</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-extrabold text-[#3B2314]">Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catatan Pesanan -->
+                    <div class="bg-white p-5 rounded-[24px] shadow-sm space-y-3 border border-[#D4A373]/10">
+                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                            Catatan untuk Barista
+                        </h2>
+                        <div>
+                            <textarea v-model="form.notes" placeholder="Contoh: Es batu sedikit saja, kopi agak manis, sendok 2..." rows="3" class="w-full text-xs rounded-xl border-gray-200 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
+                        </div>
+                    </div>
+
                     <!-- Payment Method -->
                     <div class="bg-white p-5 rounded-[24px] shadow-sm space-y-3 border border-[#D4A373]/10">
                         <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
@@ -139,18 +176,27 @@ const submitOrder = () => {
             </main>
 
             <!-- QR Code Zoom Modal -->
-            <div v-if="isQrZoomed" class="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 transition-all duration-300" @click.self="isQrZoomed = false">
-                <div class="bg-white p-5 rounded-[28px] max-w-[90%] shadow-2xl relative transition-transform duration-300 scale-100">
-                    <button type="button" @click="isQrZoomed = false" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-2 shadow-lg hover:scale-105 active:scale-95 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
-                    <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
-                    <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
+            <Transition
+                enter-active-class="ease-out duration-300 transition"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="ease-in duration-200 transition"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+            >
+                <div v-if="isQrZoomed" class="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-sm" @click.self="isQrZoomed = false">
+                    <div class="bg-white p-5 rounded-[28px] max-w-[90%] shadow-2xl relative">
+                        <button type="button" @click="isQrZoomed = false" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-2 shadow-lg hover:scale-105 active:scale-95 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
+                        <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
+                        <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
+                    </div>
                 </div>
-            </div>
+            </Transition>
         </div>
     </div>
 </template>

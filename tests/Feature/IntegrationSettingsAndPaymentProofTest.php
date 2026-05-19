@@ -187,6 +187,42 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
         
         $order = Order::first();
         $this->assertNotNull($order->payment_proof);
-        $this->assertStringContainsString('/uploads/proofs/', $order->payment_proof);
+        $this->assertStringContainsString('data:image/', $order->payment_proof);
+    }
+
+    /**
+     * Test that order with custom global notes stores successfully.
+     */
+    public function test_order_with_notes_stored_successfully(): void
+    {
+        $table = Table::create([
+            'table_name' => 'Meja 1',
+            'secure_token' => 'testtoken'
+        ]);
+
+        $category = Category::create(['name' => 'Kopi', 'slug' => 'kopi']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Kopi Latte',
+            'price' => 15000,
+            'image' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
+            'is_available' => true
+        ]);
+
+        $response = $this->withSession(['active_table_id' => $table->id])
+            ->post(route('order.store'), [
+                'customer_name' => 'Budi',
+                'customer_phone' => '0812345678',
+                'order_type' => 'dine_in',
+                'payment_method' => 'cashier',
+                'notes' => 'Less sugar and no ice please.',
+                'cart_items' => [
+                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1]
+                ]
+            ]);
+
+        $response->assertRedirect();
+        $order = Order::first();
+        $this->assertEquals('Less sugar and no ice please.', $order->notes);
     }
 }
