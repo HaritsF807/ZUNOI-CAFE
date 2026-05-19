@@ -166,7 +166,7 @@ const filteredProducts = computed(() => {
             
             <!-- Main Floating Cart Button -->
             <Link :href="'/checkout'" 
-                  class="pointer-events-auto bg-gradient-to-r from-[#3B2314] to-[#24150c] text-[#FAEDCD] px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(59,35,20,0.45)] hover:shadow-[0_10px_35px_rgba(59,35,20,0.6)] font-black flex items-center justify-between hover:scale-105 active:scale-95 transition-all duration-300 w-full max-w-sm md:max-w-md lg:max-w-lg border border-[#D4A373]/40">
+                  class="pointer-events-auto bg-gradient-to-br from-[#5C3E26] via-[#3B2314] to-[#24150c] text-[#FAEDCD] px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(59,35,20,0.45)] hover:shadow-[0_10px_35px_rgba(59,35,20,0.6)] font-black flex items-center justify-between hover:scale-105 active:scale-95 transition-all duration-300 w-full max-w-sm md:max-w-md lg:max-w-lg border border-[#D4A373]/40">
                 
                 <span class="flex items-center gap-2 text-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 shrink-0">

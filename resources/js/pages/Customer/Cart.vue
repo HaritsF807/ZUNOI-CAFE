@@ -75,7 +75,7 @@ const submitOrder = () => {
                 <div class="space-y-6">
                     <!-- Order Type Toggle -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
-                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                        <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.09.53-.139 1.078-.139 1.638 0 1.22.496 2.323 1.3 3.123m0 0L9 12" />
                             </svg>
@@ -89,7 +89,7 @@ const submitOrder = () => {
 
                     <!-- Customer Details -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border border-[#D4A373]/10">
-                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                        <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                             </svg>
@@ -110,7 +110,7 @@ const submitOrder = () => {
 
                     <!-- Detail Pesanan -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
-                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                        <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                             </svg>
@@ -154,7 +154,7 @@ const submitOrder = () => {
 
                     <!-- Catatan Pesanan -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
-                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                        <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                             </svg>
@@ -170,7 +170,7 @@ const submitOrder = () => {
                 <div class="space-y-6">
                     <!-- Payment Method -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
-                        <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
+                        <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
                             </svg>
