@@ -165,7 +165,7 @@ class OrderController extends Controller
                                "💳 *Metode:* QRIS Manual (Toko)\n" .
                                "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
                                "💵 *Status:* LUNAS (Terverifikasi)\n\n" .
-                               "*Daftar Menu:*\n" .
+                               "*Daftar Pesanan:*\n" .
                                "{$itemList}\n";
                                
                     if (!empty($order->notes)) {
@@ -187,7 +187,7 @@ class OrderController extends Controller
                                "💳 *Metode:* {$methodText}\n" .
                                "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
                                "💵 *Status Pembayaran:* {$payStatusText}\n\n" .
-                               "*Daftar Menu:*\n" .
+                               "*Daftar Pesanan:*\n" .
                                "{$itemList}\n";
                                
                     if (!empty($order->notes)) {
@@ -220,7 +220,7 @@ class OrderController extends Controller
                            "🛋️ *Tipe:* {$typeName}\n" .
                            "💰 *Total Belanja:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
                            "💵 *Status:* LUNAS (Disajikan)\n\n" .
-                           "*Daftar Menu:*\n" .
+                           "*Daftar Pesanan:*\n" .
                            "{$itemList}\n" .
                            "━━━━━━━━━━━━━━━━━━\n\n" .
                            "{$deliveryInstruction}\n\n" .
