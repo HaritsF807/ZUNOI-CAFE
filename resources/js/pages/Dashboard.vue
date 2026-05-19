@@ -116,8 +116,20 @@ const completeOrder = async (id) => {
     }
 };
 
-const sendReport = () => {
-    triggerToast('Rekapan harian sedang dikirim ke WhatsApp Owner...', 'info');
+const sendReport = async () => {
+    triggerToast('Mengirim rekapan harian ke WhatsApp Owner...', 'info');
+    try {
+        const response = await axios.post('/api/reports/send-recap');
+        if (response.data.success) {
+            triggerToast(response.data.message || 'Rekapan harian berhasil dikirim!', 'success');
+        } else {
+            triggerToast(response.data.message || 'Gagal mengirim rekapan.', 'error');
+        }
+    } catch (error) {
+        console.error('Gagal mengirim rekapan', error);
+        const errorMsg = error.response?.data?.message || 'Terjadi kesalahan sistem saat mengirim rekapan.';
+        triggerToast(errorMsg, 'error');
+    }
 };
 
 // Form Integrasi (Khusus Owner)

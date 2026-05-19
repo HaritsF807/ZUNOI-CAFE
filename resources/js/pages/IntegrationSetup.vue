@@ -21,6 +21,7 @@ const form = useForm({
     fonnte_token: props.settings?.fonnte_token || '',
     tokopay_merchant_id: props.settings?.tokopay_merchant_id || '',
     tokopay_secret: props.settings?.tokopay_secret || '',
+    owner_whatsapp: props.settings?.owner_whatsapp || '',
 });
 
 const saveIntegration = () => {
@@ -131,6 +132,18 @@ const saveIntegration = () => {
                                         <input
                                             v-model="form.fonnte_token"
                                             type="password"
+                                            class="w-full rounded-xl border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="mb-1 block text-xs font-bold text-gray-600"
+                                            >Nomor WhatsApp Owner (Contoh: 62812xxx)</label
+                                        >
+                                        <input
+                                            v-model="form.owner_whatsapp"
+                                            type="text"
+                                            placeholder="628123456789"
                                             class="w-full rounded-xl border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                         />
                                     </div>

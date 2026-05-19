@@ -75,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard/integration', [\App\Http\Controllers\SettingController::class, 'integrationIndex'])->name('integration.setup');
     Route::post('/api/settings', [\App\Http\Controllers\SettingController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/api/reports/send-recap', [\App\Http\Controllers\SettingController::class, 'sendRecap'])->name('reports.send-recap');
     
     // API Kelola Menu
     Route::post('/api/products', [\App\Http\Controllers\MenuController::class, 'storeProduct']);

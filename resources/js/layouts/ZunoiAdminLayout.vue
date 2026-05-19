@@ -1,6 +1,6 @@
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { ref, provide, onMounted, onUnmounted } from 'vue';
+import { ref, provide, onMounted, onUnmounted, watch } from 'vue';
 import { logout } from '@/routes';
 
 const user = usePage().props.auth.user;
@@ -29,6 +29,23 @@ const handleToastEvent = (event) => {
         triggerToast(event.detail.message, event.detail.type || 'success');
     }
 };
+
+// Watch for Inertia Flash Messages
+const page = usePage();
+watch(
+    () => page.props.flash,
+    (flash) => {
+        if (flash && flash.success) {
+            triggerToast(flash.success, 'success');
+            flash.success = null;
+        }
+        if (flash && flash.error) {
+            triggerToast(flash.error, 'error');
+            flash.error = null;
+        }
+    },
+    { deep: true, immediate: true }
+);
 
 onMounted(() => {
     window.addEventListener('zunoi-toast', handleToastEvent);
