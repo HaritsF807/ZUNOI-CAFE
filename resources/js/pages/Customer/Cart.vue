@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 const props = defineProps({
     qris_manual_url: String,
@@ -18,11 +18,19 @@ const form = useForm({
     notes: '',
 });
 
+let originalBgColor = '';
+
 onMounted(() => {
     const savedCart = localStorage.getItem('zunoi_cart');
     if (savedCart) {
         form.cart_items = JSON.parse(savedCart);
     }
+    originalBgColor = document.documentElement.style.backgroundColor;
+    document.documentElement.style.backgroundColor = '#3B2314';
+});
+
+onUnmounted(() => {
+    document.documentElement.style.backgroundColor = originalBgColor;
 });
 
 const cartTotal = computed(() => {
@@ -58,11 +66,13 @@ const submitOrder = () => {
 
     <!-- Main Customer Area -->
     <div
-        class="relative flex min-h-screen flex-col bg-gradient-to-b from-[#FAEDCD] via-white to-white font-sans"
+        class="relative z-0 flex min-h-screen flex-col font-sans"
     >
+        <!-- Fixed Background Gradient (Seals tablet scroll behavior) -->
+        <div class="fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white pointer-events-none"></div>
         <!-- Sticky Header -->
         <header
-            class="glass-header sticky top-0 z-40 py-3 text-[#FAEDCD]"
+            class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]"
         >
             <div
                 class="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8"
@@ -90,6 +100,8 @@ const submitOrder = () => {
                     Checkout Pesanan
                 </h1>
             </div>
+            <!-- Animated Gradient Border -->
+            <div class="header-border"></div>
         </header>
 
         <!-- Scrollable Form Area -->
@@ -590,17 +602,85 @@ const submitOrder = () => {
 <style scoped>
 .glass-header {
     position: sticky;
-    top: 0;
+    top: -10px; /* Pulls header up to cover safe area/subpixel gaps when stuck */
+    margin-top: -10px; /* Pulls header up in normal flow */
     z-index: 40;
-    overflow: hidden;
-    background: linear-gradient(to bottom, rgba(36, 21, 12, 0.85) 0%, rgba(59, 35, 20, 0.8) 50%, rgba(92, 62, 38, 0.75) 100%);
+    background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 4.5px solid rgba(225, 175, 125, 0.35);
     box-shadow: 
         0 10px 30px 0 rgba(59, 35, 20, 0.25),
         inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
         inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.header-border {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4.5px;
+    background: linear-gradient(90deg, 
+        #1e1008 0%, 
+        #e1af7d 25%, 
+        #3b2314 50%, 
+        #faedcd 75%, 
+        #1e1008 100%
+    );
+    background-size: 200% 100%;
+    animation: border-flow 8s linear infinite;
+    opacity: 0.9;
+}
+
+@keyframes border-flow {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: -200% 0%;
+    }
+}
+
+.glass-header::before {
+    content: '';
+    position: absolute;
+    top: -100px; /* Overscroll bleed: extends background 100px above header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+    background: linear-gradient(-45deg, 
+        rgba(36, 21, 12, 0.8) 0%, 
+        rgba(85, 52, 30, 0.85) 30%, 
+        rgba(125, 85, 55, 0.75) 60%, 
+        rgba(46, 27, 16, 0.85) 100%
+    );
+    background-size: 300% 300%;
+    animation: abstract-gradient 12s ease infinite;
+}
+
+.glass-header::after {
+    content: '';
+    position: absolute;
+    top: -100px; /* Overscroll bleed: extends background 100px above header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    background: linear-gradient(to bottom, rgba(26, 15, 8, 0.95) 0%, rgba(36, 21, 12, 0.3) 100%);
+    pointer-events: none;
+}
+
+@keyframes abstract-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 </style>
