@@ -1,9 +1,13 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, computed } from 'vue';
 
-defineProps({
+const props = defineProps({
     order: Object,
+});
+
+const subtotal = computed(() => {
+    return props.order.items.reduce((sum, item) => sum + (item.quantity * item.price_at_sale), 0);
 });
 
 let originalBgColor = '';
@@ -224,7 +228,25 @@ onUnmounted(() => {
                             </span>
                         </div>
                         <div
-                            class="flex items-center justify-between pt-1.5 text-xs"
+                            v-if="order.discount_amount > 0"
+                            class="flex justify-between text-[10px] font-bold text-gray-500"
+                        >
+                            <span>Subtotal</span>
+                            <span class="text-[#3B2314]">
+                                Rp {{ subtotal.toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            v-if="order.discount_amount > 0"
+                            class="flex justify-between text-[10px] font-bold text-emerald-600"
+                        >
+                            <span>Voucher ({{ order.voucher_code }})</span>
+                            <span>
+                                - Rp {{ parseInt(order.discount_amount).toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between pt-1.5 text-xs border-t border-gray-100"
                         >
                             <span class="font-bold text-[#3B2314]"
                                 >Total Pembayaran</span

@@ -13,11 +13,131 @@ class PromoController extends Controller
     public function index()
     {
         $banners = Banner::orderBy('created_at', 'desc')->get();
+        $vouchers = \App\Models\Voucher::orderBy('created_at', 'desc')->get();
 
         return Inertia::render('PromoManagement', [
-            'banners' => $banners
+            'banners' => $banners,
+            'vouchers' => $vouchers
         ]);
     }
+
+    // Save a new promo voucher
+    public function storeVoucher(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|max:50|unique:vouchers,code',
+            'name' => 'required|string|max:100',
+            'discount_type' => 'required|in:percentage,nominal',
+            'discount_value' => 'required|numeric|min:0',
+            'min_purchase' => 'required|numeric|min:0',
+            'is_active' => 'required|boolean',
+        ], [
+            'code.required' => 'Kode voucher wajib diisi!',
+            'code.unique' => 'Kode voucher ini sudah digunakan!',
+            'name.required' => 'Nama voucher wajib diisi!',
+            'discount_type.required' => 'Tipe potongan wajib dipilih!',
+            'discount_value.required' => 'Nilai potongan wajib diisi!',
+            'min_purchase.required' => 'Minimal pembelian wajib diisi!',
+        ]);
+
+        $voucher = \App\Models\Voucher::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher baru berhasil ditambahkan!',
+            'voucher' => $voucher
+        ]);
+    }
+
+    // Update an existing promo voucher
+    public function updateVoucher(Request $request, $id)
+    {
+        $voucher = \App\Models\Voucher::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => 'required|string|max:50|unique:vouchers,code,' . $id,
+            'name' => 'required|string|max:100',
+            'discount_type' => 'required|in:percentage,nominal',
+            'discount_value' => 'required|numeric|min:0',
+            'min_purchase' => 'required|numeric|min:0',
+            'is_active' => 'required|boolean',
+        ], [
+            'code.required' => 'Kode voucher wajib diisi!',
+            'code.unique' => 'Kode voucher ini sudah digunakan!',
+            'name.required' => 'Nama voucher wajib diisi!',
+            'discount_type.required' => 'Tipe potongan wajib dipilih!',
+            'discount_value.required' => 'Nilai potongan wajib diisi!',
+            'min_purchase.required' => 'Minimal pembelian wajib diisi!',
+        ]);
+
+        $voucher->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher berhasil diperbarui!',
+            'voucher' => $voucher
+        ]);
+    }
+
+    // Delete a promo voucher
+    public function deleteVoucher($id)
+    {
+        $voucher = \App\Models\Voucher::findOrFail($id);
+        $voucher->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher berhasil dihapus!'
+        ]);
+    }
+
+    // Validate a promo voucher code
+    public function validateVoucher(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'subtotal' => 'required|numeric'
+        ]);
+
+        $voucher = \App\Models\Voucher::where('code', $request->code)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$voucher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode voucher tidak valid atau sudah tidak aktif!'
+            ], 422);
+        }
+
+        if ($request->subtotal < $voucher->min_purchase) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp ' . number_format($voucher->min_purchase, 0, ',', '.')
+            ], 422);
+        }
+
+        // Calculate discount
+        $discount = 0;
+        if ($voucher->discount_type === 'percentage') {
+            $discount = ($voucher->discount_value / 100) * $request->subtotal;
+        } else {
+            $discount = $voucher->discount_value;
+        }
+
+        // Discount cannot exceed subtotal
+        if ($discount > $request->subtotal) {
+            $discount = $request->subtotal;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher berhasil diterapkan!',
+            'voucher' => $voucher,
+            'discount_amount' => (float)$discount
+        ]);
+    }
+
 
     // Save a new promo banner
     public function storePromo(Request $request)

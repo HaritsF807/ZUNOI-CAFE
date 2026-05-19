@@ -40,6 +40,26 @@ class OrderController extends Controller
             $totalPrice += ($item['price'] * $item['quantity']);
         }
 
+        // Hitung potongan voucher di server untuk keamanan
+        $discountAmount = 0;
+        $voucherCode = $request->input('voucher_code');
+        if (!empty($voucherCode)) {
+            $voucher = \App\Models\Voucher::where('code', $voucherCode)->where('is_active', true)->first();
+            if ($voucher && $totalPrice >= $voucher->min_purchase) {
+                if ($voucher->discount_type === 'percentage') {
+                    $discountAmount = ($voucher->discount_value / 100) * $totalPrice;
+                } else {
+                    $discountAmount = $voucher->discount_value;
+                }
+
+                if ($discountAmount > $totalPrice) {
+                    $discountAmount = $totalPrice;
+                }
+            }
+        }
+
+        $finalPrice = $totalPrice - $discountAmount;
+
         // Simpan bukti pembayaran ke database sebagai Base64 jika ada
         $proofUrl = null;
         if ($request->hasFile('payment_proof')) {
@@ -54,13 +74,15 @@ class OrderController extends Controller
             'table_id' => $tableId,
             'customer_name' => $validated['customer_name'],
             'customer_phone' => $validated['customer_phone'],
-            'total_price' => $totalPrice,
+            'total_price' => $finalPrice,
             'order_type' => $validated['order_type'],
             'payment_method' => $validated['payment_method'],
             'payment_status' => 'pending',
             'order_status' => 'pending',
             'payment_proof' => $proofUrl,
             'notes' => $validated['notes'] ?? null,
+            'voucher_code' => $voucherCode,
+            'discount_amount' => $discountAmount,
         ]);
 
         // Simpan Item Pesanan
@@ -100,6 +122,8 @@ class OrderController extends Controller
                     'payment_proof' => $order->payment_proof,
                     'notes' => $order->notes,
                     'time' => $order->created_at->format('H:i'),
+                    'voucher_code' => $order->voucher_code,
+                    'discount_amount' => (float) $order->discount_amount,
                     'items' => $order->items->map(function ($item) {
                         return [
                             'name' => $item->product->name ?? 'Produk Terhapus',
@@ -278,6 +302,7 @@ class OrderController extends Controller
             'payment_method' => 'required|in:cash,qris_manual,qris_tokopay',
             'cart_items' => 'required|array|min:1',
             'notes' => 'nullable|string',
+            'voucher_code' => 'nullable|string',
         ]);
 
         // Hitung total harga
@@ -285,6 +310,26 @@ class OrderController extends Controller
         foreach ($validated['cart_items'] as $item) {
             $totalPrice += ($item['price'] * $item['quantity']);
         }
+
+        // Hitung potongan voucher di server untuk keamanan
+        $discountAmount = 0;
+        $voucherCode = $validated['voucher_code'] ?? null;
+        if (!empty($voucherCode)) {
+            $voucher = \App\Models\Voucher::where('code', $voucherCode)->where('is_active', true)->first();
+            if ($voucher && $totalPrice >= $voucher->min_purchase) {
+                if ($voucher->discount_type === 'percentage') {
+                    $discountAmount = ($voucher->discount_value / 100) * $totalPrice;
+                } else {
+                    $discountAmount = $voucher->discount_value;
+                }
+
+                if ($discountAmount > $totalPrice) {
+                    $discountAmount = $totalPrice;
+                }
+            }
+        }
+
+        $finalPrice = $totalPrice - $discountAmount;
 
         // Tentukan status awal
         // Jika bayar tunai (cash), otomatis Lunas (paid) dan langsung Diproses (processing)
@@ -301,12 +346,14 @@ class OrderController extends Controller
             'table_id' => $validated['order_type'] === 'dine_in' ? $validated['table_id'] : null,
             'customer_name' => $validated['customer_name'],
             'customer_phone' => $validated['customer_phone'] ?? '-',
-            'total_price' => $totalPrice,
+            'total_price' => $finalPrice,
             'order_type' => $validated['order_type'],
             'payment_method' => $validated['payment_method'] === 'cash' ? 'cashier' : $validated['payment_method'],
             'payment_status' => $paymentStatus,
             'order_status' => $orderStatus,
             'notes' => $validated['notes'] ?? null,
+            'voucher_code' => $voucherCode,
+            'discount_amount' => $discountAmount,
         ]);
 
         // Simpan Items

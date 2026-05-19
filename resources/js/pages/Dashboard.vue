@@ -833,7 +833,26 @@ onUnmounted(() => {
                                                 class="text-[9px] text-[#D4A373] italic"
                                                 >({{ item.notes }})</span
                                             >
-                                        </div>
+                                    </div>
+
+                                    <!-- Voucher / Discount Details (Admin Only View) -->
+                                    <div
+                                        v-if="order.discount_amount > 0"
+                                        class="flex flex-wrap gap-2 mt-2 items-center"
+                                    >
+                                        <span
+                                            class="inline-flex items-center gap-1 rounded-xl bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-bold text-emerald-700"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3.5">
+                                                <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V14.34a2.247 2.247 0 0 1-1.125.41 2.25 2.25 0 0 1-3.75-2.25 2.25 2.25 0 0 1 4.875-1.077V3.5A1.5 1.5 0 0 0 15.5 2h-11Zm10 6A1.5 1.5 0 1 0 16 5a1.5 1.5 0 0 0-1.5 3Zm-7-2a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Zm0 4a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Z" clip-rule="evenodd" />
+                                            </svg>
+                                            Voucher: {{ order.voucher_code }} (-Rp {{ order.discount_amount.toLocaleString('id-ID') }})
+                                        </span>
+                                        <span
+                                            class="text-[10px] font-bold text-gray-400"
+                                        >
+                                            Subtotal: Rp {{ (order.total + order.discount_amount).toLocaleString('id-ID') }}
+                                        </span>
                                     </div>
 
                                     <!-- Notes -->

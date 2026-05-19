@@ -8,6 +8,12 @@ const props = defineProps({
     payment_method: String,
     total_price: [Number, String],
     items: String, // JSON string
+    voucher_code: String,
+    discount_amount: [Number, String],
+});
+
+const subtotal = computed(() => {
+    return parsedItems.value.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 });
 
 let originalBgColor = '';
@@ -248,7 +254,25 @@ const mockOrderId = computed(() => {
                             </span>
                         </div>
                         <div
-                            class="flex items-center justify-between pt-1.5 text-xs"
+                            v-if="discount_amount > 0"
+                            class="flex justify-between text-[10px] font-bold text-gray-500"
+                        >
+                            <span>Subtotal</span>
+                            <span class="text-[#3B2314]">
+                                Rp {{ subtotal.toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            v-if="discount_amount > 0"
+                            class="flex justify-between text-[10px] font-bold text-emerald-600"
+                        >
+                            <span>Voucher ({{ voucher_code }})</span>
+                            <span>
+                                - Rp {{ parseInt(discount_amount).toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between pt-1.5 text-xs border-t border-gray-100"
                         >
                             <span class="font-bold text-[#3B2314]"
                                 >Total Pembayaran</span
