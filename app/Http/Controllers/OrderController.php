@@ -213,7 +213,7 @@ class OrderController extends Controller
                 $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
 
                 $deliveryInstruction = $order->order_type === 'dine_in' 
-                    ? "*Barista kami akan segera mengantarkan pesanan hangat Anda langsung ke meja Anda. Silakan duduk manis dan bersiap menikmati!*"
+                    ? "*Barista kami akan segera mengantarkan pesanan Anda langsung ke meja Anda. Silakan duduk manis dan bersiap menikmati!*"
                     : "*Silakan ambil pesanan Anda di meja Barista/Kasir Zunoi Caffe.*";
 
                 $message = "☕ *ZUNOI CAFFE - PESANAN SELESAI* ☕\n\n" .
