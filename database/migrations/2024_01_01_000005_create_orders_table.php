@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('payment_method', ['cashier', 'qris_tokopay', 'qris_manual'])->default('cashier');
             $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending');
             $table->enum('order_status', ['pending', 'processing', 'completed', 'failed'])->default('pending');
+            $table->string('payment_proof')->nullable();
             $table->timestamps();
         });
     }

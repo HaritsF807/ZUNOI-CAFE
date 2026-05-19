@@ -26,7 +26,10 @@ Route::middleware(['verify_table_session'])->group(function () {
     })->name('order.index');
     
     Route::get('/checkout', function () {
-        return inertia('Customer/Cart');
+        $qrisUrl = \App\Models\Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        return inertia('Customer/Cart', [
+            'qris_manual_url' => $qrisUrl
+        ]);
     })->name('order.checkout');
 
     Route::post('/order/store', [\App\Http\Controllers\OrderController::class, 'store'])->name('order.store');
@@ -41,9 +44,8 @@ Route::middleware(['auth'])->group(function () {
         return inertia('TableManagement');
     })->name('table.management');
 
-    Route::get('/dashboard/integration', function() {
-        return inertia('IntegrationSetup');
-    })->name('integration.setup');
+    Route::get('/dashboard/integration', [\App\Http\Controllers\SettingController::class, 'integrationIndex'])->name('integration.setup');
+    Route::post('/api/settings', [\App\Http\Controllers\SettingController::class, 'updateSettings'])->name('settings.update');
     
     // API Kelola Menu
     Route::post('/api/products', [\App\Http\Controllers\MenuController::class, 'storeProduct']);

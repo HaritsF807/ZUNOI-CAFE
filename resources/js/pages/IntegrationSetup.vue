@@ -1,19 +1,29 @@
 <script setup>
 import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, usePage, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+
+const props = defineProps({
+    settings: Object
+});
 
 const user = usePage().props.auth.user;
 
 // Form Integrasi
-const integrationForm = ref({
-    fonnte_token: 'TokenFonnteAnda123',
-    tokopay_merchant_id: 'M-123456',
-    tokopay_secret: 'SecretKey...'
+const form = useForm({
+    qris_manual_url: props.settings?.qris_manual_url || '',
+    fonnte_token: props.settings?.fonnte_token || '',
+    tokopay_merchant_id: props.settings?.tokopay_merchant_id || '',
+    tokopay_secret: props.settings?.tokopay_secret || '',
 });
 
 const saveIntegration = () => {
-    alert("Pengaturan Integrasi berhasil disimpan! (Mockup)");
+    form.post('/api/settings', {
+        preserveScroll: true,
+        onSuccess: () => {
+            alert("Pengaturan integrasi berhasil diperbarui!");
+        }
+    });
 };
 </script>
 
@@ -60,7 +70,7 @@ const saveIntegration = () => {
                                 <div class="space-y-3">
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-1">API Token</label>
-                                        <input v-model="integrationForm.fonnte_token" type="password" 
+                                        <input v-model="form.fonnte_token" type="password" 
                                                class="w-full text-sm rounded-xl border-gray-200 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 px-3 py-2">
                                     </div>
                                     <p class="text-[11px] text-gray-400">Digunakan untuk mengirim pemberitahuan otomatis secara instan kepada pelanggan saat pesanan masuk/selesai.</p>
@@ -78,12 +88,12 @@ const saveIntegration = () => {
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-1">Merchant ID</label>
-                                        <input v-model="integrationForm.tokopay_merchant_id" type="text" 
+                                        <input v-model="form.tokopay_merchant_id" type="text" 
                                                class="w-full text-sm rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 px-3 py-2">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-1">Secret Key</label>
-                                        <input v-model="integrationForm.tokopay_secret" type="password" 
+                                        <input v-model="form.tokopay_secret" type="password" 
                                                class="w-full text-sm rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 px-3 py-2">
                                     </div>
                                 </div>
@@ -99,7 +109,7 @@ const saveIntegration = () => {
                             <div class="space-y-3">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-600 mb-1">URL Gambar QRIS (Upload ke Hosting/Imgur)</label>
-                                    <input type="text" value="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" 
+                                    <input type="text" v-model="form.qris_manual_url" 
                                            class="w-full text-sm rounded-xl border-gray-200 shadow-sm focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 px-3 py-2">
                                 </div>
                                 <p class="text-[11px] text-gray-400">Gambar QRIS statis ini akan ditampilkan langsung di HP pelanggan jika mereka memilih pembayaran manual 'QRIS Toko'. Pelanggan wajib menunjukkan bukti transfer fisik ke Barista.</p>

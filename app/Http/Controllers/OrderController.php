@@ -17,8 +17,15 @@ class OrderController extends Controller
             'customer_phone' => 'required|string|max:20',
             'order_type' => 'required|in:dine_in,takeaway',
             'payment_method' => 'required|in:cashier,qris_tokopay,qris_manual',
-            'cart_items' => 'required|array'
+            'cart_items' => 'required|array',
+            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
+
+        if ($validated['payment_method'] === 'qris_manual') {
+            $request->validate([
+                'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            ]);
+        }
 
         $tableId = session('active_table_id');
         if (!$tableId) {
@@ -31,6 +38,20 @@ class OrderController extends Controller
             $totalPrice += ($item['price'] * $item['quantity']);
         }
 
+        // Upload bukti pembayaran jika ada
+        $proofUrl = null;
+        if ($request->hasFile('payment_proof')) {
+            $file = $request->file('payment_proof');
+            $filename = time() . '_proof_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            if (!file_exists(public_path('uploads/proofs'))) {
+                mkdir(public_path('uploads/proofs'), 0777, true);
+            }
+            
+            $file->move(public_path('uploads/proofs'), $filename);
+            $proofUrl = '/uploads/proofs/' . $filename;
+        }
+
         // Buat Order Induk
         $order = Order::create([
             'table_id' => $tableId,
@@ -41,6 +62,7 @@ class OrderController extends Controller
             'payment_method' => $validated['payment_method'],
             'payment_status' => 'pending',
             'order_status' => 'pending',
+            'payment_proof' => $proofUrl,
         ]);
 
         // Simpan Item Pesanan
@@ -74,6 +96,7 @@ class OrderController extends Controller
                     'status' => $order->order_status,
                     'payment_method' => $order->payment_method,
                     'payment_status' => $order->payment_status,
+                    'payment_proof' => $order->payment_proof,
                     'time' => $order->created_at->format('H:i')
                 ];
             });

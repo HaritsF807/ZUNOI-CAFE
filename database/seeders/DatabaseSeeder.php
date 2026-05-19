@@ -7,6 +7,7 @@ use App\Models\Table;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAddon;
+use App\Models\Setting;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -134,6 +135,27 @@ class DatabaseSeeder extends Seeder
             'addon_name' => 'Oat Milk',
             'extra_price' => 8000,
             'category' => 'milk_type'
+        ]);
+
+        // 6. Default Settings
+        Setting::create([
+            'key' => 'qris_manual_url',
+            'value' => 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'
+        ]);
+
+        Setting::create([
+            'key' => 'fonnte_token',
+            'value' => 'TokenFonnteAnda123'
+        ]);
+
+        Setting::create([
+            'key' => 'tokopay_merchant_id',
+            'value' => 'M-123456'
+        ]);
+
+        Setting::create([
+            'key' => 'tokopay_secret',
+            'value' => 'SecretKey...'
         ]);
     }
 }

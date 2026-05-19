@@ -384,9 +384,20 @@ onUnmounted(() => {
                                         <p class="text-sm font-extrabold text-[#3B2314]">Rp {{ order.total.toLocaleString('id-ID') }}</p>
                                     </div>
                                     <div class="h-6 w-px bg-gray-200"></div>
-                                    <div>
+                                                                    <div>
                                         <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Waktu</p>
                                         <p class="text-sm font-semibold text-gray-600">{{ order.time }} WIB</p>
+                                    </div>
+                                    <div v-if="order.payment_proof" class="h-6 w-px bg-gray-200"></div>
+                                    <div v-if="order.payment_proof">
+                                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Bukti Bayar</p>
+                                        <a :href="order.payment_proof" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 font-black flex items-center gap-0.5 mt-0.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                            Lihat Bukti
+                                        </a>
                                     </div>
                                 </div>
                             </div>

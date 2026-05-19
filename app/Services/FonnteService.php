@@ -11,7 +11,7 @@ class FonnteService
 
     public function __construct()
     {
-        $this->token = env('FONNTE_TOKEN', 'mock-token');
+        $this->token = \App\Models\Setting::getValue('fonnte_token', env('FONNTE_TOKEN', 'mock-token'));
     }
 
     public function sendMessage($target, $message)

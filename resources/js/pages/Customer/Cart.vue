@@ -2,12 +2,17 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 
+const props = defineProps({
+    qris_manual_url: String
+});
+
 const form = useForm({
     customer_name: '',
     customer_phone: '',
     order_type: 'dine_in',
     payment_method: 'qris_tokopay',
-    cart_items: []
+    cart_items: [],
+    payment_proof: null
 });
 
 onMounted(() => {
@@ -20,6 +25,10 @@ onMounted(() => {
 const cartTotal = computed(() => {
     return form.cart_items.reduce((total, item) => total + (item.price * item.quantity), 0);
 });
+
+const handleFileChange = (e) => {
+    form.payment_proof = e.target.files[0];
+};
 
 const submitOrder = () => {
     form.post('/order/store', {
@@ -95,9 +104,14 @@ const submitOrder = () => {
                                 <input type="radio" v-model="form.payment_method" value="qris_manual" class="text-[#3B2314] focus:ring-[#3B2314]">
                                 <span class="font-bold">QRIS Toko (Manual Verifikasi)</span>
                             </div>
-                            <div v-if="form.payment_method === 'qris_manual'" class="mt-2 text-center bg-white p-3 rounded-xl border border-gray-100">
-                                <p class="text-[10px] text-gray-500 mb-2">Scan QR di bawah ini, lalu tunjukkan bukti bayar ke Barista.</p>
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl">
+                            <div v-if="form.payment_method === 'qris_manual'" class="mt-2 text-center bg-white p-3 rounded-xl border border-gray-100 space-y-3">
+                                <p class="text-[10px] text-gray-500 mb-1">Scan QR di bawah ini, lalu unggah bukti pembayaran.</p>
+                                <img :src="qris_manual_url" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl">
+                                
+                                <div class="text-left mt-3">
+                                    <label class="block text-[10px] font-black text-gray-600 mb-1">Unggah Bukti Pembayaran (Struk/Screenshot)</label>
+                                    <input type="file" @change="handleFileChange" accept="image/*" class="w-full text-[10px] text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:bg-[#FAEDCD] file:text-[#3B2314] hover:file:bg-[#D4A373] file:cursor-pointer" :required="form.payment_method === 'qris_manual'">
+                                </div>
                             </div>
                         </label>
 
