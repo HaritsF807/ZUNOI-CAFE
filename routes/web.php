@@ -111,5 +111,6 @@ Route::middleware(['auth'])->group(function () {
 
 // Webhook Tokopay
 Route::post('/webhook/tokopay', [\App\Http\Controllers\TokopayWebhookController::class, 'handle'])->name('webhook.tokopay');
+Route::get('/simulate-tokopay-payment/{id}', [\App\Http\Controllers\TokopayWebhookController::class, 'simulateLocalPayment']);
 
 require __DIR__.'/settings.php';

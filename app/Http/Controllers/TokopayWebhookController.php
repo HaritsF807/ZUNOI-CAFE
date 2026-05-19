@@ -36,4 +36,39 @@ class TokopayWebhookController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Simulasi lokal pembayaran Tokopay QRIS sukses.
+     */
+    public function simulateLocalPayment($id)
+    {
+        if (config('app.env') !== 'local' && config('app.env') !== 'testing') {
+            abort(403, 'Hanya dapat dijalankan di lingkungan lokal/testing.');
+        }
+
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.']);
+        }
+
+        if ($order->payment_status !== 'paid') {
+            $order->payment_status = 'paid';
+            $order->save();
+
+            // Trigger WA via Fonnte (mock)
+            try {
+                $fonnte = new FonnteService();
+                $message = "Halo {$order->customer_name}, [SIMULASI] Pembayaran pesanan Anda sebesar Rp " . number_format($order->total_price, 0, ',', '.') . " telah berhasil diterima! Pesanan Anda segera diproses.";
+                $fonnte->sendMessage($order->customer_phone, $message);
+            } catch (\Exception $e) {
+                // Abaikan error WA saat pengujian lokal
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Simulasi Pembayaran Tokopay QRIS untuk Pesanan #{$id} Berhasil! Status diubah menjadi LUNAS.",
+            'order' => $order
+        ]);
+    }
 }

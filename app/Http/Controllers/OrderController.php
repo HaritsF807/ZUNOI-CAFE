@@ -120,7 +120,12 @@ class OrderController extends Controller
 
         $order = Order::findOrFail($id);
         
-        // Jika status order selesai, set juga status pembayaran menjadi lunas (paid) jika belum lunas
+        // Jika status order diterima (processing) dan pembayaran via QRIS Manual, set juga status pembayaran menjadi paid (LUNAS)
+        if ($validated['order_status'] === 'processing' && $order->payment_method === 'qris_manual') {
+            $order->payment_status = 'paid';
+        }
+        
+        // Jika status order selesai (completed), set juga status pembayaran menjadi lunas (paid) jika belum lunas
         if ($validated['order_status'] === 'completed') {
             $order->payment_status = 'paid';
         }
