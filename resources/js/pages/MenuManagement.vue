@@ -1,7 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
-import axios from 'axios';
 import { ref, computed, watch } from 'vue';
+import axios from 'axios';
 import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
 const triggerToast = (message, type = 'success') => {
