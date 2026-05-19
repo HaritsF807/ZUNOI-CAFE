@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Setting;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Setting;
 use App\Services\FonnteService;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class SettingController extends Controller
 {
@@ -27,7 +27,7 @@ class SettingController extends Controller
         ];
 
         return Inertia::render('IntegrationSetup', [
-            'settings' => $settings
+            'settings' => $settings,
         ]);
     }
 
@@ -65,66 +65,66 @@ class SettingController extends Controller
         if (empty($ownerWhatsapp)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nomor WhatsApp Owner belum dikonfigurasi di Pengaturan Integrasi!'
+                'message' => 'Nomor WhatsApp Owner belum dikonfigurasi di Pengaturan Integrasi!',
             ], 422);
         }
 
         if (empty($fonnteToken) || $fonnteToken === 'TokenFonnteAnda123') {
             return response()->json([
                 'success' => false,
-                'message' => 'Token API Fonnte belum dikonfigurasi atau masih menggunakan nilai default!'
+                'message' => 'Token API Fonnte belum dikonfigurasi atau masih menggunakan nilai default!',
             ], 422);
         }
 
         try {
             $today = Carbon::now('Asia/Jakarta')->toDateString();
-            
+
             $totalOrders = Order::whereDate('created_at', $today)->count();
-            
+
             $paidOrders = Order::whereDate('created_at', $today)
                 ->where('payment_status', 'paid')
                 ->count();
-                
+
             $totalSales = Order::whereDate('created_at', $today)
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
 
-            $message = "📊 *LAPORAN REKAP PENJUALAN HARIAN* 📊\n" .
-                       "☕ *ZUNOI CAFFE* ☕\n\n" .
-                       "Halo Owner, berikut adalah rekapan transaksi penjualan untuk hari ini:\n\n" .
-                       "📅 *Tanggal:* " . Carbon::now('Asia/Jakarta')->format('d F Y') . "\n" .
-                       "━━━━━━━━━━━━━━━━━━\n" .
-                       "📈 *RINGKASAN PERFORMA:*\n" .
-                       "• Total Transaksi: {$totalOrders} pesanan\n" .
-                       "• Transaksi Sukses/Lunas: {$paidOrders} pesanan\n" .
-                       "• *Total Omset/Pendapatan:* Rp " . number_format($totalSales, 0, ',', '.') . "\n" .
-                       "━━━━━━━━━━━━━━━━━━\n" .
+            $message = "📊 *LAPORAN REKAP PENJUALAN HARIAN* 📊\n".
+                       "☕ *ZUNOI CAFFE* ☕\n\n".
+                       "Halo Owner, berikut adalah rekapan transaksi penjualan untuk hari ini:\n\n".
+                       '📅 *Tanggal:* '.Carbon::now('Asia/Jakarta')->format('d F Y')."\n".
+                       "━━━━━━━━━━━━━━━━━━\n".
+                       "📈 *RINGKASAN PERFORMA:*\n".
+                       "• Total Transaksi: {$totalOrders} pesanan\n".
+                       "• Transaksi Sukses/Lunas: {$paidOrders} pesanan\n".
+                       '• *Total Omset/Pendapatan:* Rp '.number_format($totalSales, 0, ',', '.')."\n".
+                       "━━━━━━━━━━━━━━━━━━\n".
                        "💳 *METODE PEMBAYARAN (Lunas):*\n";
-                       
+
             $payments = Order::whereDate('created_at', $today)
                 ->where('payment_status', 'paid')
                 ->select('payment_method', DB::raw('count(*) as count'), DB::raw('sum(total_price) as total'))
                 ->groupBy('payment_method')
                 ->get();
-                
+
             if ($payments->isEmpty()) {
                 $message .= "Belum ada transaksi lunas hari ini.\n";
             } else {
                 foreach ($payments as $pay) {
                     $methodName = $pay->payment_method === 'cashier' ? 'Kasir/Tunai' : ($pay->payment_method === 'qris_manual' ? 'QRIS Manual' : 'QRIS Otomatis');
-                    $message .= "• {$methodName}: {$pay->count}x (Rp " . number_format($pay->total, 0, ',', '.') . ")\n";
+                    $message .= "• {$methodName}: {$pay->count}x (Rp ".number_format($pay->total, 0, ',', '.').")\n";
                 }
             }
-            
-            $message .= "━━━━━━━━━━━━━━━━━━\n" .
+
+            $message .= "━━━━━━━━━━━━━━━━━━\n".
                         "🛋️ *TIPE LAYANAN (Lunas):*\n";
-                        
+
             $types = Order::whereDate('created_at', $today)
                 ->where('payment_status', 'paid')
                 ->select('order_type', DB::raw('count(*) as count'))
                 ->groupBy('order_type')
                 ->get();
-                
+
             if ($types->isEmpty()) {
                 $message .= "Belum ada transaksi lunas hari ini.\n";
             } else {
@@ -133,10 +133,10 @@ class SettingController extends Controller
                     $message .= "• {$typeName}: {$t->count}x\n";
                 }
             }
-            
-            $message .= "━━━━━━━━━━━━━━━━━━\n" .
+
+            $message .= "━━━━━━━━━━━━━━━━━━\n".
                         "🏆 *5 MENU TERLARIS HARI INI:*\n";
-                        
+
             $topItems = OrderItem::select('product_id', DB::raw('SUM(quantity) as total_qty'))
                 ->whereHas('order', function ($query) use ($today) {
                     $query->whereDate('created_at', $today)
@@ -147,7 +147,7 @@ class SettingController extends Controller
                 ->orderBy('total_qty', 'desc')
                 ->limit(5)
                 ->get();
-                
+
             if ($topItems->isEmpty()) {
                 $message .= "Belum ada menu yang terjual hari ini.\n";
             } else {
@@ -158,21 +158,21 @@ class SettingController extends Controller
                     $rank++;
                 }
             }
-            
-            $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
-                        "Laporan ini dibuat otomatis oleh Sistem ZUNOI-CAFFE. Tetap semangat, semoga hari esok mendatangkan lebih banyak berkah dan pelanggan! ☕💛🌱";
 
-            $fonnte = new FonnteService();
+            $message .= "━━━━━━━━━━━━━━━━━━\n\n".
+                        'Laporan ini dibuat otomatis oleh Sistem ZUNOI-CAFFE. Tetap semangat, semoga hari esok mendatangkan lebih banyak berkah dan pelanggan! ☕💛🌱';
+
+            $fonnte = new FonnteService;
             $fonnte->sendMessage($ownerWhatsapp, $message);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Rekapan harian berhasil dikirim ke WhatsApp Owner!'
+                'message' => 'Rekapan harian berhasil dikirim ke WhatsApp Owner!',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengirim rekapan: ' . $e->getMessage()
+                'message' => 'Gagal mengirim rekapan: '.$e->getMessage(),
             ], 500);
         }
     }

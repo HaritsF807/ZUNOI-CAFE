@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Table;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAddon;
 use App\Models\Setting;
+use App\Models\Table;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -36,12 +36,12 @@ class DatabaseSeeder extends Seeder
         // 2. Data Meja (dengan Secure Token)
         Table::create([
             'table_name' => 'Meja 01',
-            'secure_token' => 'x7R9wK' // URL: /meja/x7R9wK
+            'secure_token' => 'x7R9wK', // URL: /meja/x7R9wK
         ]);
-        
+
         Table::create([
             'table_name' => 'Meja 02',
-            'secure_token' => 'bA2f9i' // URL: /meja/bA2f9i
+            'secure_token' => 'bA2f9i', // URL: /meja/bA2f9i
         ]);
 
         // 3. Kategori Produk
@@ -127,35 +127,35 @@ class DatabaseSeeder extends Seeder
             'product_id' => $latte->id,
             'addon_name' => 'Extra Shot Espresso',
             'extra_price' => 5000,
-            'category' => 'coffee_extra'
+            'category' => 'coffee_extra',
         ]);
 
         ProductAddon::create([
             'product_id' => $latte->id,
             'addon_name' => 'Oat Milk',
             'extra_price' => 8000,
-            'category' => 'milk_type'
+            'category' => 'milk_type',
         ]);
 
         // 6. Default Settings
         Setting::create([
             'key' => 'qris_manual_url',
-            'value' => 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'
+            'value' => 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg',
         ]);
 
         Setting::create([
             'key' => 'fonnte_token',
-            'value' => 'TokenFonnteAnda123'
+            'value' => 'TokenFonnteAnda123',
         ]);
 
         Setting::create([
             'key' => 'tokopay_merchant_id',
-            'value' => 'M-123456'
+            'value' => 'M-123456',
         ]);
 
         Setting::create([
             'key' => 'tokopay_secret',
-            'value' => 'SecretKey...'
+            'value' => 'SecretKey...',
         ]);
     }
 }

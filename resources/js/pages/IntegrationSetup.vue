@@ -1,19 +1,18 @@
-<script setup>
-import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
+<script setup lang="ts">
 import { Head, usePage, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
-const triggerToast = (message, type = 'success') => {
-    window.dispatchEvent(new CustomEvent('zunoi-toast', {
-        detail: { message, type }
-    }));
+const triggerToast = (message: string, type = 'success') => {
+    window.dispatchEvent(
+        new CustomEvent('zunoi-toast', {
+            detail: { message, type },
+        }),
+    );
 };
 
 const props = defineProps({
     settings: Object,
 });
-
-const user = usePage().props.auth.user;
 
 // Form Integrasi
 const form = useForm({
@@ -138,7 +137,8 @@ const saveIntegration = () => {
                                     <div>
                                         <label
                                             class="mb-1 block text-xs font-bold text-gray-600"
-                                            >Nomor WhatsApp Owner (Contoh: 62812xxx)</label
+                                            >Nomor WhatsApp Owner (Contoh:
+                                            62812xxx)</label
                                         >
                                         <input
                                             v-model="form.owner_whatsapp"
@@ -261,7 +261,5 @@ const saveIntegration = () => {
                 </div>
             </div>
         </div>
-
-
     </ZunoiAdminLayout>
 </template>

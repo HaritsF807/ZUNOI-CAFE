@@ -11,11 +11,11 @@ class VerifyTableSession
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->session()->has('active_table_id')) {
+        if (! $request->session()->has('active_table_id')) {
             return redirect()->route('scan.required');
         }
 
@@ -24,6 +24,7 @@ class VerifyTableSession
             $placedAt = $request->session()->get('order_placed_at');
             if (time() - $placedAt > 300) {
                 $request->session()->forget(['active_table_id', 'active_table_name', 'order_placed_at']);
+
                 return redirect()->route('scan.required');
             }
         }

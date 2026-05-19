@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class MenuController extends Controller
 {
@@ -18,46 +18,46 @@ class MenuController extends Controller
 
         return Inertia::render('MenuManagement', [
             'categories' => $categories,
-            'products' => $products
+            'products' => $products,
         ]);
     }
 
     // --- MANAJEMEN KATEGORI ---
-    
+
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:categories,name'
+            'name' => 'required|string|max:100|unique:categories,name',
         ]);
 
         $category = Category::create([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name'])
+            'slug' => Str::slug($validated['name']),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil ditambahkan!',
-            'category' => $category
+            'category' => $category,
         ]);
     }
 
     public function updateCategory(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:categories,name,' . $id
+            'name' => 'required|string|max:100|unique:categories,name,'.$id,
         ]);
 
         $category = Category::findOrFail($id);
         $category->update([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name'])
+            'slug' => Str::slug($validated['name']),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil diperbarui!',
-            'category' => $category
+            'category' => $category,
         ]);
     }
 
@@ -68,7 +68,7 @@ class MenuController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Kategori dan seluruh menunya berhasil dihapus!'
+            'message' => 'Kategori dan seluruh menunya berhasil dihapus!',
         ]);
     }
 
@@ -83,22 +83,22 @@ class MenuController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|string|max:1000',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'is_available' => 'sometimes|boolean'
+            'is_available' => 'sometimes|boolean',
         ]);
 
         $imageUrl = $validated['image'] ?? 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=300&auto=format&fit=crop';
 
         if ($request->hasFile('image_file')) {
             $file = $request->file('image_file');
-            $filename = time() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
-            
+            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
+
             // Buat direktori jika belum ada
-            if (!file_exists(public_path('uploads/products'))) {
+            if (! file_exists(public_path('uploads/products'))) {
                 mkdir(public_path('uploads/products'), 0777, true);
             }
-            
+
             $file->move(public_path('uploads/products'), $filename);
-            $imageUrl = '/uploads/products/' . $filename;
+            $imageUrl = '/uploads/products/'.$filename;
         }
 
         $product = Product::create([
@@ -107,13 +107,13 @@ class MenuController extends Controller
             'price' => $validated['price'],
             'description' => $validated['description'] ?? null,
             'image' => $imageUrl,
-            'is_available' => $validated['is_available'] ?? true
+            'is_available' => $validated['is_available'] ?? true,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil ditambahkan!',
-            'product' => $product
+            'product' => $product,
         ]);
     }
 
@@ -126,24 +126,24 @@ class MenuController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|string|max:1000',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'is_available' => 'sometimes|boolean'
+            'is_available' => 'sometimes|boolean',
         ]);
 
         $product = Product::findOrFail($id);
-        
+
         $imageUrl = $validated['image'] ?? $product->image;
 
         if ($request->hasFile('image_file')) {
             $file = $request->file('image_file');
-            $filename = time() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
-            
+            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
+
             // Buat direktori jika belum ada
-            if (!file_exists(public_path('uploads/products'))) {
+            if (! file_exists(public_path('uploads/products'))) {
                 mkdir(public_path('uploads/products'), 0777, true);
             }
-            
+
             $file->move(public_path('uploads/products'), $filename);
-            $imageUrl = '/uploads/products/' . $filename;
+            $imageUrl = '/uploads/products/'.$filename;
         }
 
         $product->update([
@@ -152,13 +152,13 @@ class MenuController extends Controller
             'price' => $validated['price'],
             'description' => $validated['description'] ?? null,
             'image' => $imageUrl,
-            'is_available' => $validated['is_available'] ?? true
+            'is_available' => $validated['is_available'] ?? true,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil diperbarui!',
-            'product' => $product
+            'product' => $product,
         ]);
     }
 
@@ -169,20 +169,20 @@ class MenuController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Produk berhasil dihapus!'
+            'message' => 'Produk berhasil dihapus!',
         ]);
     }
 
     public function toggleProductAvailability($id)
     {
         $product = Product::findOrFail($id);
-        $product->is_available = !$product->is_available;
+        $product->is_available = ! $product->is_available;
         $product->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Status ketersediaan menu berhasil diperbarui!',
-            'is_available' => $product->is_available
+            'is_available' => $product->is_available,
         ]);
     }
 }

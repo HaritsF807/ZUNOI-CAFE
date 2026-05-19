@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Table;
 use App\Models\User;
-use App\Models\Category;
-use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -73,7 +73,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        
+
         $this->assertEquals('https://example.com/new-qris.png', Setting::getValue('qris_manual_url'));
         $this->assertEquals('new-token', Setting::getValue('fonnte_token'));
     }
@@ -85,7 +85,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
     {
         $table = Table::create([
             'table_name' => 'Meja 1',
-            'secure_token' => 'testtoken'
+            'secure_token' => 'testtoken',
         ]);
 
         $category = Category::create(['name' => 'Kopi', 'slug' => 'kopi']);
@@ -94,7 +94,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
             'name' => 'Kopi Latte',
             'price' => 15000,
             'image' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
-            'is_available' => true
+            'is_available' => true,
         ]);
 
         $response = $this->withSession(['active_table_id' => $table->id])
@@ -104,15 +104,15 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
                 'order_type' => 'dine_in',
                 'payment_method' => 'cashier',
                 'cart_items' => [
-                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1]
-                ]
+                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1],
+                ],
             ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('orders', [
             'customer_name' => 'Budi',
             'payment_method' => 'cashier',
-            'payment_proof' => null
+            'payment_proof' => null,
         ]);
     }
 
@@ -123,7 +123,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
     {
         $table = Table::create([
             'table_name' => 'Meja 1',
-            'secure_token' => 'testtoken'
+            'secure_token' => 'testtoken',
         ]);
 
         $category = Category::create(['name' => 'Kopi', 'slug' => 'kopi']);
@@ -132,7 +132,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
             'name' => 'Kopi Latte',
             'price' => 15000,
             'image' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
-            'is_available' => true
+            'is_available' => true,
         ]);
 
         $response = $this->withSession(['active_table_id' => $table->id])
@@ -142,8 +142,8 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
                 'order_type' => 'dine_in',
                 'payment_method' => 'qris_manual',
                 'cart_items' => [
-                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1]
-                ]
+                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1],
+                ],
             ]);
 
         $response->assertSessionHasErrors('payment_proof');
@@ -156,7 +156,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
     {
         $table = Table::create([
             'table_name' => 'Meja 1',
-            'secure_token' => 'testtoken'
+            'secure_token' => 'testtoken',
         ]);
 
         $category = Category::create(['name' => 'Kopi', 'slug' => 'kopi']);
@@ -165,7 +165,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
             'name' => 'Kopi Latte',
             'price' => 15000,
             'image' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
-            'is_available' => true
+            'is_available' => true,
         ]);
 
         Storage::fake('public');
@@ -179,12 +179,12 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
                 'payment_method' => 'qris_manual',
                 'payment_proof' => $dummyImage,
                 'cart_items' => [
-                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1]
-                ]
+                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1],
+                ],
             ]);
 
         $response->assertRedirect();
-        
+
         $order = Order::first();
         $this->assertNotNull($order->payment_proof);
         $this->assertStringContainsString('data:image/', $order->payment_proof);
@@ -197,7 +197,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
     {
         $table = Table::create([
             'table_name' => 'Meja 1',
-            'secure_token' => 'testtoken'
+            'secure_token' => 'testtoken',
         ]);
 
         $category = Category::create(['name' => 'Kopi', 'slug' => 'kopi']);
@@ -206,7 +206,7 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
             'name' => 'Kopi Latte',
             'price' => 15000,
             'image' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
-            'is_available' => true
+            'is_available' => true,
         ]);
 
         $response = $this->withSession(['active_table_id' => $table->id])
@@ -217,8 +217,8 @@ class IntegrationSettingsAndPaymentProofTest extends TestCase
                 'payment_method' => 'cashier',
                 'notes' => 'Less sugar and no ice please.',
                 'cart_items' => [
-                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1]
-                ]
+                    ['id' => $product->id, 'name' => 'Kopi', 'price' => 15000, 'quantity' => 1],
+                ],
             ]);
 
         $response->assertRedirect();

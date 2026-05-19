@@ -20,6 +20,7 @@ const form = useForm({
 
 onMounted(() => {
     const savedCart = localStorage.getItem('zunoi_cart');
+
     if (savedCart) {
         form.cart_items = JSON.parse(savedCart);
     }

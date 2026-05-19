@@ -12,6 +12,7 @@ const selectedCategoryId = ref('all');
 
 onMounted(() => {
     const savedCart = localStorage.getItem('zunoi_cart');
+
     if (savedCart) {
         cart.value = JSON.parse(savedCart);
     }
@@ -19,6 +20,7 @@ onMounted(() => {
 
 const addToCart = (product) => {
     const existing = cart.value.find((item) => item.id === product.id);
+
     if (existing) {
         existing.quantity++;
     } else {
@@ -30,6 +32,7 @@ const addToCart = (product) => {
             quantity: 1,
         });
     }
+
     localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
 };
 
@@ -39,16 +42,20 @@ const totalCartItems = computed(() => {
 
 const getCartItemQuantity = (productId) => {
     const item = cart.value.find((i) => i.id === productId);
+
     return item ? item.quantity : 0;
 };
 
 const removeFromCart = (product) => {
     const existing = cart.value.find((item) => item.id === product.id);
+
     if (existing) {
         existing.quantity--;
+
         if (existing.quantity === 0) {
             cart.value = cart.value.filter((item) => item.id !== product.id);
         }
+
         localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
     }
 };
@@ -57,6 +64,7 @@ const filteredProducts = computed(() => {
     if (selectedCategoryId.value === 'all') {
         return props.products;
     }
+
     return props.products.filter(
         (product) => product.category_id === selectedCategoryId.value,
     );
