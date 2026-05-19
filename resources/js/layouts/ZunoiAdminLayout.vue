@@ -15,10 +15,10 @@ const handleLogout = () => {
     <div class="min-h-screen bg-[#FAEDCD] flex font-sans text-gray-800">
         <!-- Sidebar -->
         <aside 
-            class="bg-[#3B2314] text-[#FAEDCD] w-64 min-h-screen flex flex-col justify-between transition-all duration-300 z-30"
+            class="bg-[#3B2314] text-[#FAEDCD] w-64 h-screen sticky top-0 flex flex-col justify-between transition-all duration-300 z-30"
             :class="{'w-64': isSidebarOpen, 'w-20 overflow-hidden': !isSidebarOpen}"
         >
-            <div>
+            <div class="flex flex-col flex-1 overflow-y-auto">
                 <!-- Sidebar Header -->
                 <div class="p-6 flex items-center justify-between border-b border-[#D4A373]/30">
                     <div class="flex items-center gap-3" v-if="isSidebarOpen">

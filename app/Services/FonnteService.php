@@ -16,8 +16,8 @@ class FonnteService
 
     public function sendMessage($target, $message)
     {
-        // Jika token belum di-set, kita log saja (Mockup)
-        if ($this->token === 'mock-token' || env('APP_ENV') === 'local') {
+        // Jika token adalah default mockup atau kosong, kita log saja (Mockup)
+        if ($this->token === 'mock-token' || $this->token === 'TokenFonnteAnda123' || empty($this->token)) {
             Log::info("Fonnte WA Mock: Send to $target => $message");
             return true;
         }

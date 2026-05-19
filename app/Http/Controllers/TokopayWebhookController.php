@@ -22,15 +22,49 @@ class TokopayWebhookController extends Controller
         Log::info("Tokopay Webhook received for Order ID: $order_id with status: $status");
 
         if ($status === 'Success') {
-            $order = Order::find($order_id);
+            $order = Order::with('items.product')->find($order_id);
             if ($order && $order->payment_status !== 'paid') {
                 $order->payment_status = 'paid';
                 $order->save();
 
                 // Trigger WA via Fonnte
-                $fonnte = new FonnteService();
-                $message = "Halo {$order->customer_name}, Pembayaran pesanan Anda sebesar Rp " . number_format($order->total_price, 0, ',', '.') . " telah berhasil diterima! Pesanan Anda segera diproses.";
-                $fonnte->sendMessage($order->customer_phone, $message);
+                try {
+                    $itemList = "";
+                    foreach ($order->items as $item) {
+                        $itemList .= "• " . ($item->product->name ?? 'Menu Kopi') . " x" . $item->quantity . "\n";
+                        if (!empty($item->notes)) {
+                            $itemList .= "   └ *Catatan:* \"" . $item->notes . "\"\n";
+                        }
+                    }
+                    $itemList = trim($itemList);
+                    $typeName = $order->order_type === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Takeaway (Bawa Pulang)';
+                    $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
+
+                    $message = "☕ *ZUNOI CAFFE - PEMBAYARAN SUKSES* ☕\n\n" .
+                               "Halo *{$order->customer_name}*, terima kasih! Pembayaran Anda telah kami terima secara otomatis.\n\n" .
+                               "*Rincian Transaksi:*\n" .
+                               "━━━━━━━━━━━━━━━━━━\n" .
+                               "🆔 *ID Pesanan:* #{$order->id}\n" .
+                               "📅 *Waktu:* {$timeFormatted} WIB\n" .
+                               "🛋️ *Tipe:* {$typeName}\n" .
+                               "💳 *Metode:* QRIS Otomatis (Tokopay)\n" .
+                               "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
+                               "💵 *Status:* LUNAS\n\n" .
+                               "*Daftar Menu:*\n" .
+                               "{$itemList}\n";
+                               
+                    if (!empty($order->notes)) {
+                        $message .= "\n📝 *Catatan Khusus Barista:*\n\"{$order->notes}\"\n";
+                    }
+                    
+                    $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
+                                "Pesanan Anda telah diteruskan ke Barista kami dan sedang dalam antrean pengerjaan. Kami akan mengirimkan notifikasi lagi begitu pesanan Anda mulai diproses. Selamat menunggu! 💛";
+
+                    $fonnte = new FonnteService();
+                    $fonnte->sendMessage($order->customer_phone, $message);
+                } catch (\Exception $e) {
+                    Log::error("Fonnte Webhook WA Error: " . $e->getMessage());
+                }
             }
         }
 
@@ -46,7 +80,7 @@ class TokopayWebhookController extends Controller
             abort(403, 'Hanya dapat dijalankan di lingkungan lokal/testing.');
         }
 
-        $order = Order::find($id);
+        $order = Order::with('items.product')->find($id);
         if (!$order) {
             return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.']);
         }
@@ -55,10 +89,40 @@ class TokopayWebhookController extends Controller
             $order->payment_status = 'paid';
             $order->save();
 
-            // Trigger WA via Fonnte (mock)
+            // Trigger WA via Fonnte
             try {
+                $itemList = "";
+                foreach ($order->items as $item) {
+                    $itemList .= "• " . ($item->product->name ?? 'Menu Kopi') . " x" . $item->quantity . "\n";
+                    if (!empty($item->notes)) {
+                        $itemList .= "   └ *Catatan:* \"" . $item->notes . "\"\n";
+                    }
+                }
+                $itemList = trim($itemList);
+                $typeName = $order->order_type === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Takeaway (Bawa Pulang)';
+                $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
+
+                $message = "☕ *ZUNOI CAFFE - PEMBAYARAN SUKSES [SIMULASI]* ☕\n\n" .
+                           "Halo *{$order->customer_name}*, terima kasih! [SIMULASI] Pembayaran Anda telah kami terima secara otomatis.\n\n" .
+                           "*Rincian Transaksi:*\n" .
+                           "━━━━━━━━━━━━━━━━━━\n" .
+                           "🆔 *ID Pesanan:* #{$order->id}\n" .
+                           "📅 *Waktu:* {$timeFormatted} WIB\n" .
+                           "🛋️ *Tipe:* {$typeName}\n" .
+                           "💳 *Metode:* QRIS Otomatis (Tokopay)\n" .
+                           "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
+                           "💵 *Status:* LUNAS\n\n" .
+                           "*Daftar Menu:*\n" .
+                           "{$itemList}\n";
+                           
+                if (!empty($order->notes)) {
+                    $message .= "\n📝 *Catatan Khusus Barista:*\n\"{$order->notes}\"\n";
+                }
+                
+                $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
+                            "Pesanan Anda telah diteruskan ke Barista kami dan sedang dalam antrean pengerjaan. Kami akan mengirimkan notifikasi lagi begitu pesanan Anda mulai diproses. Selamat menunggu! 💛";
+
                 $fonnte = new FonnteService();
-                $message = "Halo {$order->customer_name}, [SIMULASI] Pembayaran pesanan Anda sebesar Rp " . number_format($order->total_price, 0, ',', '.') . " telah berhasil diterima! Pesanan Anda segera diproses.";
                 $fonnte->sendMessage($order->customer_phone, $message);
             } catch (\Exception $e) {
                 // Abaikan error WA saat pengujian lokal

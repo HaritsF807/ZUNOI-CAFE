@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\FonnteService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -118,7 +119,7 @@ class OrderController extends Controller
             'payment_status' => 'sometimes|in:pending,paid'
         ]);
 
-        $order = Order::findOrFail($id);
+        $order = Order::with('items.product')->findOrFail($id);
         
         // Jika status order diterima (processing) dan pembayaran via QRIS Manual, set juga status pembayaran menjadi paid (LUNAS)
         if ($validated['order_status'] === 'processing' && $order->payment_method === 'qris_manual') {
@@ -130,12 +131,106 @@ class OrderController extends Controller
             $order->payment_status = 'paid';
         }
         
+        $oldStatus = $order->order_status;
         $order->order_status = $validated['order_status'];
         if (isset($validated['payment_status'])) {
             $order->payment_status = $validated['payment_status'];
         }
         
         $order->save();
+
+        // Kirim WhatsApp Notifikasi Perubahan Status via Fonnte
+        try {
+            $fonnte = new FonnteService();
+            if ($order->order_status === 'processing' && $oldStatus !== 'processing') {
+                $itemList = "";
+                foreach ($order->items as $item) {
+                    $itemList .= "• " . ($item->product->name ?? 'Menu Kopi') . " x" . $item->quantity . "\n";
+                    if (!empty($item->notes)) {
+                        $itemList .= "   └ *Catatan:* \"" . $item->notes . "\"\n";
+                    }
+                }
+                $itemList = trim($itemList);
+                $typeName = $order->order_type === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Takeaway (Bawa Pulang)';
+                $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
+
+                if ($order->payment_method === 'qris_manual') {
+                    $message = "☕ *ZUNOI CAFFE - PEMBAYARAN TERVERIFIKASI* ☕\n\n" .
+                               "Halo *{$order->customer_name}*, terima kasih! Bukti pembayaran QRIS Anda telah berhasil kami verifikasi.\n\n" .
+                               "*Rincian Transaksi:*\n" .
+                               "━━━━━━━━━━━━━━━━━━\n" .
+                               "🆔 *ID Pesanan:* #{$order->id}\n" .
+                               "📅 *Waktu:* {$timeFormatted} WIB\n" .
+                               "🛋️ *Tipe:* {$typeName}\n" .
+                               "💳 *Metode:* QRIS Manual (Toko)\n" .
+                               "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
+                               "💵 *Status:* LUNAS (Terverifikasi)\n\n" .
+                               "*Daftar Menu:*\n" .
+                               "{$itemList}\n";
+                               
+                    if (!empty($order->notes)) {
+                        $message .= "\n📝 *Catatan Khusus Barista:*\n\"{$order->notes}\"\n";
+                    }
+                    
+                    $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
+                                "*Pesanan Anda saat ini sedang DIPROSES oleh Barista Zunoi!* Silakan bersantai sejenak, kami akan mengabari Anda setelah pesanan siap disajikan. ☕💛";
+                } else {
+                    $payStatusText = $order->payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR';
+                    $methodText = $order->payment_method === 'cashier' ? 'Bayar di Kasir' : 'QRIS Otomatis (Tokopay)';
+                    $message = "☕ *ZUNOI CAFFE - PESANAN DIPROSES* ☕\n\n" .
+                               "Halo *{$order->customer_name}*, pesanan Anda saat ini telah masuk antrean pengerjaan!\n\n" .
+                               "*Rincian Transaksi:*\n" .
+                               "━━━━━━━━━━━━━━━━━━\n" .
+                               "🆔 *ID Pesanan:* #{$order->id}\n" .
+                               "📅 *Waktu:* {$timeFormatted} WIB\n" .
+                               "🛋️ *Tipe:* {$typeName}\n" .
+                               "💳 *Metode:* {$methodText}\n" .
+                               "💰 *Total Tagihan:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
+                               "💵 *Status Pembayaran:* {$payStatusText}\n\n" .
+                               "*Daftar Menu:*\n" .
+                               "{$itemList}\n";
+                               
+                    if (!empty($order->notes)) {
+                        $message .= "\n📝 *Catatan Khusus Barista:*\n\"{$order->notes}\"\n";
+                    }
+                    
+                    $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
+                                "*Barista Zunoi sedang memproses pesanan Anda dengan penuh cinta!* Mohon tunggu sejenak, kami akan memberikan notifikasi setelah pesanan Anda selesai disiapkan. ☕💛";
+                }
+                $fonnte->sendMessage($order->customer_phone, $message);
+            } elseif ($order->order_status === 'completed' && $oldStatus !== 'completed') {
+                $itemList = "";
+                foreach ($order->items as $item) {
+                    $itemList .= "• " . ($item->product->name ?? 'Menu Kopi') . " x" . $item->quantity . "\n";
+                }
+                $itemList = trim($itemList);
+                $typeName = $order->order_type === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Takeaway (Bawa Pulang)';
+                $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
+
+                $deliveryInstruction = $order->order_type === 'dine_in' 
+                    ? "*Barista kami akan segera mengantarkan pesanan hangat Anda langsung ke meja Anda. Silakan duduk manis dan bersiap menikmati!*"
+                    : "*Silakan ambil pesanan Anda di meja Barista/Kasir Zunoi Caffe.*";
+
+                $message = "☕ *ZUNOI CAFFE - PESANAN SELESAI* ☕\n\n" .
+                           "Halo *{$order->customer_name}*, kabar gembira! Pesanan Anda telah selesai disiapkan dan siap dinikmati!\n\n" .
+                           "*Rincian Transaksi:*\n" .
+                           "━━━━━━━━━━━━━━━━━━\n" .
+                           "🆔 *ID Pesanan:* #{$order->id}\n" .
+                           "📅 *Waktu:* {$timeFormatted} WIB\n" .
+                           "🛋️ *Tipe:* {$typeName}\n" .
+                           "💰 *Total Belanja:* Rp " . number_format($order->total_price, 0, ',', '.') . "\n" .
+                           "💵 *Status:* LUNAS (Disajikan)\n\n" .
+                           "*Daftar Menu:*\n" .
+                           "{$itemList}\n" .
+                           "━━━━━━━━━━━━━━━━━━\n\n" .
+                           "{$deliveryInstruction}\n\n" .
+                           "Terima kasih banyak telah memesan di Zunoi Caffe. Semoga hari Anda menyenangkan dan penuh energi positif! ☕💛";
+                
+                $fonnte->sendMessage($order->customer_phone, $message);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal kirim WA update status: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
