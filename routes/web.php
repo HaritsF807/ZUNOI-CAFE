@@ -21,9 +21,11 @@ Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
         $products = \App\Models\Product::with(['category', 'addons'])->get();
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
+        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
         return inertia('Customer/MenuList', [
             'products' => $products,
-            'categories' => $categories
+            'categories' => $categories,
+            'banners' => $banners
         ]);
     })->name('order.index');
     
@@ -42,6 +44,7 @@ Route::get('/order/success/{secure_key}', [\App\Http\Controllers\OrderController
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/menu', [\App\Http\Controllers\MenuController::class, 'index'])->name('menu.management');
+    Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');
     
     Route::get('/dashboard/tables', function() {
         return inertia('TableManagement');
@@ -50,9 +53,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/menu-preview', function () {
         $products = \App\Models\Product::with(['category', 'addons'])->get();
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
+        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
         return inertia('MenuPreview', [
             'products' => $products,
-            'categories' => $categories
+            'categories' => $categories,
+            'banners' => $banners
         ]);
     })->name('menu.preview');
 
@@ -92,6 +97,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/categories', [\App\Http\Controllers\MenuController::class, 'storeCategory']);
     Route::put('/api/categories/{id}', [\App\Http\Controllers\MenuController::class, 'updateCategory']);
     Route::delete('/api/categories/{id}', [\App\Http\Controllers\MenuController::class, 'deleteCategory']);
+
+    // API Kelola Promo
+    Route::post('/api/promos', [\App\Http\Controllers\PromoController::class, 'storePromo']);
+    Route::post('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromo']); // POST method for multipart updates with spoofing or just direct post
+    Route::delete('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromo']);
 
     Route::get('/api/orders/live', [\App\Http\Controllers\OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus']);

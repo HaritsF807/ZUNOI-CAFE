@@ -1,10 +1,15 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import BannerSlider from '@/components/BannerSlider.vue';
 
 const props = defineProps({
     products: Array,
     categories: Array,
+    banners: {
+        type: Array,
+        default: () => []
+    }
 });
 
 const cart = ref([]);
@@ -205,6 +210,8 @@ const addSelectionToCart = () => {
         <main
             class="mx-auto w-full max-w-7xl flex-1 px-4 pt-2.5 pb-24 sm:px-6 lg:px-8"
         >
+            <BannerSlider :banners="banners" class="mt-4 mb-8" />
+
             <h2
                 class="mb-1.5 text-lg font-black tracking-tight text-[#3B2314] md:text-xl"
             >
