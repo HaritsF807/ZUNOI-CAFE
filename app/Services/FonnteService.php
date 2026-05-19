@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -11,7 +12,7 @@ class FonnteService
 
     public function __construct()
     {
-        $this->token = \App\Models\Setting::getValue('fonnte_token', env('FONNTE_TOKEN', 'mock-token'));
+        $this->token = Setting::getValue('fonnte_token', env('FONNTE_TOKEN', 'mock-token'));
     }
 
     public function sendMessage($target, $message)
@@ -19,6 +20,7 @@ class FonnteService
         // Jika token adalah default mockup atau kosong, kita log saja (Mockup)
         if ($this->token === 'mock-token' || $this->token === 'TokenFonnteAnda123' || empty($this->token)) {
             Log::info("Fonnte WA Mock: Send to $target => $message");
+
             return true;
         }
 
@@ -32,7 +34,8 @@ class FonnteService
 
             return $response->successful();
         } catch (\Exception $e) {
-            Log::error("Fonnte WA Error: " . $e->getMessage());
+            Log::error('Fonnte WA Error: '.$e->getMessage());
+
             return false;
         }
     }

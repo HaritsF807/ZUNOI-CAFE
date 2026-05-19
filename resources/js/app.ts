@@ -11,6 +11,7 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         const lowerName = name.toLowerCase();
+
         switch (true) {
             case lowerName === 'welcome':
             case lowerName === 'dashboard':

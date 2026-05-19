@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Table;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class TableController extends Controller
 {
@@ -12,7 +11,7 @@ class TableController extends Controller
     {
         $table = Table::where('secure_token', $secure_token)->first();
 
-        if (!$table) {
+        if (! $table) {
             abort(404, 'Meja tidak ditemukan atau QR code tidak valid.');
         }
 

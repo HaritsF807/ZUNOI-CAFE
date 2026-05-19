@@ -1,13 +1,15 @@
 <script setup>
-import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
 const triggerToast = (message, type = 'success') => {
-    window.dispatchEvent(new CustomEvent('zunoi-toast', {
-        detail: { message, type }
-    }));
+    window.dispatchEvent(
+        new CustomEvent('zunoi-toast', {
+            detail: { message, type },
+        }),
+    );
 };
 
 const user = usePage().props.auth.user;
@@ -73,7 +75,10 @@ const fetchTables = async () => {
 };
 
 const addTable = async () => {
-    if (!newTableName.value) return;
+    if (!newTableName.value) {
+return;
+}
+
     try {
         await axios.post('/api/tables', { table_name: newTableName.value });
         newTableName.value = '';
@@ -91,6 +96,7 @@ const acceptOrder = async (id) => {
         const response = await axios.patch(`/api/orders/${id}/status`, {
             order_status: 'processing',
         });
+
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} berhasil diterima!`, 'success');
@@ -106,6 +112,7 @@ const completeOrder = async (id) => {
         const response = await axios.patch(`/api/orders/${id}/status`, {
             order_status: 'completed',
         });
+
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} ditandai sebagai selesai!`, 'success');
@@ -118,16 +125,26 @@ const completeOrder = async (id) => {
 
 const sendReport = async () => {
     triggerToast('Mengirim rekapan harian ke WhatsApp Owner...', 'info');
+
     try {
         const response = await axios.post('/api/reports/send-recap');
+
         if (response.data.success) {
-            triggerToast(response.data.message || 'Rekapan harian berhasil dikirim!', 'success');
+            triggerToast(
+                response.data.message || 'Rekapan harian berhasil dikirim!',
+                'success',
+            );
         } else {
-            triggerToast(response.data.message || 'Gagal mengirim rekapan.', 'error');
+            triggerToast(
+                response.data.message || 'Gagal mengirim rekapan.',
+                'error',
+            );
         }
     } catch (error) {
         console.error('Gagal mengirim rekapan', error);
-        const errorMsg = error.response?.data?.message || 'Terjadi kesalahan sistem saat mengirim rekapan.';
+        const errorMsg =
+            error.response?.data?.message ||
+            'Terjadi kesalahan sistem saat mengirim rekapan.';
         triggerToast(errorMsg, 'error');
     }
 };
@@ -145,7 +162,10 @@ const saveIntegration = () => {
 
 // Filtered Orders berdasarkan tab yang dipilih
 const filteredOrders = computed(() => {
-    if (currentTab.value === 'all') return orders.value;
+    if (currentTab.value === 'all') {
+return orders.value;
+}
+
     return orders.value.filter((o) => o.status === currentTab.value);
 });
 
@@ -187,8 +207,11 @@ const downloadQr = async (table) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-        console.error("Gagal mengunduh QR Code", error);
-        triggerToast("Gagal mengunduh QR Code. Silakan klik kanan pada gambar untuk menyimpannya.", "error");
+        console.error('Gagal mengunduh QR Code', error);
+        triggerToast(
+            'Gagal mengunduh QR Code. Silakan klik kanan pada gambar untuk menyimpannya.',
+            'error',
+        );
     }
 };
 
@@ -208,17 +231,20 @@ const deleteTable = async (id, tableName) => {
         !confirm(
             `Apakah Anda yakin ingin menghapus ${tableName}? Seluruh data barcode meja ini akan dinonaktifkan.`,
         )
-    )
-        return;
+    ) {
+return;
+}
+
     try {
         const response = await axios.delete(`/api/tables/${id}`);
+
         if (response.data.success) {
             fetchTables();
-            triggerToast("Meja berhasil dihapus!", "success");
+            triggerToast('Meja berhasil dihapus!', 'success');
         }
     } catch (error) {
-        console.error("Gagal menghapus meja", error);
-        triggerToast("Gagal menghapus meja.", "error");
+        console.error('Gagal menghapus meja', error);
+        triggerToast('Gagal menghapus meja.', 'error');
     }
 };
 
@@ -914,7 +940,6 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
-
 
         <!-- Modal Zoom Bukti Pembayaran -->
         <Transition
