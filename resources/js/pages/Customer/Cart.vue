@@ -153,7 +153,7 @@ const submitOrder = () => {
                             Catatan untuk Barista
                         </h2>
                         <div>
-                            <textarea v-model="form.notes" placeholder="Beri catatan di sini" rows="2" class="w-full text-xs text-[#3B2314] placeholder-[#3B2314]/50 rounded-xl border border-gray-300 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
+                            <input v-model="form.notes" type="text" placeholder="Beri catatan di sini" class="w-full text-xs text-[#3B2314] placeholder-[#3B2314]/50 rounded-xl border border-gray-300 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2.5">
                         </div>
                     </div>
                 </div>
