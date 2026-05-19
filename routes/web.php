@@ -46,6 +46,32 @@ Route::middleware(['auth'])->group(function () {
         return inertia('TableManagement');
     })->name('table.management');
 
+    Route::get('/dashboard/menu-preview', function () {
+        $products = \App\Models\Product::with('category')->get();
+        $categories = \App\Models\Category::orderBy('name', 'asc')->get();
+        return inertia('MenuPreview', [
+            'products' => $products,
+            'categories' => $categories
+        ]);
+    })->name('menu.preview');
+
+    Route::get('/dashboard/menu-preview/checkout', function () {
+        $qrisUrl = \App\Models\Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        return inertia('MenuPreviewCheckout', [
+            'qris_manual_url' => $qrisUrl
+        ]);
+    })->name('menu.preview.checkout');
+
+    Route::get('/dashboard/menu-preview/success', function (\Illuminate\Http\Request $request) {
+        return inertia('MenuPreviewSuccess', [
+            'customer_name' => $request->query('customer_name'),
+            'order_type' => $request->query('order_type'),
+            'payment_method' => $request->query('payment_method'),
+            'total_price' => $request->query('total_price'),
+            'items' => $request->query('items')
+        ]);
+    })->name('menu.preview.success');
+
     Route::get('/dashboard/integration', [\App\Http\Controllers\SettingController::class, 'integrationIndex'])->name('integration.setup');
     Route::post('/api/settings', [\App\Http\Controllers\SettingController::class, 'updateSettings'])->name('settings.update');
     

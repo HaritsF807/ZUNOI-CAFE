@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 
 const props = defineProps({
@@ -8,7 +8,7 @@ const props = defineProps({
 
 const isQrZoomed = ref(false);
 
-const form = useForm({
+const form = ref({
     customer_name: '',
     customer_phone: '',
     order_type: 'dine_in',
@@ -19,14 +19,14 @@ const form = useForm({
 });
 
 onMounted(() => {
-    const savedCart = localStorage.getItem('zunoi_cart');
+    const savedCart = localStorage.getItem('zunoi_preview_cart');
     if (savedCart) {
-        form.cart_items = JSON.parse(savedCart);
+        form.value.cart_items = JSON.parse(savedCart);
     }
 });
 
 const cartTotal = computed(() => {
-    return form.cart_items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return form.value.cart_items.reduce((total, item) => total + (item.price * item.quantity), 0);
 });
 
 const taxTotal = computed(() => {
@@ -38,46 +38,62 @@ const finalTotal = computed(() => {
 });
 
 const handleFileChange = (e) => {
-    form.payment_proof = e.target.files[0];
+    form.value.payment_proof = e.target.files[0];
 };
 
-const submitOrder = () => {
-    form.post('/order/store', {
-        onSuccess: () => {
-            localStorage.removeItem('zunoi_cart');
+const submitPreviewOrder = () => {
+    alert('Mode Preview: Pesanan berhasil dibuat secara simulasi! Anda akan diarahkan ke halaman invoice preview.');
+    
+    // Clear preview cart
+    localStorage.removeItem('zunoi_preview_cart');
+    
+    // Send to success preview route with simulated data
+    router.visit('/dashboard/menu-preview/success', {
+        method: 'get',
+        data: {
+            customer_name: form.value.customer_name || 'Pelanggan Demo',
+            order_type: form.value.order_type,
+            payment_method: form.value.payment_method,
+            total_price: finalTotal.value,
+            items: JSON.stringify(form.value.cart_items)
         }
     });
 };
 </script>
 
 <template>
-    <Head title="Checkout Zunoi Caffe" />
+    <Head title="Preview Checkout - Zunoi Caffe" />
 
     <!-- Main Customer Area -->
     <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
         
+        <!-- Preview Banner -->
+        <div class="bg-red-500 text-white text-center py-1.5 text-xs font-black tracking-widest uppercase shadow-sm z-50">
+            Mode Preview - Tampilan Pelanggan
+        </div>
+
         <!-- Sticky Header -->
-        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-[-1px] z-40">
+        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-4">
-                <Link :href="'/order'" class="bg-[#FAEDCD] text-[#3B2314] p-2 rounded-lg hover:scale-105 active:scale-95 transition transform shrink-0">
+                <Link :href="'/dashboard/menu-preview'" class="bg-[#FAEDCD] text-[#3B2314] p-2 rounded-lg hover:scale-105 active:scale-95 transition transform shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                 </Link>
-                <h1 class="text-xl font-black tracking-wide">Checkout Pesanan</h1>
+                <h1 class="text-xl font-black tracking-wide">Checkout Pesanan (Preview)</h1>
             </div>
         </header>
 
         <!-- Scrollable Form Area -->
         <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-            <form @submit.prevent="submitOrder" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
+            <form @submit.prevent="submitPreviewOrder" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
                 <!-- Left Column: Order Type, Customer Details, Order Details, Notes -->
                 <div class="space-y-6">
                     <!-- Order Type Toggle -->
                     <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
                         <h2 class="font-extrabold text-[#3B2314] text-sm flex items-center gap-1.5 mb-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.09.53-.139 1.078-.139 1.638 0 1.22.496 2.323 1.3 3.123m0 0L9 12" />
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75 2.25 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.09.53-.139 1.078-.139 1.638 0 1.22.496 2.323 1.3 3.123m0 0L9 12" />
                             </svg>
                             Pilih Metode Pemesanan Anda
                         </h2>
@@ -93,7 +109,7 @@ const submitOrder = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                             </svg>
-                            Informasi Pemesan
+                            Informasi Pemesan (Demo)
                         </h2>
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Nama Lengkap</label>
@@ -191,7 +207,7 @@ const submitOrder = () => {
                                 <p class="text-[10px] text-gray-500 mb-1">Scan QR di bawah ini, lalu unggah bukti pembayaran.</p>
                                 
                                 <div class="relative group cursor-zoom-in inline-block" @click="isQrZoomed = true">
-                                    <img :src="qris_manual_url" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl transition hover:opacity-90">
+                                    <img :src="qris_manual_url || 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'" alt="QRIS Toko" class="w-28 h-28 mx-auto border p-1 rounded-xl transition hover:opacity-90">
                                     <div class="absolute inset-0 bg-[#3B2314]/30 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-white">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637zM10.5 7.5v6m3-3h-6" />
@@ -220,7 +236,7 @@ const submitOrder = () => {
             </form>
         </main>
 
-        <!-- QR Code Zoom Modal (Beautiful animated modal covering entire screen) -->
+        <!-- QR Code Zoom Modal -->
         <Transition
             enter-active-class="ease-out duration-300 transition"
             enter-from-class="opacity-0 scale-95"
@@ -236,7 +252,7 @@ const submitOrder = () => {
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
                     </button>
-                    <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
+                    <img :src="qris_manual_url || 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
                     <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
                     <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
                 </div>

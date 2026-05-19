@@ -84,7 +84,7 @@ const handleLogout = () => {
                     </Link>
 
                     <a 
-                        href="/order" 
+                        href="/dashboard/menu-preview" 
                         target="_blank"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 hover:bg-[#FAEDCD]/10 text-gray-300 hover:text-white"
                     >

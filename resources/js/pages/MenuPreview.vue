@@ -11,7 +11,7 @@ const cart = ref([]);
 const selectedCategoryId = ref('all');
 
 onMounted(() => {
-    const savedCart = localStorage.getItem('zunoi_cart');
+    const savedCart = localStorage.getItem('zunoi_preview_cart');
     if (savedCart) {
         cart.value = JSON.parse(savedCart);
     }
@@ -30,7 +30,7 @@ const addToCart = (product) => {
             quantity: 1
         });
     }
-    localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
+    localStorage.setItem('zunoi_preview_cart', JSON.stringify(cart.value));
 };
 
 const totalCartItems = computed(() => {
@@ -49,7 +49,7 @@ const removeFromCart = (product) => {
         if (existing.quantity === 0) {
             cart.value = cart.value.filter(item => item.id !== product.id);
         }
-        localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
+        localStorage.setItem('zunoi_preview_cart', JSON.stringify(cart.value));
     }
 };
 
@@ -59,22 +59,36 @@ const filteredProducts = computed(() => {
     }
     return props.products.filter(product => product.category_id === selectedCategoryId.value);
 });
+
+const showPreviewAlert = () => {
+    alert('Mode Preview: Fitur checkout dinonaktifkan dalam mode ini.');
+};
 </script>
 
 <template>
-    <Head title="Menu Zunoi Caffe" />
+    <Head title="Preview Menu QR - Zunoi Caffe" />
 
-    <!-- Main Customer Area -->
+    <!-- Main Customer Area (Preview) -->
     <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
         
+        <!-- Preview Banner -->
+        <div class="bg-red-500 text-white text-center py-1.5 text-xs font-black tracking-widest uppercase shadow-sm z-50">
+            Mode Preview - Tampilan Pelanggan
+        </div>
+
         <!-- Sticky Header -->
-        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-[-1px] z-40">
+        <header class="bg-[#3B2314] text-[#FAEDCD] py-3.5 shadow-md sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center gap-4">
-                <div>
+                <div class="flex items-center gap-3">
+                    <Link href="/dashboard" class="bg-[#FAEDCD]/10 p-1.5 rounded-lg hover:bg-[#FAEDCD]/20 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                        </svg>
+                    </Link>
                     <h1 class="text-lg md:text-xl font-black tracking-wide">Zunoi Caffe</h1>
                 </div>
                 <span class="bg-[#D4A373] text-[#3B2314] text-xs px-3.5 py-1.5 rounded-lg font-black uppercase tracking-wider shrink-0 shadow-sm">
-                    {{ $page.props.active_table_name || 'Meja -' }}
+                    Meja Preview
                 </span>
             </div>
         </header>
@@ -165,7 +179,7 @@ const filteredProducts = computed(() => {
         <div class="fixed bottom-6 left-0 right-0 flex flex-col items-center justify-end px-6 pointer-events-none z-50">
             
             <!-- Main Floating Cart Button -->
-            <Link :href="'/checkout'" 
+            <Link :href="'/dashboard/menu-preview/checkout'" 
                   class="pointer-events-auto bg-gradient-to-br from-[#5C3E26] via-[#3B2314] to-[#24150c] text-[#FAEDCD] px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(59,35,20,0.45)] hover:shadow-[0_10px_35px_rgba(59,35,20,0.6)] font-black flex items-center justify-between hover:scale-105 active:scale-95 transition-all duration-300 w-full max-w-sm md:max-w-md lg:max-w-lg border border-[#D4A373]/40">
                 
                 <span class="flex items-center gap-2 text-sm">
