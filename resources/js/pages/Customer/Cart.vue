@@ -145,7 +145,7 @@ const submitOrder = () => {
                             Catatan untuk Barista
                         </h2>
                         <div>
-                            <textarea v-model="form.notes" placeholder="Contoh: Es batu sedikit saja, kopi agak manis, sendok 2..." rows="2" class="w-full text-xs rounded-xl border-gray-200 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
+                            <textarea v-model="form.notes" placeholder="Beri catatan di sini" rows="2" class="w-full text-xs text-[#3B2314] placeholder-[#3B2314]/50 rounded-xl border border-gray-300 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2 resize-none"></textarea>
                         </div>
                     </div>
                 </div>
@@ -161,15 +161,15 @@ const submitOrder = () => {
                             Metode Pembayaran
                         </h2>
                         
-                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer text-xs transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'qris_tokopay'}">
+                        <label class="flex items-center gap-3 p-3 border border-gray-300 rounded-xl cursor-pointer text-xs text-[#3B2314] transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'qris_tokopay'}">
                             <input type="radio" v-model="form.payment_method" value="qris_tokopay" class="text-[#3B2314] focus:ring-[#3B2314]">
-                            <span class="font-bold">QRIS Otomatis (Tokopay)</span>
+                            <span class="font-extrabold text-[#3B2314]">QRIS Otomatis (Tokopay)</span>
                         </label>
 
-                        <label class="flex flex-col gap-2 p-3 border rounded-xl cursor-pointer text-xs transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'qris_manual'}">
+                        <label class="flex flex-col gap-2 p-3 border border-gray-300 rounded-xl cursor-pointer text-xs text-[#3B2314] transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'qris_manual'}">
                             <div class="flex items-center gap-3">
                                 <input type="radio" v-model="form.payment_method" value="qris_manual" class="text-[#3B2314] focus:ring-[#3B2314]">
-                                <span class="font-bold">QRIS Toko (Manual Verifikasi)</span>
+                                <span class="font-extrabold text-[#3B2314]">QRIS Toko (Manual Verifikasi)</span>
                             </div>
                             <div v-if="form.payment_method === 'qris_manual'" class="mt-2 text-center bg-white p-3 rounded-xl border border-gray-100 space-y-3">
                                 <p class="text-[10px] text-gray-500 mb-1">Scan QR di bawah ini, lalu unggah bukti pembayaran.</p>
@@ -191,9 +191,9 @@ const submitOrder = () => {
                             </div>
                         </label>
 
-                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer text-xs transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'cashier'}">
+                        <label class="flex items-center gap-3 p-3 border border-gray-300 rounded-xl cursor-pointer text-xs text-[#3B2314] transition duration-200" :class="{'border-[#D4A373] bg-[#FAEDCD]/30': form.payment_method === 'cashier'}">
                             <input type="radio" v-model="form.payment_method" value="cashier" class="text-[#3B2314] focus:ring-[#3B2314]">
-                            <span class="font-bold">Bayar Langsung di Kasir</span>
+                            <span class="font-extrabold text-[#3B2314]">Bayar Langsung di Kasir</span>
                         </label>
                     </div>
 
