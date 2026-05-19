@@ -27,24 +27,41 @@ defineProps<{
 <template>
     <Head title="Log In - Zunoi Caffe" />
 
-    <div class="min-h-screen flex items-center justify-center bg-cover bg-center relative p-6 font-sans" style="background-image: url('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80');">
+    <div
+        class="relative flex min-h-screen items-center justify-center bg-cover bg-center p-6 font-sans"
+        style="
+            background-image: url('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80');
+        "
+    >
         <!-- Dark Overlay -->
-        <div class="absolute inset-0 bg-[#3B2314]/80 backdrop-blur-sm z-0"></div>
+        <div
+            class="absolute inset-0 z-0 bg-[#3B2314]/80 backdrop-blur-sm"
+        ></div>
 
         <!-- Login Card -->
-        <div class="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl text-[#FAEDCD]">
+        <div
+            class="relative z-10 w-full max-w-md rounded-3xl border border-white/20 bg-white/10 p-8 text-[#FAEDCD] shadow-2xl backdrop-blur-md"
+        >
             <!-- Header/Logo -->
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 rounded-full bg-[#D4A373] text-[#3B2314] flex items-center justify-center font-extrabold text-2xl shadow-lg mx-auto mb-4 border-2 border-white/30">
+            <div class="mb-8 text-center">
+                <div
+                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/30 bg-[#D4A373] text-2xl font-extrabold text-[#3B2314] shadow-lg"
+                >
                     Z
                 </div>
-                <h1 class="text-3xl font-extrabold text-white tracking-wide">ZUNOI CAFFE</h1>
-                <p class="text-xs text-[#D4A373] uppercase tracking-widest font-bold mt-1">Admin & Barista Portal</p>
+                <h1 class="text-3xl font-extrabold tracking-wide text-white">
+                    ZUNOI CAFFE
+                </h1>
+                <p
+                    class="mt-1 text-xs font-bold tracking-widest text-[#D4A373] uppercase"
+                >
+                    Admin & Barista Portal
+                </p>
             </div>
 
             <div
                 v-if="status"
-                class="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-xl text-center text-sm font-medium text-green-300"
+                class="mb-4 rounded-xl border border-green-500/30 bg-green-500/20 p-3 text-center text-sm font-medium text-green-300"
             >
                 {{ status }}
             </div>
@@ -58,7 +75,11 @@ defineProps<{
                 <div class="space-y-4">
                     <!-- Email field -->
                     <div class="space-y-2">
-                        <Label for="email" class="text-sm font-semibold text-gray-200">Email Address</Label>
+                        <Label
+                            for="email"
+                            class="text-sm font-semibold text-gray-200"
+                            >Email Address</Label
+                        >
                         <Input
                             id="email"
                             type="email"
@@ -68,15 +89,22 @@ defineProps<{
                             :tabindex="1"
                             autocomplete="email"
                             placeholder="nama@zunoi.id"
-                            class="w-full bg-white/10 border-white/20 text-white rounded-xl py-3 px-4 focus:ring-[#D4A373] focus:border-[#D4A373] placeholder-gray-400"
+                            class="w-full rounded-xl border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-400 focus:border-[#D4A373] focus:ring-[#D4A373]"
                         />
-                        <InputError :message="errors.email" class="text-red-400 text-xs font-semibold" />
+                        <InputError
+                            :message="errors.email"
+                            class="text-xs font-semibold text-red-400"
+                        />
                     </div>
 
                     <!-- Password field -->
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <Label for="password" class="text-sm font-semibold text-gray-200">Password</Label>
+                            <Label
+                                for="password"
+                                class="text-sm font-semibold text-gray-200"
+                                >Password</Label
+                            >
                             <TextLink
                                 v-if="canResetPassword"
                                 :href="request()"
@@ -93,15 +121,26 @@ defineProps<{
                             :tabindex="2"
                             autocomplete="current-password"
                             placeholder="Password Anda"
-                            class="w-full bg-white/10 border-white/20 text-white rounded-xl py-3 px-4 focus:ring-[#D4A373] focus:border-[#D4A373]"
+                            class="w-full rounded-xl border-white/20 bg-white/10 px-4 py-3 text-white focus:border-[#D4A373] focus:ring-[#D4A373]"
                         />
-                        <InputError :message="errors.password" class="text-red-400 text-xs font-semibold" />
+                        <InputError
+                            :message="errors.password"
+                            class="text-xs font-semibold text-red-400"
+                        />
                     </div>
 
                     <!-- Remember me -->
                     <div class="flex items-center justify-between pt-2">
-                        <Label for="remember" class="flex items-center space-x-3 text-sm text-gray-200 cursor-pointer">
-                            <Checkbox id="remember" name="remember" :tabindex="3" class="rounded border-white/20 bg-white/10 text-[#3B2314] focus:ring-[#D4A373]" />
+                        <Label
+                            for="remember"
+                            class="flex cursor-pointer items-center space-x-3 text-sm text-gray-200"
+                        >
+                            <Checkbox
+                                id="remember"
+                                name="remember"
+                                :tabindex="3"
+                                class="rounded border-white/20 bg-white/10 text-[#3B2314] focus:ring-[#D4A373]"
+                            />
                             <span>Ingat Saya</span>
                         </Label>
                     </div>
@@ -109,7 +148,7 @@ defineProps<{
                     <!-- Login Button -->
                     <Button
                         type="submit"
-                        class="w-full bg-[#D4A373] text-[#3B2314] font-extrabold py-3.5 rounded-xl text-md shadow-lg hover:bg-[#c49363] hover:scale-[1.02] transition-all duration-200 mt-4 flex items-center justify-center gap-2"
+                        class="text-md mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A373] py-3.5 font-extrabold text-[#3B2314] shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-[#c49363]"
                         :tabindex="4"
                         :disabled="processing"
                         data-test="login-button"
@@ -118,7 +157,6 @@ defineProps<{
                         <span>Masuk ke Dashboard</span>
                     </Button>
                 </div>
-
             </Form>
         </div>
     </div>
