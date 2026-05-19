@@ -73,6 +73,106 @@ const filteredProducts = computed(() => {
 const showPreviewAlert = () => {
     alert('Mode Preview: Fitur checkout dinonaktifkan dalam mode ini.');
 };
+
+const isModalOpen = ref(false);
+const showAddAnimation = ref(false);
+const selectedProduct = ref(null);
+const selectedQuantity = ref(1);
+const additions = ref([]);
+
+const computedTotalPrice = computed(() => {
+    if (!selectedProduct.value) return 0;
+    
+    let base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
+    
+    let addonsTotal = 0;
+    additions.value.forEach(add => {
+        if (add.selection !== null) {
+            let mult = add.selection === 'Extra' ? 2 : 1;
+            addonsTotal += parseInt(add.price) * mult * selectedQuantity.value;
+        }
+    });
+    
+    return base + addonsTotal;
+});
+
+const defaultAdditions = [
+    { name: 'Gula', price: 0 },
+    { name: 'Es Batu', price: 0 },
+    { name: 'Whipped Cream', price: 5000 },
+    { name: 'Espresso Shot', price: 7000 }
+];
+
+const openSelectionModal = (product) => {
+    selectedProduct.value = product;
+    selectedQuantity.value = 1;
+    
+    const sourceAdditions = (product.additions && product.additions.length > 0) 
+        ? product.additions 
+        : defaultAdditions;
+        
+    additions.value = sourceAdditions.map(a => ({ ...a, selection: null }));
+    isModalOpen.value = true;
+};
+
+const closeSelectionModal = () => {
+    isModalOpen.value = false;
+    selectedProduct.value = null;
+};
+
+const increaseQuantity = () => {
+    selectedQuantity.value++;
+};
+
+const decreaseQuantity = () => {
+    if (selectedQuantity.value > 1) {
+        selectedQuantity.value--;
+    }
+};
+
+const addSelectionToCart = () => {
+    if (!selectedProduct.value) return;
+    const product = selectedProduct.value;
+    
+    const selectedAddons = additions.value.filter(a => a.selection !== null);
+    
+    let addonsTotal = 0;
+    selectedAddons.forEach(add => {
+        let mult = add.selection === 'Extra' ? 2 : 1;
+        addonsTotal += parseInt(add.price) * mult;
+    });
+
+    const unitPrice = parseInt(product.price) + addonsTotal;
+
+    const notesStr = selectedAddons.length > 0 ? '+ ' + selectedAddons.map(a => {
+        let mult = a.selection === 'Extra' ? 2 : 1;
+        let priceText = a.price > 0 ? ` (+Rp ${(parseInt(a.price) * mult).toLocaleString('id-ID')})` : '';
+        return `${a.name} (${a.selection})${priceText}`;
+    }).join(', ') : null;
+
+    const existing = cart.value.find((item) => item.id === product.id && item.notes === notesStr);
+    if (existing) {
+        existing.quantity += selectedQuantity.value;
+    } else {
+        cart.value.push({
+            id: product.id,
+            name: product.name,
+            basePrice: parseInt(product.price),
+            addonPrice: addonsTotal,
+            price: unitPrice,
+            image: product.image,
+            quantity: selectedQuantity.value,
+            notes: notesStr
+        });
+    }
+    localStorage.setItem('zunoi_preview_cart', JSON.stringify(cart.value));
+    
+    // Tampilkan animasi +1 tanpa menutup modal
+    showAddAnimation.value = true;
+    setTimeout(() => {
+        showAddAnimation.value = false;
+    }, 600);
+};
 </script>
 
 <template>
@@ -179,9 +279,16 @@ const showPreviewAlert = () => {
                 <div
                     v-for="product in filteredProducts"
                     :key="product.id"
-                    class="flex overflow-hidden rounded-2xl border border-[#D4A373]/10 bg-white shadow-sm transition-all duration-300 hover:border-[#D4A373]/30"
-                    :class="{ 'opacity-50 grayscale': !product.is_available }"
+                    class="flex overflow-hidden rounded-2xl bg-white transition-all duration-300 relative"
+                    :class="[
+                        !product.is_available ? 'opacity-50 grayscale' : '',
+                        getCartItemQuantity(product.id) > 0 
+                            ? 'border-none shadow-[0_8px_25px_rgba(59,35,20,0.15)] scale-[1.02] z-10' 
+                            : 'border border-[#D4A373]/10 shadow-sm hover:border-[#D4A373]/30 hover:shadow-md'
+                    ]"
                 >
+                    <!-- Animated Gradient Border for Selected Items -->
+                    <div v-if="getCartItemQuantity(product.id) > 0" class="absolute inset-0 pointer-events-none p-[2px] rounded-2xl animated-gradient-border z-20"></div>
                     <img
                         :src="
                             product.image ||
@@ -215,55 +322,17 @@ const showPreviewAlert = () => {
                                 v-if="product.is_available"
                                 class="relative flex h-8 items-center justify-end"
                             >
-                                <Transition name="expand-bounce" mode="out-in">
-                                    <!-- If not in cart, show single (+) Add button -->
-                                    <button
-                                        v-if="getCartItemQuantity(product.id) === 0"
-                                        @click="addToCart(product)"
-                                        class="add-btn flex h-8 w-8 items-center justify-center rounded-xl shadow-sm"
-                                        key="add"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="3.2"
-                                            stroke="currentColor"
-                                            class="h-4.5 w-4.5 text-[#3B2314]"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M12 4.5v15m7.5-7.5h-15"
-                                            />
-                                        </svg>
-                                    </button>
-
-                                    <!-- If in cart, show [-] Qty [+] selector -->
-                                    <div
-                                        v-else
-                                        class="qty-selector flex items-center gap-2.5 rounded-xl px-2 py-1 shadow-sm"
-                                        key="qty"
-                                    >
-                                        <button
-                                            @click="removeFromCart(product)"
-                                            class="flex h-6 w-6 items-center justify-center rounded-lg text-base font-black text-[#FAEDCD] transition active:scale-75"
-                                        >
-                                            -
-                                        </button>
-                                        <span
-                                            class="min-w-[14px] text-center text-xs font-black text-[#FAEDCD]"
-                                        >
-                                            {{ getCartItemQuantity(product.id) }}
-                                        </span>
-                                        <button
-                                            @click="addToCart(product)"
-                                            class="flex h-6 w-6 items-center justify-center rounded-lg text-base font-black text-[#FAEDCD] transition active:scale-75"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                </Transition>
+                                <!-- 'Pilih' / 'Pilih Lagi' Button -->
+                                <button
+                                    @click.stop="openSelectionModal(product)"
+                                    :disabled="!product.is_available"
+                                    class="rounded-xl px-4 py-1.5 text-xs font-black transition-all duration-300"
+                                    :class="getCartItemQuantity(product.id) > 0
+                                        ? 'bg-[#3B2314] text-white shadow-md hover:bg-[#2A180E] active:scale-95'
+                                        : 'bg-white text-[#3B2314] border border-[#D4A373]/30 hover:bg-[#D4A373]/10 hover:border-[#D4A373]/50 shadow-sm active:scale-95'"
+                                >
+                                    {{ getCartItemQuantity(product.id) > 0 ? 'Pilih Lagi' : 'Pilih' }}
+                                </button>
                             </div>
                             <span
                                 v-else
@@ -315,6 +384,93 @@ const showPreviewAlert = () => {
                 </span>
             </Link>
         </div>
+
+        <!-- Selection Modal with smooth slide animations -->
+        <Transition name="modal-slide">
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-end justify-center">
+                <!-- Backdrop overlay -->
+                <div @click="closeSelectionModal" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+                
+                <!-- Modal content container (Minimalist Glassmorphism) -->
+                <div class="relative w-full h-[85vh] max-h-[900px] overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 backdrop-blur-2xl text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col">
+                    
+                    <!-- Animated Gradient Border -->
+                    <div class="absolute -top-[2px] -left-[2px] -right-[2px] bottom-0 pointer-events-none pt-[6px] rounded-t-[2.5rem] animated-gradient-border z-50"></div>
+                    
+                    <!-- Content area -->
+                    <div class="flex-1 overflow-y-auto">
+                        <!-- Top Section -->
+                        <div class="p-8 pb-4">
+                            <!-- Back Button -->
+                            <button type="button" @click="closeSelectionModal" class="flex h-8 px-3.5 gap-1.5 items-center justify-center rounded-[10px] bg-white/50 border border-white/40 shadow-sm text-[#3B2314] hover:bg-white/70 active:scale-75 transition-all duration-300 ease-out backdrop-blur-md mb-4">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                <span class="text-[13px] font-extrabold tracking-wide">Back</span>
+                            </button>
+                            
+                            <!-- Item Info -->
+                            <div class="flex gap-5 items-start">
+                                <img :src="selectedProduct?.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'" class="h-24 w-24 shrink-0 rounded-2xl object-cover border border-[#3B2314]/10 shadow-sm" />
+                                <div class="flex flex-col pt-1">
+                                    <h4 class="font-extrabold text-2xl text-[#3B2314] leading-tight">{{ selectedProduct?.name }}</h4>
+                                    <p class="text-sm text-[#3B2314]/70 line-clamp-3 mt-1.5 leading-snug">{{ selectedProduct?.description }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Price Block (No Card) -->
+                            <div class="mt-4 flex items-center justify-between px-1">
+                                <span class="text-sm font-bold text-[#3B2314]/70">Harga</span>
+                                <p class="text-lg font-black text-[#3B2314]">Rp {{ parseInt(selectedProduct?.price).toLocaleString('id-ID') }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Add-ons Section -->
+                        <div v-if="additions && additions.length > 0" class="px-8 pb-8 pt-4 space-y-3">
+                            <h5 class="text-sm font-extrabold tracking-wide text-[#3B2314]">Pilih Add-on</h5>
+                            <div class="space-y-2.5">
+                                <div v-for="addition in additions" :key="addition.name" class="flex flex-col bg-white/30 px-4 py-3 rounded-2xl border border-white/40 shadow-sm backdrop-blur-md transition hover:bg-white/50">
+                                    <div class="flex items-center justify-between mb-2.5">
+                                        <span class="text-base font-bold text-[#3B2314]">{{ addition.name }}</span>
+                                        <span v-if="addition.price > 0" class="text-[11px] font-bold text-[#3B2314]/60">
+                                            +Rp {{ addition.selection === 'Extra' ? (addition.price * 2).toLocaleString('id-ID') : addition.price.toLocaleString('id-ID') }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-1.5 bg-white/40 p-1 rounded-xl w-full">
+                                        <button v-for="option in ['Less', 'Normal', 'Extra']" :key="option"
+                                            @click="addition.selection = addition.selection === option ? null : option"
+                                            class="flex-1 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-300"
+                                            :class="addition.selection === option 
+                                                ? 'bg-[#3B2314] text-white shadow-md scale-[1.02]' 
+                                                : 'text-[#3B2314]/60 hover:bg-white/50 active:scale-95'">
+                                            {{ option }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Action Bar -->
+                    <div class="w-full flex items-center justify-between border-t border-[#3B2314]/10 px-6 py-4 bg-[#F9EFE3]/90 backdrop-blur-2xl shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+                        <div class="flex flex-col items-start">
+                            <span class="text-[11px] font-bold text-[#3B2314]/60 uppercase tracking-widest leading-none mb-1">Total</span>
+                            <span class="text-xl font-black text-[#3B2314] leading-none">Rp {{ computedTotalPrice.toLocaleString('id-ID') }}</span>
+                        </div>
+                        <div class="flex items-center gap-4 relative">
+                            <!-- Animasi +1 -->
+                            <Transition name="fade-up-plus">
+                                <span v-if="showAddAnimation" class="absolute -left-10 top-1/2 -translate-y-1/2 text-[#3B2314] font-extrabold text-xl z-50 drop-shadow-sm">+1</span>
+                            </Transition>
+                            <button type="button" @click="addSelectionToCart" class="bg-[#3B2314] text-[#FAEDCD] px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-[#2A180E] active:scale-95 transition text-[13px] leading-tight text-center">
+                                Masukkan Ke<br>Keranjang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -568,5 +724,47 @@ const showPreviewAlert = () => {
         transform: scale(0.8);
         opacity: 0;
     }
+}
+
+/* Modal Slide up/down transition */
+.modal-slide-enter-active,
+.modal-slide-leave-active {
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.modal-slide-enter-active .relative,
+.modal-slide-leave-active .relative {
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+}
+
+.modal-slide-enter-from {
+    opacity: 0;
+}
+.modal-slide-enter-from .relative {
+    transform: translateY(100vh);
+    opacity: 0;
+}
+
+.modal-slide-leave-to {
+    opacity: 0;
+}
+.modal-slide-leave-to .relative {
+    transform: translateY(100vh);
+    opacity: 0;
+}
+
+/* Animated Glassmorphism Gradient Border */
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-gradient-border {
+    background: linear-gradient(60deg, #3B2314, #D4A373, #5c3a21, #FAEDCD);
+    background-size: 300% 300%;
+    animation: gradientMove 4s ease infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
 }
 </style>

@@ -66,6 +66,125 @@ const handleFileChange = (e) => {
     form.value.payment_proof = e.target.files[0];
 };
 
+const submitOrder = () => {
+    form.post('/order/store-cashier', {
+        onSuccess: () => {
+            localStorage.removeItem('zunoi_preview_cart');
+        },
+    });
+};
+
+const removeCartItem = (index) => {
+    form.value.cart_items.splice(index, 1);
+    localStorage.setItem('zunoi_preview_cart', JSON.stringify(form.value.cart_items));
+};
+
+const defaultAdditions = [
+    { name: 'Gula', price: 0 },
+    { name: 'Es Batu', price: 0 },
+    { name: 'Whipped Cream', price: 5000 },
+    { name: 'Espresso Shot', price: 7000 }
+];
+
+const getAdditionsForCartItem = (item) => {
+    if (item.additions && item.additions.length > 0) {
+        return JSON.parse(JSON.stringify(item.additions));
+    }
+    // Fallback parsing from notes
+    const parsedAdditions = defaultAdditions.map(a => {
+        let selection = null;
+        if (item.notes) {
+            // Check if notes contains addition name followed by selection
+            const regex = new RegExp(a.name + '\\s*\\((Less|Normal|Extra)\\)', 'i');
+            const match = item.notes.match(regex);
+            if (match) {
+                selection = match[1];
+                selection = selection.charAt(0).toUpperCase() + selection.slice(1);
+            }
+        }
+        return { ...a, selection };
+    });
+    return parsedAdditions;
+};
+
+const editingIndex = ref(-1);
+const isModalOpen = ref(false);
+const selectedProduct = ref(null);
+const selectedQuantity = ref(1);
+const additions = ref([]);
+
+const computedTotalPrice = computed(() => {
+    if (!selectedProduct.value) return 0;
+    
+    let base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
+    
+    let addonsTotal = 0;
+    additions.value.forEach(add => {
+        if (add.selection !== null) {
+            let mult = add.selection === 'Extra' ? 2 : 1;
+            addonsTotal += parseInt(add.price) * mult * selectedQuantity.value;
+        }
+    });
+    
+    return base + addonsTotal;
+});
+
+const editCartItem = (index) => {
+    const item = form.value.cart_items[index];
+    editingIndex.value = index;
+    selectedProduct.value = {
+        id: item.id,
+        name: item.name,
+        price: item.basePrice || item.price,
+        image: item.image,
+        description: ''
+    };
+    selectedQuantity.value = item.quantity;
+    additions.value = getAdditionsForCartItem(item);
+    isModalOpen.value = true;
+};
+
+const closeSelectionModal = () => {
+    isModalOpen.value = false;
+    selectedProduct.value = null;
+    editingIndex.value = -1;
+};
+
+const saveCartItem = () => {
+    if (editingIndex.value === -1) return;
+    
+    const selectedAddons = additions.value.filter(a => a.selection !== null);
+    
+    let addonsTotal = 0;
+    selectedAddons.forEach(add => {
+        let mult = add.selection === 'Extra' ? 2 : 1;
+        addonsTotal += parseInt(add.price) * mult;
+    });
+
+    const basePrice = selectedProduct.value.price;
+    const unitPrice = basePrice + addonsTotal;
+
+    const notesStr = selectedAddons.length > 0 ? '+ ' + selectedAddons.map(a => {
+        let mult = a.selection === 'Extra' ? 2 : 1;
+        let priceText = a.price > 0 ? ` (+Rp ${(parseInt(a.price) * mult).toLocaleString('id-ID')})` : '';
+        return `${a.name} (${a.selection})${priceText}`;
+    }).join(', ') : null;
+
+    // Update the item in cart_items
+    const item = form.value.cart_items[editingIndex.value];
+    item.quantity = selectedQuantity.value;
+    item.notes = notesStr;
+    item.price = unitPrice;
+    item.basePrice = basePrice;
+    item.addonPrice = addonsTotal;
+    item.additions = JSON.parse(JSON.stringify(additions.value));
+
+    // Save to localStorage
+    localStorage.setItem('zunoi_preview_cart', JSON.stringify(form.value.cart_items));
+    
+    closeSelectionModal();
+};
+
 const submitPreviewOrder = () => {
     triggerToast('Mode Preview: Pesanan berhasil dibuat! Anda akan dialihkan ke rincian invoice.', 'success');
     
@@ -148,9 +267,9 @@ const submitPreviewOrder = () => {
             >
                 <!-- Left Column: Order Type, Customer Details, Order Details, Notes -->
                 <div class="space-y-4">
-                    <!-- Order Type Toggle -->
+                    <!-- Customer Details -->
                     <div
-                        class="space-y-3 rounded-2xl border border-[#D4A373]/10 bg-white p-4 shadow-sm"
+                        class="space-y-4 rounded-2xl border border-[#D4A373]/40 bg-white p-4 shadow-sm"
                     >
                         <h2
                             class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
@@ -166,7 +285,64 @@ const submitPreviewOrder = () => {
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75 2.25 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.09.53-.139 1.078-.139 1.638 0 1.22.496 2.323 1.3 3.123m0 0L9 12"
+                                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                                />
+                            </svg>
+                            Informasi Pemesan (Demo)
+                        </h2>
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-600"
+                                >Nama Lengkap</label
+                            >
+                            <input
+                                v-model="form.customer_name"
+                                type="text"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-600"
+                                >Nomor WhatsApp Aktif</label
+                            >
+                            <input
+                                v-model="form.customer_phone"
+                                type="text"
+                                placeholder="Contoh: 08123456789"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                required
+                            />
+                            <p
+                                class="mt-1.5 text-[10px] leading-normal font-medium text-gray-500 italic"
+                            >
+                                *Invoice digital akan dikirimkan ke nomor
+                                whatsapp yang diinput, mohon untuk menginput
+                                nomor whatsapp aktif anda.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Order Type Toggle -->
+                    <div
+                        class="space-y-3 rounded-2xl border border-[#D4A373]/40 bg-white p-4 shadow-sm"
+                    >
+                        <h2
+                            class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-4 w-4 text-[#D4A373]"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.09.53-.139 1.078-.139 1.638 0 1.22.496 2.323 1.3 3.123m0 0L9 12"
                                 />
                             </svg>
                             Pilih Metode Pemesanan Anda
@@ -203,66 +379,9 @@ const submitPreviewOrder = () => {
                         </div>
                     </div>
 
-                    <!-- Customer Details -->
-                    <div
-                        class="space-y-4 rounded-2xl border border-[#D4A373]/10 bg-white p-4 shadow-sm"
-                    >
-                        <h2
-                            class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2.5"
-                                stroke="currentColor"
-                                class="h-4 w-4 text-[#D4A373]"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                                />
-                            </svg>
-                            Informasi Pemesan (Demo)
-                        </h2>
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-bold text-gray-600"
-                                >Nama Lengkap</label
-                            >
-                            <input
-                                v-model="form.customer_name"
-                                type="text"
-                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-bold text-gray-600"
-                                >Nomor WhatsApp Aktif</label
-                            >
-                            <input
-                                v-model="form.customer_phone"
-                                type="text"
-                                placeholder="Contoh: 08123456789"
-                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
-                                required
-                            />
-                            <p
-                                class="mt-1.5 text-[10px] leading-normal font-medium text-gray-500 italic"
-                            >
-                                *Invoice digital akan dikirimkan ke nomor
-                                whatsapp yang diinput, mohon untuk menginput
-                                nomor whatsapp aktif anda.
-                            </p>
-                        </div>
-                    </div>
-
                     <!-- Detail Pesanan -->
                     <div
-                        class="space-y-3 rounded-2xl border border-[#D4A373]/10 bg-white p-4 shadow-sm"
+                        class="space-y-3 rounded-2xl border border-[#D4A373]/40 bg-white p-4 shadow-sm"
                     >
                         <h2
                             class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
@@ -286,49 +405,75 @@ const submitPreviewOrder = () => {
 
                         <div
                             v-if="form.cart_items.length > 0"
-                            class="max-h-[220px] space-y-3 overflow-y-auto pr-1"
+                            class="space-y-3"
                         >
                             <div
-                                v-for="item in form.cart_items"
-                                :key="item.id"
-                                class="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 p-2"
+                                v-for="(item, index) in form.cart_items"
+                                :key="item.id + index"
+                                class="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50 p-3"
                             >
-                                <div class="flex items-center gap-2">
+                                <!-- Top Section: Image, Name, Price, and Actions -->
+                                <div class="flex items-start gap-3 w-full">
                                     <img
                                         :src="
                                             item.image ||
                                             'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'
                                         "
                                         alt="Product"
-                                        class="h-10 w-10 rounded-lg border object-cover"
+                                        class="h-12 w-12 rounded-lg border object-cover shrink-0"
                                     />
-                                    <div class="text-left">
+                                    <div class="text-left flex-1 flex flex-col justify-center">
                                         <p
                                             class="text-xs font-bold text-gray-800"
                                         >
                                             {{ item.name }}
                                         </p>
-                                        <p
-                                            class="text-[10px] font-semibold text-gray-400"
+                                        <div class="flex flex-col mt-0.5">
+                                            <p
+                                                class="text-[10px] font-semibold text-gray-400"
+                                            >
+                                                {{ item.quantity }}x &bull; Rp
+                                                {{
+                                                    (item.basePrice || item.price).toLocaleString(
+                                                        'id-ID',
+                                                    )
+                                                }}
+                                            </p>
+                                            <p class="text-[11px] font-extrabold text-[#3B2314] mt-0.5">
+                                                = Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <!-- Action Buttons -->
+                                    <div class="flex gap-1.5 shrink-0 ml-2 pt-0.5">
+                                        <button
+                                            @click="editCartItem(index)"
+                                            type="button"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-[#FAEDCD] hover:text-[#D4A373] hover:border-[#D4A373] transition active:scale-95 shadow-sm"
                                         >
-                                            {{ item.quantity }}x &bull; Rp
-                                            {{
-                                                item.price.toLocaleString(
-                                                    'id-ID',
-                                                )
-                                            }}
-                                        </p>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            @click="removeCartItem(index)"
+                                            type="button"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition active:scale-95 shadow-sm"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
-                                <span
-                                    class="text-xs font-extrabold text-[#3B2314]"
-                                    >Rp
-                                    {{
-                                        (
-                                            item.price * item.quantity
-                                        ).toLocaleString('id-ID')
-                                    }}</span
-                                >
+                                <!-- Bottom Section: Full Width Addons -->
+                                <div v-if="item.notes" class="w-full pt-2 border-t border-gray-200/60 mt-0.5">
+                                    <p
+                                        class="text-[11px] font-black text-[#D4A373] leading-snug"
+                                    >
+                                        {{ item.notes }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <div
@@ -384,7 +529,7 @@ const submitPreviewOrder = () => {
 
                     <!-- Catatan Pesanan -->
                     <div
-                        class="space-y-3 rounded-2xl border border-[#D4A373]/10 bg-white p-4 shadow-sm"
+                        class="space-y-3 rounded-2xl border border-[#D4A373]/40 bg-white p-4 shadow-sm"
                     >
                         <h2
                             class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
@@ -420,7 +565,7 @@ const submitPreviewOrder = () => {
                 <div class="space-y-4">
                     <!-- Payment Method -->
                     <div
-                        class="space-y-3 rounded-2xl border border-[#D4A373]/10 bg-white p-4 shadow-sm"
+                        class="space-y-3 rounded-2xl border border-[#D4A373]/40 bg-white p-4 shadow-sm"
                     >
                         <h2
                             class="mb-1.5 flex items-center gap-1.5 text-sm font-extrabold text-[#3B2314]"
@@ -453,7 +598,7 @@ const submitPreviewOrder = () => {
                                 type="radio"
                                 v-model="form.payment_method"
                                 value="qris_tokopay"
-                                class="text-[#3B2314] focus:ring-[#3B2314]"
+                                class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
                             />
                             <span class="font-extrabold text-[#3B2314]"
                                 >QRIS Otomatis (Tokopay)</span
@@ -472,7 +617,7 @@ const submitPreviewOrder = () => {
                                     type="radio"
                                     v-model="form.payment_method"
                                     value="qris_manual"
-                                    class="text-[#3B2314] focus:ring-[#3B2314]"
+                                    class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
                                 />
                                 <span class="font-extrabold text-[#3B2314]"
                                     >QRIS Toko (Manual Verifikasi)</span
@@ -555,7 +700,7 @@ const submitPreviewOrder = () => {
                                 type="radio"
                                 v-model="form.payment_method"
                                 value="cashier"
-                                class="text-[#3B2314] focus:ring-[#3B2314]"
+                                class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
                             />
                             <span class="font-extrabold text-[#3B2314]"
                                 >Bayar Langsung di Kasir</span
@@ -563,18 +708,35 @@ const submitPreviewOrder = () => {
                         </label>
                     </div>
 
-                    <button
-                        type="submit"
-                        class="w-full rounded-xl bg-[#D4A373] py-4 text-xs font-black tracking-wider text-[#3B2314] uppercase shadow-md transition-all hover:scale-[1.02] active:scale-95"
-                        :disabled="form.cart_items.length === 0"
-                        :class="{
-                            'cursor-not-allowed opacity-50':
-                                form.cart_items.length === 0,
-                        }"
+                    <!-- Animated Border Wrapper -->
+                    <div
+                        class="relative p-[3px] rounded-2xl overflow-hidden shadow-[0_5px_20px_rgba(21,11,5,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-95"
+                        :class="form.cart_items.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
                     >
-                        Bayar Sekarang &bull; Rp
-                        {{ finalTotal.toLocaleString('id-ID') }}
-                    </button>
+                        <!-- Rotating/Abstract Gradient Border -->
+                        <div class="absolute inset-0 animated-border opacity-50"></div>
+                        
+                        <!-- Main Button -->
+                        <button
+                            type="submit"
+                            class="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#25150B] p-3.5 pl-5 shine-effect"
+                            :disabled="form.cart_items.length === 0"
+                        >
+                            <!-- Dark Brown Bottom-Right Radial Gradient -->
+                            <div class="absolute -bottom-10 -right-10 w-24 h-24 rounded-full bg-[#150B05]/95 blur-md pointer-events-none"></div>
+
+                            <!-- Content -->
+                            <div class="relative z-10 flex items-center gap-2.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#FAEDCD]">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                                </svg>
+                                <span class="text-xs font-black tracking-wider text-[#FAEDCD] uppercase">Bayar Sekarang</span>
+                            </div>
+                            <div class="relative z-10 flex items-center justify-center rounded-xl bg-[#D4A373] px-4 py-2 text-xs font-black text-[#3B2314]">
+                                {{ form.cart_items.reduce((total, item) => total + item.quantity, 0) }} Item
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </form>
         </main>
@@ -672,6 +834,88 @@ const submitPreviewOrder = () => {
                 </div>
             </div>
         </Transition>
+
+        <!-- Selection Modal with smooth slide animations for Edit -->
+        <Transition name="modal-slide">
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-end justify-center">
+                <!-- Backdrop overlay -->
+                <div @click="closeSelectionModal" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+                
+                <!-- Modal content container (Minimalist Glassmorphism) -->
+                <div class="relative w-full h-[85vh] max-h-[900px] overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 backdrop-blur-2xl text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col">
+                    
+                    <!-- Animated Gradient Border -->
+                    <div class="absolute -top-[2px] -left-[2px] -right-[2px] bottom-0 pointer-events-none pt-[6px] rounded-t-[2.5rem] animated-gradient-border z-50"></div>
+                    
+                    <!-- Content area -->
+                    <div class="flex-1 overflow-y-auto">
+                        <!-- Top Section -->
+                        <div class="p-8 pb-4">
+                            <!-- Back Button -->
+                            <button type="button" @click="closeSelectionModal" class="flex h-8 px-3.5 gap-1.5 items-center justify-center rounded-[10px] bg-white/50 border border-white/40 shadow-sm text-[#3B2314] hover:bg-white/70 active:scale-75 transition-all duration-300 ease-out backdrop-blur-md mb-4">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                <span class="text-[13px] font-extrabold tracking-wide">Back</span>
+                            </button>
+                            
+                            <!-- Item Info -->
+                            <div class="flex gap-5 items-start">
+                                <img :src="selectedProduct?.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'" class="h-24 w-24 shrink-0 rounded-2xl object-cover border border-[#3B2314]/10 shadow-sm" />
+                                <div class="flex flex-col pt-1">
+                                    <h4 class="font-extrabold text-2xl text-[#3B2314] leading-tight">{{ selectedProduct?.name }}</h4>
+                                </div>
+                            </div>
+                            
+                            <!-- Price Block (No Card) -->
+                            <div class="mt-4 flex items-center justify-between px-1">
+                                <span class="text-sm font-bold text-[#3B2314]/70">Harga</span>
+                                <p class="text-lg font-black text-[#3B2314]">Rp {{ parseInt(selectedProduct?.price).toLocaleString('id-ID') }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Add-ons Section -->
+                        <div v-if="additions && additions.length > 0" class="px-8 pb-8 pt-4 space-y-3">
+                            <h5 class="text-sm font-extrabold tracking-wide text-[#3B2314]">Pilih Add-on</h5>
+                            <div class="space-y-2.5">
+                                <div v-for="addition in additions" :key="addition.name" class="flex flex-col bg-white/30 px-4 py-3 rounded-2xl border border-white/40 shadow-sm backdrop-blur-md transition hover:bg-white/50">
+                                    <div class="flex items-center justify-between mb-2.5">
+                                        <span class="text-base font-bold text-[#3B2314]">{{ addition.name }}</span>
+                                        <span v-if="addition.price > 0" class="text-[11px] font-bold text-[#3B2314]/60">
+                                            +Rp {{ addition.selection === 'Extra' ? (addition.price * 2).toLocaleString('id-ID') : addition.price.toLocaleString('id-ID') }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-1.5 bg-white/40 p-1 rounded-xl w-full">
+                                        <button v-for="option in ['Less', 'Normal', 'Extra']" :key="option"
+                                            @click="addition.selection = addition.selection === option ? null : option"
+                                            class="flex-1 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-300"
+                                            :class="addition.selection === option 
+                                                ? 'bg-[#3B2314] text-white shadow-md scale-[1.02]' 
+                                                : 'text-[#3B2314]/60 hover:bg-white/50 active:scale-95'">
+                                            {{ option }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Action Bar -->
+                    <div class="w-full flex items-center justify-between border-t border-[#3B2314]/10 px-6 py-4 bg-[#F9EFE3]/90 backdrop-blur-2xl shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+                        <div class="flex flex-col items-start">
+                            <span class="text-[11px] font-bold text-[#3B2314]/60 uppercase tracking-widest leading-none mb-1">Total</span>
+                            <span class="text-xl font-black text-[#3B2314] leading-none">Rp {{ computedTotalPrice.toLocaleString('id-ID') }}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button type="button" @click="saveCartItem" class="bg-[#3B2314] text-[#FAEDCD] px-8 py-3 rounded-xl font-bold shadow-md hover:bg-[#2A180E] active:scale-95 transition text-[14px] leading-tight text-center">
+                                Simpan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -758,5 +1002,82 @@ const submitPreviewOrder = () => {
     100% {
         background-position: 0% 50%;
     }
+}
+
+@keyframes borderGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes shine {
+    0% { transform: translateX(-150%) skewX(-25deg); }
+    50% { transform: translateX(150%) skewX(-25deg); }
+    100% { transform: translateX(150%) skewX(-25deg); }
+}
+
+.animated-border {
+    background: linear-gradient(270deg, #3B2314, #1C0F07, #25150B, #523522);
+    background-size: 400% 400%;
+    animation: borderGradient 6s ease infinite;
+}
+
+.shine-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+    transform: translateX(-150%) skewX(-25deg);
+    animation: shine 4.5s infinite ease-in-out;
+    pointer-events: none;
+}
+
+/* Modal Slide up/down transition */
+.modal-slide-enter-active,
+.modal-slide-leave-active {
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.modal-slide-enter-active .relative,
+.modal-slide-leave-active .relative {
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+}
+
+.modal-slide-enter-from {
+    opacity: 0;
+}
+.modal-slide-enter-from .relative {
+    transform: translateY(100vh);
+    opacity: 0;
+}
+
+.modal-slide-leave-to {
+    opacity: 0;
+}
+.modal-slide-leave-to .relative {
+    transform: translateY(100vh);
+    opacity: 0;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-gradient-border {
+    background: linear-gradient(60deg, #3B2314, #D4A373, #5c3a21, #FAEDCD);
+    background-size: 300% 300%;
+    animation: gradientMove 4s ease infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
 }
 </style>

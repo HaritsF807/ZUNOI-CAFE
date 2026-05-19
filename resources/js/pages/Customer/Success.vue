@@ -177,15 +177,21 @@ onUnmounted(() => {
                                 <span class="font-black text-[#3B2314]">{{
                                     item.product?.name || 'Menu Kopi'
                                 }}</span>
-                                <span
-                                    class="mt-0.5 block text-[9px] font-bold text-gray-400"
+                                <p
+                                    class="text-[10px] font-semibold text-gray-400"
                                 >
-                                    {{ item.quantity }} x Rp
+                                    {{ item.quantity }}x &bull; Rp
                                     {{
-                                        parseInt(
-                                            item.price_at_sale,
-                                        ).toLocaleString('id-ID')
+                                        (item.basePrice || item.price).toLocaleString(
+                                            'id-ID',
+                                        )
                                     }}
+                                </p>
+                                <span
+                                    v-if="item.notes"
+                                    class="mt-1 block text-[9px] font-black text-[#D4A373]"
+                                >
+                                    {{ item.notes }}
                                 </span>
                             </div>
                             <span class="font-black text-[#3B2314]">
