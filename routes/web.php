@@ -19,9 +19,11 @@ Route::get('/scan-required', function () {
 
 Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
-        $products = \App\Models\Product::all();
+        $products = \App\Models\Product::with('category')->get();
+        $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         return inertia('Customer/MenuList', [
-            'products' => $products
+            'products' => $products,
+            'categories' => $categories
         ]);
     })->name('order.index');
     

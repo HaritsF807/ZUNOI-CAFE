@@ -44,33 +44,34 @@ const submitOrder = () => {
 <template>
     <Head title="Checkout Zunoi Caffe" />
 
-    <!-- Outer Desktop Background (Cozy Coffee Shop) -->
-    <div class="min-h-screen bg-[#3B2314]/5 md:bg-[#1E100A] md:bg-[url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1600')] md:bg-cover md:bg-center md:bg-blend-multiply flex items-center justify-center p-0 md:p-6 font-sans">
+    <!-- Main Customer Area -->
+    <div class="min-h-screen bg-[#FAEDCD] font-sans flex flex-col relative">
         
-        <!-- Smartphone Mockup Container -->
-        <div class="w-full h-screen md:h-[88vh] md:max-h-[850px] md:max-w-md md:rounded-[44px] md:shadow-[0_30px_70px_rgba(0,0,0,0.8)] bg-[#FAEDCD] overflow-hidden md:border-[10px] md:border-[#3B2314] relative flex flex-col">
-            
-            <!-- Sticky Header -->
-            <header class="bg-[#3B2314] text-[#FAEDCD] p-5 flex items-center gap-4 shadow-md rounded-b-[28px] sticky top-0 z-40">
-                <Link :href="'/order'" class="bg-[#FAEDCD] text-[#3B2314] p-2 rounded-full hover:scale-105 active:scale-95 transition transform">
+        <!-- Sticky Header -->
+        <header class="bg-[#3B2314] text-[#FAEDCD] py-5 shadow-md sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-4">
+                <Link :href="'/order'" class="bg-[#FAEDCD] text-[#3B2314] p-2 rounded-lg hover:scale-105 active:scale-95 transition transform shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                 </Link>
-                <h1 class="text-lg font-black tracking-wide">Checkout Pesanan</h1>
-            </header>
+                <h1 class="text-xl font-black tracking-wide">Checkout Pesanan</h1>
+            </div>
+        </header>
 
-            <!-- Scrollable Form Area -->
-            <main class="flex-1 overflow-y-auto p-6 scrollbar-none">
-                <form @submit.prevent="submitOrder" class="space-y-6">
+        <!-- Scrollable Form Area -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+            <form @submit.prevent="submitOrder" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
+                <!-- Left Column: Order Type & Customer Details -->
+                <div class="space-y-6">
                     <!-- Order Type Toggle -->
-                    <div class="bg-white p-1 rounded-2xl flex shadow-sm border border-[#D4A373]/10">
-                        <button type="button" @click="form.order_type = 'dine_in'" :class="{'bg-[#3B2314] text-white': form.order_type === 'dine_in', 'text-gray-500': form.order_type !== 'dine_in'}" class="flex-1 py-2.5 rounded-xl font-bold text-xs transition-all duration-300">Dine In</button>
-                        <button type="button" @click="form.order_type = 'takeaway'" :class="{'bg-[#3B2314] text-white': form.order_type === 'takeaway', 'text-gray-500': form.order_type !== 'takeaway'}" class="flex-1 py-2.5 rounded-xl font-bold text-xs transition-all duration-300">Takeaway</button>
+                    <div class="bg-white p-1 rounded-xl flex shadow-sm border border-[#D4A373]/10">
+                        <button type="button" @click="form.order_type = 'dine_in'" :class="{'bg-[#3B2314] text-white': form.order_type === 'dine_in', 'text-gray-500': form.order_type !== 'dine_in'}" class="flex-1 py-2.5 rounded-lg font-bold text-xs transition-all duration-300">Dine In</button>
+                        <button type="button" @click="form.order_type = 'takeaway'" :class="{'bg-[#3B2314] text-white': form.order_type === 'takeaway', 'text-gray-500': form.order_type !== 'takeaway'}" class="flex-1 py-2.5 rounded-lg font-bold text-xs transition-all duration-300">Takeaway</button>
                     </div>
 
                     <!-- Customer Details -->
-                    <div class="bg-white p-5 rounded-[24px] shadow-sm space-y-4 border border-[#D4A373]/10">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border border-[#D4A373]/10">
                         <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
@@ -84,11 +85,17 @@ const submitOrder = () => {
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Nomor WhatsApp Aktif</label>
                             <input v-model="form.customer_phone" type="text" placeholder="Contoh: 08123456789" class="w-full text-xs rounded-xl border-gray-200 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] px-3 py-2" required>
+                            <p class="text-[10px] text-gray-500 mt-1.5 italic font-medium leading-normal">
+                                *Invoice digital akan dikirimkan ke nomor whatsapp yang diinput, mohon untuk menginput nomor whatsapp aktif anda.
+                            </p>
                         </div>
                     </div>
+                </div>
 
+                <!-- Right Column: Payment Method & Submit -->
+                <div class="space-y-6">
                     <!-- Payment Method -->
-                    <div class="bg-white p-5 rounded-[24px] shadow-sm space-y-3 border border-[#D4A373]/10">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-[#D4A373]/10">
                         <h2 class="font-extrabold text-[#3B2314] border-b pb-2 text-sm flex items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#D4A373]">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
@@ -132,24 +139,24 @@ const submitOrder = () => {
                         </label>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#D4A373] text-[#3B2314] font-black py-4 rounded-2xl shadow-md hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-wider mt-8" :disabled="form.cart_items.length === 0" :class="{'opacity-50 cursor-not-allowed': form.cart_items.length === 0}">
+                    <button type="submit" class="w-full bg-[#D4A373] text-[#3B2314] font-black py-4 rounded-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-wider" :disabled="form.cart_items.length === 0" :class="{'opacity-50 cursor-not-allowed': form.cart_items.length === 0}">
                         Bayar Sekarang &bull; Rp {{ cartTotal.toLocaleString('id-ID') }}
                     </button>
-                </form>
-            </main>
-
-            <!-- QR Code Zoom Modal -->
-            <div v-if="isQrZoomed" class="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 transition-all duration-300" @click.self="isQrZoomed = false">
-                <div class="bg-white p-5 rounded-[28px] max-w-[90%] shadow-2xl relative transition-transform duration-300 scale-100">
-                    <button type="button" @click="isQrZoomed = false" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-2 shadow-lg hover:scale-105 active:scale-95 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
-                    <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
-                    <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
                 </div>
+            </form>
+        </main>
+
+        <!-- QR Code Zoom Modal (Using standard fixed modal) -->
+        <div v-if="isQrZoomed" class="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 transition-all duration-300" @click.self="isQrZoomed = false">
+            <div class="bg-white p-5 rounded-2xl max-w-[90%] shadow-2xl relative transition-transform duration-300 scale-100">
+                <button type="button" @click="isQrZoomed = false" class="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-2 shadow-lg hover:scale-105 active:scale-95 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <img :src="qris_manual_url" alt="QRIS Toko Zoomed" class="w-64 h-64 mx-auto rounded-xl border p-1">
+                <p class="text-center text-xs font-black text-[#3B2314] mt-4">Scan QRIS Toko Zunoi</p>
+                <p class="text-center text-[10px] text-gray-400 mt-1">Silakan scan kode QR di atas untuk menyelesaikan transfer.</p>
             </div>
         </div>
     </div>
