@@ -8,8 +8,8 @@ const props = defineProps({
     categories: Array,
     banners: {
         type: Array,
-        default: () => []
-    }
+        default: () => [],
+    },
 });
 
 const cart = ref([]);
@@ -23,6 +23,7 @@ onMounted(() => {
     if (savedCart) {
         cart.value = JSON.parse(savedCart);
     }
+
     originalBgColor = document.documentElement.style.backgroundColor;
     document.documentElement.style.backgroundColor = '#3B2314';
 });
@@ -90,17 +91,19 @@ const selectedQuantity = ref(1);
 const additions = ref([]);
 
 const computedTotalPrice = computed(() => {
-    if (!selectedProduct.value) return 0;
-    
-    let base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
-    
+    if (!selectedProduct.value) {
+return 0;
+}
+
+    const base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
+
     let addonsTotal = 0;
-    additions.value.forEach(add => {
+    additions.value.forEach((add) => {
         if (add.selected) {
             addonsTotal += parseInt(add.price) * selectedQuantity.value;
         }
     });
-    
+
     return base + addonsTotal;
 });
 
@@ -108,19 +111,24 @@ const defaultAdditions = [
     { name: 'Gula', price: 0 },
     { name: 'Es Batu', price: 0 },
     { name: 'Whipped Cream', price: 5000 },
-    { name: 'Espresso Shot', price: 7000 }
+    { name: 'Espresso Shot', price: 7000 },
 ];
 
 const openSelectionModal = (product) => {
     selectedProduct.value = product;
     selectedQuantity.value = 1;
-    
-    const isDrinkCategory = ['coffee', 'non-coffee'].includes(product.category?.slug?.toLowerCase() || '');
-    const sourceAdditions = (product.additions && product.additions.length > 0) 
-        ? product.additions 
-        : (isDrinkCategory ? defaultAdditions : []);
-        
-    additions.value = sourceAdditions.map(a => ({ ...a, selected: false }));
+
+    const isDrinkCategory = ['coffee', 'non-coffee'].includes(
+        product.category?.slug?.toLowerCase() || '',
+    );
+    const sourceAdditions =
+        product.additions && product.additions.length > 0
+            ? product.additions
+            : isDrinkCategory
+              ? defaultAdditions
+              : [];
+
+    additions.value = sourceAdditions.map((a) => ({ ...a, selected: false }));
     isModalOpen.value = true;
 };
 
@@ -140,24 +148,40 @@ const decreaseQuantity = () => {
 };
 
 const addSelectionToCart = () => {
-    if (!selectedProduct.value) return;
+    if (!selectedProduct.value) {
+return;
+}
+
     const product = selectedProduct.value;
-    
-    const selectedAddons = additions.value.filter(a => a.selected);
-    
+
+    const selectedAddons = additions.value.filter((a) => a.selected);
+
     let addonsTotal = 0;
-    selectedAddons.forEach(add => {
+    selectedAddons.forEach((add) => {
         addonsTotal += parseInt(add.price);
     });
 
     const unitPrice = parseInt(product.price) + addonsTotal;
 
-    const notesStr = selectedAddons.length > 0 ? '+ ' + selectedAddons.map(a => {
-        let priceText = a.price > 0 ? ` (+Rp ${parseInt(a.price).toLocaleString('id-ID')})` : '';
-        return `${a.name}${priceText}`;
-    }).join(', ') : null;
+    const notesStr =
+        selectedAddons.length > 0
+            ? '+ ' +
+              selectedAddons
+                  .map((a) => {
+                      const priceText =
+                          a.price > 0
+                              ? ` (+Rp ${parseInt(a.price).toLocaleString('id-ID')})`
+                              : '';
 
-    const existing = cart.value.find((item) => item.id === product.id && item.notes === notesStr);
+                      return `${a.name}${priceText}`;
+                  })
+                  .join(', ')
+            : null;
+
+    const existing = cart.value.find(
+        (item) => item.id === product.id && item.notes === notesStr,
+    );
+
     if (existing) {
         existing.quantity += selectedQuantity.value;
     } else {
@@ -170,11 +194,12 @@ const addSelectionToCart = () => {
             image: product.image,
             quantity: selectedQuantity.value,
             notes: notesStr,
-            additions: JSON.parse(JSON.stringify(additions.value))
+            additions: JSON.parse(JSON.stringify(additions.value)),
         });
     }
+
     localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
-    
+
     // Tampilkan animasi +1 tanpa menutup modal
     showAddAnimation.value = true;
     setTimeout(() => {
@@ -187,15 +212,13 @@ const addSelectionToCart = () => {
     <Head title="Menu Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div
-        class="relative z-0 flex min-h-screen flex-col font-sans"
-    >
+    <div class="relative z-0 flex min-h-screen flex-col font-sans">
         <!-- Fixed Background Gradient (Seals tablet scroll behavior) -->
-        <div class="fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white pointer-events-none"></div>
+        <div
+            class="pointer-events-none fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white"
+        ></div>
         <!-- Sticky Header -->
-        <header
-            class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]"
-        >
+        <header class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]">
             <div
                 class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
             >
@@ -205,7 +228,7 @@ const addSelectionToCart = () => {
                     </h1>
                 </div>
                 <span
-                    class="shrink-0 rounded-lg bg-white/95 backdrop-blur-sm border border-white/40 px-3 py-1 text-xs font-black tracking-wider text-[#3B2314] uppercase shadow-sm"
+                    class="shrink-0 rounded-lg border border-white/40 bg-white/95 px-3 py-1 text-xs font-black tracking-wider text-[#3B2314] uppercase shadow-sm backdrop-blur-sm"
                 >
                     {{ $page.props.active_table_name || 'Meja -' }}
                 </span>
@@ -235,7 +258,8 @@ const addSelectionToCart = () => {
                     @click="selectedCategoryId = 'all'"
                     :class="{
                         'glass-filter-btn-active': selectedCategoryId === 'all',
-                        'glass-filter-btn-inactive': selectedCategoryId !== 'all',
+                        'glass-filter-btn-inactive':
+                            selectedCategoryId !== 'all',
                     }"
                     class="category-btn rounded-xl px-4 py-2 text-xs font-black tracking-wide whitespace-nowrap"
                 >
@@ -248,8 +272,10 @@ const addSelectionToCart = () => {
                     :key="cat.id"
                     @click="selectedCategoryId = cat.id"
                     :class="{
-                        'glass-filter-btn-active': selectedCategoryId === cat.id,
-                        'glass-filter-btn-inactive': selectedCategoryId !== cat.id,
+                        'glass-filter-btn-active':
+                            selectedCategoryId === cat.id,
+                        'glass-filter-btn-inactive':
+                            selectedCategoryId !== cat.id,
                     }"
                     class="category-btn rounded-xl px-4 py-2 text-xs font-black tracking-wide whitespace-nowrap"
                 >
@@ -263,16 +289,19 @@ const addSelectionToCart = () => {
                 <div
                     v-for="product in filteredProducts"
                     :key="product.id"
-                    class="flex overflow-hidden rounded-2xl bg-white transition-all duration-300 relative"
+                    class="relative flex overflow-hidden rounded-2xl bg-white transition-all duration-300"
                     :class="[
                         !product.is_available ? 'opacity-50 grayscale' : '',
-                        getCartItemQuantity(product.id) > 0 
-                            ? 'border-none shadow-[0_8px_25px_rgba(59,35,20,0.15)] scale-[1.02] z-10' 
-                            : 'border border-[#D4A373]/10 shadow-sm hover:border-[#D4A373]/30 hover:shadow-md'
+                        getCartItemQuantity(product.id) > 0
+                            ? 'z-10 scale-[1.02] border-none shadow-[0_8px_25px_rgba(59,35,20,0.15)]'
+                            : 'border border-[#D4A373]/10 shadow-sm hover:border-[#D4A373]/30 hover:shadow-md',
                     ]"
                 >
                     <!-- Animated Gradient Border for Selected Items -->
-                    <div v-if="getCartItemQuantity(product.id) > 0" class="absolute inset-0 pointer-events-none p-[2px] rounded-2xl animated-gradient-border z-20"></div>
+                    <div
+                        v-if="getCartItemQuantity(product.id) > 0"
+                        class="animated-gradient-border pointer-events-none absolute inset-0 z-20 rounded-2xl p-[2px]"
+                    ></div>
                     <img
                         :src="
                             product.image ||
@@ -311,11 +340,17 @@ const addSelectionToCart = () => {
                                     @click.stop="openSelectionModal(product)"
                                     :disabled="!product.is_available"
                                     class="rounded-xl px-4 py-1.5 text-xs font-black transition-all duration-300"
-                                    :class="getCartItemQuantity(product.id) > 0
-                                        ? 'bg-[#3B2314] text-white shadow-md hover:bg-[#2A180E] active:scale-95'
-                                        : 'bg-white text-[#3B2314] border border-[#D4A373]/30 hover:bg-[#D4A373]/10 hover:border-[#D4A373]/50 shadow-sm active:scale-95'"
+                                    :class="
+                                        getCartItemQuantity(product.id) > 0
+                                            ? 'bg-[#3B2314] text-white shadow-md hover:bg-[#2A180E] active:scale-95'
+                                            : 'border border-[#D4A373]/30 bg-white text-[#3B2314] shadow-sm hover:border-[#D4A373]/50 hover:bg-[#D4A373]/10 active:scale-95'
+                                    "
                                 >
-                                    {{ getCartItemQuantity(product.id) > 0 ? 'Pilih Lagi' : 'Pilih' }}
+                                    {{
+                                        getCartItemQuantity(product.id) > 0
+                                            ? 'Pilih Lagi'
+                                            : 'Pilih'
+                                    }}
                                 </button>
                             </div>
                             <span
@@ -336,7 +371,7 @@ const addSelectionToCart = () => {
 
         <!-- Floating Cart Container (Fixed at viewport bottom) -->
         <div
-            class="pointer-events-none fixed right-0 bottom-4 md:bottom-16 left-0 z-50 flex flex-col items-center justify-end px-6"
+            class="pointer-events-none fixed right-0 bottom-4 left-0 z-50 flex flex-col items-center justify-end px-6 md:bottom-16"
         >
             <!-- Main Floating Cart Button -->
             <Link
@@ -371,89 +406,200 @@ const addSelectionToCart = () => {
 
         <!-- Selection Modal with smooth slide animations -->
         <Transition name="modal-slide">
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-end justify-center">
+            <div
+                v-if="isModalOpen"
+                class="fixed inset-0 z-50 flex items-end justify-center"
+            >
                 <!-- Backdrop overlay -->
-                <div @click="closeSelectionModal" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-                
+                <div
+                    @click="closeSelectionModal"
+                    class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                ></div>
+
                 <!-- Modal content container (Minimalist Glassmorphism) -->
-                <div class="relative w-full h-[85vh] max-h-[900px] overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 backdrop-blur-2xl text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col">
-                    
+                <div
+                    class="relative flex h-[85vh] max-h-[900px] w-full flex-col overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] backdrop-blur-2xl"
+                >
                     <!-- Animated Gradient Border -->
-                    <div class="absolute -top-[2px] -left-[2px] -right-[2px] bottom-0 pointer-events-none pt-[6px] rounded-t-[2.5rem] animated-gradient-border z-50"></div>
-                    
+                    <div
+                        class="animated-gradient-border pointer-events-none absolute -top-[2px] -right-[2px] bottom-0 -left-[2px] z-50 rounded-t-[2.5rem] pt-[6px]"
+                    ></div>
+
                     <!-- Content area -->
                     <div class="flex-1 overflow-y-auto">
                         <!-- Top Section -->
                         <div class="p-8 pb-4">
                             <!-- Back Button -->
-                            <button type="button" @click="closeSelectionModal" class="flex h-8 px-3.5 gap-1.5 items-center justify-center rounded-[10px] bg-white/50 border border-white/40 shadow-sm text-[#3B2314] hover:bg-white/70 active:scale-75 transition-all duration-300 ease-out backdrop-blur-md mb-4">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            <button
+                                type="button"
+                                @click="closeSelectionModal"
+                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70 active:scale-75"
+                            >
+                                <svg
+                                    class="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2.5"
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                    />
                                 </svg>
-                                <span class="text-[13px] font-extrabold tracking-wide">Back</span>
+                                <span
+                                    class="text-[13px] font-extrabold tracking-wide"
+                                    >Back</span
+                                >
                             </button>
-                            
+
                             <!-- Item Info -->
-                            <div class="flex gap-5 items-start">
-                                <img :src="selectedProduct?.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'" class="h-24 w-24 shrink-0 rounded-2xl object-cover border border-[#3B2314]/10 shadow-sm" />
+                            <div class="flex items-start gap-5">
+                                <img
+                                    :src="
+                                        selectedProduct?.image ||
+                                        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'
+                                    "
+                                    class="h-24 w-24 shrink-0 rounded-2xl border border-[#3B2314]/10 object-cover shadow-sm"
+                                />
                                 <div class="flex flex-col pt-1">
-                                    <h4 class="font-extrabold text-2xl text-[#3B2314] leading-tight">{{ selectedProduct?.name }}</h4>
-                                    <p class="text-sm text-[#3B2314]/70 line-clamp-3 mt-1.5 leading-snug">{{ selectedProduct?.description }}</p>
+                                    <h4
+                                        class="text-2xl leading-tight font-extrabold text-[#3B2314]"
+                                    >
+                                        {{ selectedProduct?.name }}
+                                    </h4>
+                                    <p
+                                        class="mt-1.5 line-clamp-3 text-sm leading-snug text-[#3B2314]/70"
+                                    >
+                                        {{ selectedProduct?.description }}
+                                    </p>
                                 </div>
                             </div>
-                            
+
                             <!-- Price Block (No Card) -->
-                            <div class="mt-4 flex items-center justify-between px-1">
-                                <span class="text-sm font-bold text-[#3B2314]/70">Harga</span>
-                                <p class="text-lg font-black text-[#3B2314]">Rp {{ parseInt(selectedProduct?.price).toLocaleString('id-ID') }}</p>
+                            <div
+                                class="mt-4 flex items-center justify-between px-1"
+                            >
+                                <span
+                                    class="text-sm font-bold text-[#3B2314]/70"
+                                    >Harga</span
+                                >
+                                <p class="text-lg font-black text-[#3B2314]">
+                                    Rp
+                                    {{
+                                        parseInt(
+                                            selectedProduct?.price,
+                                        ).toLocaleString('id-ID')
+                                    }}
+                                </p>
                             </div>
                         </div>
-                        
+
                         <!-- Add-ons Section -->
-                        <div v-if="additions && additions.length > 0" class="px-8 pb-8 pt-4 space-y-3">
-                            <h5 class="text-sm font-extrabold tracking-wide text-[#3B2314]">Pilih Add-on</h5>
+                        <div
+                            v-if="additions && additions.length > 0"
+                            class="space-y-3 px-8 pt-4 pb-8"
+                        >
+                            <h5
+                                class="text-sm font-extrabold tracking-wide text-[#3B2314]"
+                            >
+                                Pilih Add-on
+                            </h5>
                             <div class="space-y-2.5">
-                                <div v-for="addition in additions" :key="addition.name" 
-                                    @click="addition.selected = !addition.selected"
-                                    class="flex items-center justify-between bg-white/30 px-5 py-3.5 rounded-2xl border shadow-sm backdrop-blur-md transition-all duration-300 cursor-pointer select-none"
-                                    :class="addition.selected 
-                                        ? 'border-[#3B2314] bg-white/70 shadow-md translate-x-1' 
-                                        : 'border-white/40 hover:bg-white/50 hover:border-white/60'">
-                                    
+                                <div
+                                    v-for="addition in additions"
+                                    :key="addition.name"
+                                    @click="
+                                        addition.selected = !addition.selected
+                                    "
+                                    class="flex cursor-pointer items-center justify-between rounded-2xl border bg-white/30 px-5 py-3.5 shadow-sm backdrop-blur-md transition-all duration-300 select-none"
+                                    :class="
+                                        addition.selected
+                                            ? 'translate-x-1 border-[#3B2314] bg-white/70 shadow-md'
+                                            : 'border-white/40 hover:border-white/60 hover:bg-white/50'
+                                    "
+                                >
                                     <div class="flex items-center gap-3">
                                         <!-- Custom Checkbox -->
-                                        <div class="h-5 w-5 rounded-md border flex items-center justify-center transition-all duration-300 pointer-events-none"
-                                            :class="addition.selected 
-                                                ? 'bg-[#3B2314] border-[#3B2314]' 
-                                                : 'border-gray-300 bg-white'">
-                                            <svg v-if="addition.selected" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-3.5 w-3.5 text-white">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                        <div
+                                            class="pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border transition-all duration-300"
+                                            :class="
+                                                addition.selected
+                                                    ? 'border-[#3B2314] bg-[#3B2314]'
+                                                    : 'border-gray-300 bg-white'
+                                            "
+                                        >
+                                            <svg
+                                                v-if="addition.selected"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="3"
+                                                stroke="currentColor"
+                                                class="h-3.5 w-3.5 text-white"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="m4.5 12.75 6 6 9-13.5"
+                                                />
                                             </svg>
                                         </div>
-                                        <span class="text-base font-bold text-[#3B2314]">{{ addition.name }}</span>
+                                        <span
+                                            class="text-base font-bold text-[#3B2314]"
+                                            >{{ addition.name }}</span
+                                        >
                                     </div>
-                                    
-                                    <span v-if="addition.price > 0" class="text-xs font-black text-[#D4A373]">
-                                        +Rp {{ addition.price.toLocaleString('id-ID') }}
+
+                                    <span
+                                        v-if="addition.price > 0"
+                                        class="text-xs font-black text-[#D4A373]"
+                                    >
+                                        +Rp
+                                        {{
+                                            addition.price.toLocaleString(
+                                                'id-ID',
+                                            )
+                                        }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Bottom Action Bar -->
-                    <div class="w-full flex items-center justify-between border-t border-[#3B2314]/10 px-6 py-4 bg-[#F9EFE3]/90 backdrop-blur-2xl shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+                    <div
+                        class="flex w-full items-center justify-between border-t border-[#3B2314]/10 bg-[#F9EFE3]/90 px-6 py-4 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] backdrop-blur-2xl"
+                    >
                         <div class="flex flex-col items-start">
-                            <span class="text-[11px] font-bold text-[#3B2314]/60 uppercase tracking-widest leading-none mb-1">Total</span>
-                            <span class="text-xl font-black text-[#3B2314] leading-none">Rp {{ computedTotalPrice.toLocaleString('id-ID') }}</span>
+                            <span
+                                class="mb-1 text-[11px] leading-none font-bold tracking-widest text-[#3B2314]/60 uppercase"
+                                >Total</span
+                            >
+                            <span
+                                class="text-xl leading-none font-black text-[#3B2314]"
+                                >Rp
+                                {{
+                                    computedTotalPrice.toLocaleString('id-ID')
+                                }}</span
+                            >
                         </div>
-                        <div class="flex items-center gap-4 relative">
+                        <div class="relative flex items-center gap-4">
                             <!-- Animasi +1 -->
                             <Transition name="fade-up-plus">
-                                <span v-if="showAddAnimation" class="absolute -left-10 top-1/2 -translate-y-1/2 text-[#3B2314] font-extrabold text-xl z-50 drop-shadow-sm">+1</span>
+                                <span
+                                    v-if="showAddAnimation"
+                                    class="absolute top-1/2 -left-10 z-50 -translate-y-1/2 text-xl font-extrabold text-[#3B2314] drop-shadow-sm"
+                                    >+1</span
+                                >
                             </Transition>
-                            <button type="button" @click="addSelectionToCart" class="bg-[#3B2314] text-[#FAEDCD] px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-[#2A180E] active:scale-95 transition text-[13px] leading-tight text-center">
-                                Masukkan Ke<br>Keranjang
+                            <button
+                                type="button"
+                                @click="addSelectionToCart"
+                                class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-center text-[13px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                            >
+                                Masukkan Ke<br />Keranjang
                             </button>
                         </div>
                     </div>
@@ -467,11 +613,16 @@ const addSelectionToCart = () => {
 .glass-glossy-btn {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(92, 62, 38, 0.75) 0%, rgba(59, 35, 20, 0.8) 50%, rgba(36, 21, 12, 0.85) 100%);
+    background: linear-gradient(
+        135deg,
+        rgba(92, 62, 38, 0.75) 0%,
+        rgba(59, 35, 20, 0.8) 50%,
+        rgba(36, 21, 12, 0.85) 100%
+    );
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 2.5px solid rgba(250, 237, 205, 0.35);
-    box-shadow: 
+    box-shadow:
         0 10px 30px 0 rgba(59, 35, 20, 0.45),
         inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
@@ -486,7 +637,11 @@ const addSelectionToCart = () => {
     left: 0;
     right: 0;
     height: 50%;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0) 100%
+    );
     pointer-events: none;
     z-index: 1;
 }
@@ -499,7 +654,12 @@ const addSelectionToCart = () => {
     left: 0;
     width: 60%;
     height: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.22) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
     transform: translate3d(-180%, 0, 0) skewX(-25deg);
     pointer-events: none;
     z-index: 2;
@@ -509,7 +669,7 @@ const addSelectionToCart = () => {
 
 .glass-glossy-btn:hover {
     border-color: rgba(250, 237, 205, 0.45);
-    box-shadow: 
+    box-shadow:
         0 10px 35px 0 rgba(59, 35, 20, 0.55),
         inset 0 0 10px 0 rgba(255, 255, 255, 0.35),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
@@ -524,7 +684,7 @@ const addSelectionToCart = () => {
     background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 
+    box-shadow:
         0 10px 30px 0 rgba(59, 35, 20, 0.25),
         inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
@@ -537,11 +697,12 @@ const addSelectionToCart = () => {
     right: 0;
     bottom: 0;
     height: 4.5px;
-    background: linear-gradient(90deg, 
-        #1e1008 0%, 
-        #e1af7d 25%, 
-        #3b2314 50%, 
-        #faedcd 75%, 
+    background: linear-gradient(
+        90deg,
+        #1e1008 0%,
+        #e1af7d 25%,
+        #3b2314 50%,
+        #faedcd 75%,
         #1e1008 100%
     );
     background-size: 200% 100%;
@@ -566,10 +727,11 @@ const addSelectionToCart = () => {
     right: 0;
     bottom: 0;
     z-index: -2;
-    background: linear-gradient(-45deg, 
-        rgba(36, 21, 12, 0.8) 0%, 
-        rgba(85, 52, 30, 0.85) 30%, 
-        rgba(125, 85, 55, 0.75) 60%, 
+    background: linear-gradient(
+        -45deg,
+        rgba(36, 21, 12, 0.8) 0%,
+        rgba(85, 52, 30, 0.85) 30%,
+        rgba(125, 85, 55, 0.75) 60%,
         rgba(46, 27, 16, 0.85) 100%
     );
     background-size: 300% 300%;
@@ -584,7 +746,11 @@ const addSelectionToCart = () => {
     right: 0;
     bottom: 0;
     z-index: -1;
-    background: linear-gradient(to bottom, rgba(26, 15, 8, 0.95) 0%, rgba(36, 21, 12, 0.3) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(26, 15, 8, 0.95) 0%,
+        rgba(36, 21, 12, 0.3) 100%
+    );
     pointer-events: none;
 }
 
@@ -599,8 +765,6 @@ const addSelectionToCart = () => {
         background-position: 0% 50%;
     }
 }
-
-
 
 @keyframes btn-shine {
     0% {
@@ -618,11 +782,16 @@ const addSelectionToCart = () => {
 .glass-filter-btn-active {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(92, 62, 38, 0.85) 0%, rgba(59, 35, 20, 0.9) 50%, rgba(36, 21, 12, 0.95) 100%);
+    background: linear-gradient(
+        135deg,
+        rgba(92, 62, 38, 0.85) 0%,
+        rgba(59, 35, 20, 0.9) 50%,
+        rgba(36, 21, 12, 0.95) 100%
+    );
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: #FAEDCD;
-    box-shadow: 
+    color: #faedcd;
+    box-shadow:
         inset 0 0 8px 0 rgba(255, 255, 255, 0.2),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
         inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
@@ -635,7 +804,11 @@ const addSelectionToCart = () => {
     left: 0;
     right: 0;
     height: 50%;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0) 100%
+    );
     pointer-events: none;
     z-index: 1;
 }
@@ -646,9 +819,8 @@ const addSelectionToCart = () => {
     background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: #3B2314;
-    box-shadow: 
-        inset 0 0 6px 0 rgba(255, 255, 255, 0.4);
+    color: #3b2314;
+    box-shadow: inset 0 0 6px 0 rgba(255, 255, 255, 0.4);
 }
 
 .category-btn {
@@ -679,7 +851,7 @@ const addSelectionToCart = () => {
 }
 
 .qty-selector {
-    background: #3B2314;
+    background: #3b2314;
     border: none;
 }
 
@@ -724,7 +896,9 @@ const addSelectionToCart = () => {
 }
 .modal-slide-enter-active .relative,
 .modal-slide-leave-active .relative {
-    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+    transition:
+        transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+        opacity 0.5s ease;
 }
 
 .modal-slide-enter-from {
@@ -745,16 +919,24 @@ const addSelectionToCart = () => {
 
 /* Animated Glassmorphism Gradient Border */
 @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .animated-gradient-border {
-    background: linear-gradient(60deg, #3B2314, #D4A373, #5c3a21, #FAEDCD);
+    background: linear-gradient(60deg, #3b2314, #d4a373, #5c3a21, #faedcd);
     background-size: 300% 300%;
     animation: gradientMove 4s ease infinite;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
 }

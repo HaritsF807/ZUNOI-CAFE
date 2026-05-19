@@ -33,6 +33,7 @@ Route::middleware(['verify_table_session'])->group(function () {
         $products = Product::with(['category', 'addons'])->get();
         $categories = Category::orderBy('name', 'asc')->get();
         $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        
         return inertia('Customer/MenuList', [
             'products' => $products,
             'categories' => $categories,
@@ -66,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
         $products = Product::with(['category', 'addons'])->get();
         $categories = Category::orderBy('name', 'asc')->get();
         $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+
         return inertia('MenuPreview', [
             'products' => $products,
             'categories' => $categories,

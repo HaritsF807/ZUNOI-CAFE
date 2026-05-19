@@ -38,11 +38,11 @@ const mockOrderId = computed(() => {
     <Head title="Preview Pesanan Berhasil - Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div
-        class="relative z-0 flex min-h-screen flex-col font-sans"
-    >
+    <div class="relative z-0 flex min-h-screen flex-col font-sans">
         <!-- Fixed Background Gradient (Seals tablet scroll behavior) -->
-        <div class="fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white pointer-events-none"></div>
+        <div
+            class="pointer-events-none fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white"
+        ></div>
         <!-- Preview Banner -->
         <div
             class="z-50 bg-red-500 py-1.5 text-center text-xs font-black tracking-widest text-white uppercase shadow-sm"
@@ -51,9 +51,7 @@ const mockOrderId = computed(() => {
         </div>
 
         <!-- Sticky Header -->
-        <header
-            class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]"
-        >
+        <header class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]">
             <div
                 class="mx-auto flex max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8"
             >
@@ -207,9 +205,9 @@ const mockOrderId = computed(() => {
                                 >
                                     {{ item.quantity }}x &bull; Rp
                                     {{
-                                        (item.basePrice || item.price).toLocaleString(
-                                            'id-ID',
-                                        )
+                                        (
+                                            item.basePrice || item.price
+                                        ).toLocaleString('id-ID')
                                     }}
                                 </p>
                                 <span
@@ -282,7 +280,7 @@ const mockOrderId = computed(() => {
     background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 
+    box-shadow:
         0 10px 30px 0 rgba(59, 35, 20, 0.25),
         inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
@@ -295,11 +293,12 @@ const mockOrderId = computed(() => {
     right: 0;
     bottom: 0;
     height: 4.5px;
-    background: linear-gradient(90deg, 
-        #1e1008 0%, 
-        #e1af7d 25%, 
-        #3b2314 50%, 
-        #faedcd 75%, 
+    background: linear-gradient(
+        90deg,
+        #1e1008 0%,
+        #e1af7d 25%,
+        #3b2314 50%,
+        #faedcd 75%,
         #1e1008 100%
     );
     background-size: 200% 100%;
@@ -324,10 +323,11 @@ const mockOrderId = computed(() => {
     right: 0;
     bottom: 0;
     z-index: -2;
-    background: linear-gradient(-45deg, 
-        rgba(36, 21, 12, 0.8) 0%, 
-        rgba(85, 52, 30, 0.85) 30%, 
-        rgba(125, 85, 55, 0.75) 60%, 
+    background: linear-gradient(
+        -45deg,
+        rgba(36, 21, 12, 0.8) 0%,
+        rgba(85, 52, 30, 0.85) 30%,
+        rgba(125, 85, 55, 0.75) 60%,
         rgba(46, 27, 16, 0.85) 100%
     );
     background-size: 300% 300%;
@@ -342,7 +342,11 @@ const mockOrderId = computed(() => {
     right: 0;
     bottom: 0;
     z-index: -1;
-    background: linear-gradient(to bottom, rgba(26, 15, 8, 0.95) 0%, rgba(36, 21, 12, 0.3) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(26, 15, 8, 0.95) 0%,
+        rgba(36, 21, 12, 0.3) 100%
+    );
     pointer-events: none;
 }
 

@@ -26,6 +26,7 @@ onMounted(() => {
     if (savedCart) {
         form.value.cart_items = JSON.parse(savedCart);
     }
+
     originalBgColor = document.documentElement.style.backgroundColor;
     document.documentElement.style.backgroundColor = '#3B2314';
 });
@@ -68,7 +69,7 @@ const handleFileChange = (e) => {
 };
 
 const submitOrder = () => {
-    form.post('/order/store-cashier', {
+    form.value.post('/order/store-cashier', {
         onSuccess: () => {
             localStorage.removeItem('zunoi_preview_cart');
         },
@@ -77,34 +78,42 @@ const submitOrder = () => {
 
 const removeCartItem = (index) => {
     form.value.cart_items.splice(index, 1);
-    localStorage.setItem('zunoi_preview_cart', JSON.stringify(form.value.cart_items));
+    localStorage.setItem(
+        'zunoi_preview_cart',
+        JSON.stringify(form.value.cart_items),
+    );
 };
 
 const defaultAdditions = [
     { name: 'Gula', price: 0 },
     { name: 'Es Batu', price: 0 },
     { name: 'Whipped Cream', price: 5000 },
-    { name: 'Espresso Shot', price: 7000 }
+    { name: 'Espresso Shot', price: 7000 },
 ];
 
 const getAdditionsForCartItem = (item) => {
     if (item.additions && item.additions.length > 0) {
-        return JSON.parse(JSON.stringify(item.additions)).map(a => {
+        return JSON.parse(JSON.stringify(item.additions)).map((a) => {
             if (a.selected === undefined) {
-                a.selected = (a.selection !== null && a.selection !== undefined);
+                a.selected = a.selection !== null && a.selection !== undefined;
             }
+
             return a;
         });
     }
+
     // Fallback parsing from notes
-    const parsedAdditions = defaultAdditions.map(a => {
+    const parsedAdditions = defaultAdditions.map((a) => {
         let selected = false;
+
         if (item.notes) {
             const regex = new RegExp(a.name, 'i');
             selected = regex.test(item.notes);
         }
+
         return { ...a, selected };
     });
+
     return parsedAdditions;
 };
 
@@ -115,17 +124,19 @@ const selectedQuantity = ref(1);
 const additions = ref([]);
 
 const computedTotalPrice = computed(() => {
-    if (!selectedProduct.value) return 0;
-    
-    let base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
-    
+    if (!selectedProduct.value) {
+return 0;
+}
+
+    const base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
+
     let addonsTotal = 0;
-    additions.value.forEach(add => {
+    additions.value.forEach((add) => {
         if (add.selected) {
             addonsTotal += parseInt(add.price) * selectedQuantity.value;
         }
     });
-    
+
     return base + addonsTotal;
 });
 
@@ -137,7 +148,7 @@ const editCartItem = (index) => {
         name: item.name,
         price: item.basePrice || item.price,
         image: item.image,
-        description: ''
+        description: '',
     };
     selectedQuantity.value = item.quantity;
     additions.value = getAdditionsForCartItem(item);
@@ -151,22 +162,34 @@ const closeSelectionModal = () => {
 };
 
 const saveCartItem = () => {
-    if (editingIndex.value === -1) return;
-    
-    const selectedAddons = additions.value.filter(a => a.selected);
-    
+    if (editingIndex.value === -1) {
+return;
+}
+
+    const selectedAddons = additions.value.filter((a) => a.selected);
+
     let addonsTotal = 0;
-    selectedAddons.forEach(add => {
+    selectedAddons.forEach((add) => {
         addonsTotal += parseInt(add.price);
     });
 
     const basePrice = selectedProduct.value.price;
     const unitPrice = basePrice + addonsTotal;
 
-    const notesStr = selectedAddons.length > 0 ? '+ ' + selectedAddons.map(a => {
-        let priceText = a.price > 0 ? ` (+Rp ${parseInt(a.price).toLocaleString('id-ID')})` : '';
-        return `${a.name}${priceText}`;
-    }).join(', ') : null;
+    const notesStr =
+        selectedAddons.length > 0
+            ? '+ ' +
+              selectedAddons
+                  .map((a) => {
+                      const priceText =
+                          a.price > 0
+                              ? ` (+Rp ${parseInt(a.price).toLocaleString('id-ID')})`
+                              : '';
+
+                      return `${a.name}${priceText}`;
+                  })
+                  .join(', ')
+            : null;
 
     // Update the item in cart_items
     const item = form.value.cart_items[editingIndex.value];
@@ -178,8 +201,11 @@ const saveCartItem = () => {
     item.additions = JSON.parse(JSON.stringify(additions.value));
 
     // Save to localStorage
-    localStorage.setItem('zunoi_preview_cart', JSON.stringify(form.value.cart_items));
-    
+    localStorage.setItem(
+        'zunoi_preview_cart',
+        JSON.stringify(form.value.cart_items),
+    );
+
     closeSelectionModal();
 };
 
@@ -212,11 +238,11 @@ const submitPreviewOrder = () => {
     <Head title="Preview Checkout - Zunoi Caffe" />
 
     <!-- Main Customer Area -->
-    <div
-        class="relative z-0 flex min-h-screen flex-col font-sans"
-    >
+    <div class="relative z-0 flex min-h-screen flex-col font-sans">
         <!-- Fixed Background Gradient (Seals tablet scroll behavior) -->
-        <div class="fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white pointer-events-none"></div>
+        <div
+            class="pointer-events-none fixed inset-x-0 -top-24 bottom-0 -z-10 bg-gradient-to-b from-[#FAEDCD] via-white to-white"
+        ></div>
         <!-- Preview Banner -->
         <div
             class="z-50 bg-red-500 py-1.5 text-center text-xs font-black tracking-widest text-white uppercase shadow-sm"
@@ -225,9 +251,7 @@ const submitPreviewOrder = () => {
         </div>
 
         <!-- Sticky Header -->
-        <header
-            class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]"
-        >
+        <header class="glass-header sticky z-40 pt-[22px] pb-3 text-[#FAEDCD]">
             <div
                 class="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8"
             >
@@ -414,63 +438,101 @@ const submitPreviewOrder = () => {
                                 class="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50 p-3"
                             >
                                 <!-- Top Section: Image, Name, Price, and Actions -->
-                                <div class="flex items-start gap-3 w-full">
+                                <div class="flex w-full items-start gap-3">
                                     <img
                                         :src="
                                             item.image ||
                                             'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'
                                         "
                                         alt="Product"
-                                        class="h-12 w-12 rounded-lg border object-cover shrink-0"
+                                        class="h-12 w-12 shrink-0 rounded-lg border object-cover"
                                     />
-                                    <div class="text-left flex-1 flex flex-col justify-center">
+                                    <div
+                                        class="flex flex-1 flex-col justify-center text-left"
+                                    >
                                         <p
                                             class="text-xs font-bold text-gray-800"
                                         >
                                             {{ item.name }}
                                         </p>
-                                        <div class="flex flex-col mt-0.5">
+                                        <div class="mt-0.5 flex flex-col">
                                             <p
                                                 class="text-[10px] font-semibold text-gray-400"
                                             >
                                                 {{ item.quantity }}x &bull; Rp
                                                 {{
-                                                    (item.basePrice || item.price).toLocaleString(
-                                                        'id-ID',
-                                                    )
+                                                    (
+                                                        item.basePrice ||
+                                                        item.price
+                                                    ).toLocaleString('id-ID')
                                                 }}
                                             </p>
-                                            <p class="text-[11px] font-extrabold text-[#3B2314] mt-0.5">
-                                                = Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}
+                                            <p
+                                                class="mt-0.5 text-[11px] font-extrabold text-[#3B2314]"
+                                            >
+                                                = Rp
+                                                {{
+                                                    (
+                                                        item.price *
+                                                        item.quantity
+                                                    ).toLocaleString('id-ID')
+                                                }}
                                             </p>
                                         </div>
                                     </div>
                                     <!-- Action Buttons -->
-                                    <div class="flex gap-1.5 shrink-0 ml-2 pt-0.5">
+                                    <div
+                                        class="ml-2 flex shrink-0 gap-1.5 pt-0.5"
+                                    >
                                         <button
                                             @click="editCartItem(index)"
                                             type="button"
-                                            class="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-[#FAEDCD] hover:text-[#D4A373] hover:border-[#D4A373] transition active:scale-95 shadow-sm"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-[#D4A373] hover:bg-[#FAEDCD] hover:text-[#D4A373] active:scale-95"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                                              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2.5"
+                                                stroke="currentColor"
+                                                class="h-3.5 w-3.5"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                                                />
                                             </svg>
                                         </button>
                                         <button
                                             @click="removeCartItem(index)"
                                             type="button"
-                                            class="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition active:scale-95 shadow-sm"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 active:scale-95"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                                              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2.5"
+                                                stroke="currentColor"
+                                                class="h-3.5 w-3.5"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                                />
                                             </svg>
                                         </button>
                                     </div>
                                 </div>
                                 <!-- Bottom Section: Full Width Addons -->
-                                <div v-if="item.notes" class="w-full pt-2 border-t border-gray-200/60 mt-0.5">
+                                <div
+                                    v-if="item.notes"
+                                    class="mt-0.5 w-full border-t border-gray-200/60 pt-2"
+                                >
                                     <p
-                                        class="text-[11px] font-black text-[#D4A373] leading-snug"
+                                        class="text-[11px] leading-snug font-black text-[#D4A373]"
                                     >
                                         {{ item.notes }}
                                     </p>
@@ -599,7 +661,7 @@ const submitPreviewOrder = () => {
                                 type="radio"
                                 v-model="form.payment_method"
                                 value="qris_tokopay"
-                                class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
+                                class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
                             />
                             <span class="font-extrabold text-[#3B2314]"
                                 >QRIS Otomatis (Tokopay)</span
@@ -618,7 +680,7 @@ const submitPreviewOrder = () => {
                                     type="radio"
                                     v-model="form.payment_method"
                                     value="qris_manual"
-                                    class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
+                                    class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
                                 />
                                 <span class="font-extrabold text-[#3B2314]"
                                     >QRIS Toko (Manual Verifikasi)</span
@@ -701,7 +763,7 @@ const submitPreviewOrder = () => {
                                 type="radio"
                                 v-model="form.payment_method"
                                 value="cashier"
-                                class="text-[#3B2314] focus:ring-[#3B2314] accent-[#3B2314]"
+                                class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
                             />
                             <span class="font-extrabold text-[#3B2314]"
                                 >Bayar Langsung di Kasir</span
@@ -711,30 +773,62 @@ const submitPreviewOrder = () => {
 
                     <!-- Animated Border Wrapper -->
                     <div
-                        class="relative p-[3px] rounded-2xl overflow-hidden shadow-[0_5px_20px_rgba(21,11,5,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-95"
-                        :class="form.cart_items.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="relative overflow-hidden rounded-2xl p-[3px] shadow-[0_5px_20px_rgba(21,11,5,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-95"
+                        :class="
+                            form.cart_items.length === 0
+                                ? 'cursor-not-allowed opacity-50'
+                                : ''
+                        "
                     >
                         <!-- Rotating/Abstract Gradient Border -->
-                        <div class="absolute inset-0 animated-border opacity-50"></div>
-                        
+                        <div
+                            class="animated-border absolute inset-0 opacity-50"
+                        ></div>
+
                         <!-- Main Button -->
                         <button
                             type="submit"
-                            class="relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#25150B] p-3.5 pl-5 shine-effect"
+                            class="shine-effect relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#25150B] p-3.5 pl-5"
                             :disabled="form.cart_items.length === 0"
                         >
                             <!-- Dark Brown Bottom-Right Radial Gradient -->
-                            <div class="absolute -bottom-10 -right-10 w-24 h-24 rounded-full bg-[#150B05]/95 blur-md pointer-events-none"></div>
+                            <div
+                                class="pointer-events-none absolute -right-10 -bottom-10 h-24 w-24 rounded-full bg-[#150B05]/95 blur-md"
+                            ></div>
 
                             <!-- Content -->
-                            <div class="relative z-10 flex items-center gap-2.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#FAEDCD]">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                            <div
+                                class="relative z-10 flex items-center gap-2.5"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2.5"
+                                    stroke="currentColor"
+                                    class="h-4 w-4 text-[#FAEDCD]"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"
+                                    />
                                 </svg>
-                                <span class="text-xs font-black tracking-wider text-[#FAEDCD] uppercase">Bayar Sekarang</span>
+                                <span
+                                    class="text-xs font-black tracking-wider text-[#FAEDCD] uppercase"
+                                    >Bayar Sekarang</span
+                                >
                             </div>
-                            <div class="relative z-10 flex items-center justify-center rounded-xl bg-[#D4A373] px-4 py-2 text-xs font-black text-[#3B2314]">
-                                {{ form.cart_items.reduce((total, item) => total + item.quantity, 0) }} Item
+                            <div
+                                class="relative z-10 flex items-center justify-center rounded-xl bg-[#D4A373] px-4 py-2 text-xs font-black text-[#3B2314]"
+                            >
+                                {{
+                                    form.cart_items.reduce(
+                                        (total, item) => total + item.quantity,
+                                        0,
+                                    )
+                                }}
+                                Item
                             </div>
                         </button>
                     </div>
@@ -885,83 +979,186 @@ const submitPreviewOrder = () => {
 
         <!-- Selection Modal with smooth slide animations for Edit -->
         <Transition name="modal-slide">
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-end justify-center">
+            <div
+                v-if="isModalOpen"
+                class="fixed inset-0 z-50 flex items-end justify-center"
+            >
                 <!-- Backdrop overlay -->
-                <div @click="closeSelectionModal" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-                
+                <div
+                    @click="closeSelectionModal"
+                    class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                ></div>
+
                 <!-- Modal content container (Minimalist Glassmorphism) -->
-                <div class="relative w-full h-[85vh] max-h-[900px] overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 backdrop-blur-2xl text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col">
-                    
+                <div
+                    class="relative flex h-[85vh] max-h-[900px] w-full flex-col overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-[#d5b497]/95 to-[#f3e6d8]/95 text-[#3B2314] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] backdrop-blur-2xl"
+                >
                     <!-- Animated Gradient Border -->
-                    <div class="absolute -top-[2px] -left-[2px] -right-[2px] bottom-0 pointer-events-none pt-[6px] rounded-t-[2.5rem] animated-gradient-border z-50"></div>
-                    
+                    <div
+                        class="animated-gradient-border pointer-events-none absolute -top-[2px] -right-[2px] bottom-0 -left-[2px] z-50 rounded-t-[2.5rem] pt-[6px]"
+                    ></div>
+
                     <!-- Content area -->
                     <div class="flex-1 overflow-y-auto">
                         <!-- Top Section -->
                         <div class="p-8 pb-4">
                             <!-- Back Button -->
-                            <button type="button" @click="closeSelectionModal" class="flex h-8 px-3.5 gap-1.5 items-center justify-center rounded-[10px] bg-white/50 border border-white/40 shadow-sm text-[#3B2314] hover:bg-white/70 active:scale-75 transition-all duration-300 ease-out backdrop-blur-md mb-4">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            <button
+                                type="button"
+                                @click="closeSelectionModal"
+                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70 active:scale-75"
+                            >
+                                <svg
+                                    class="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2.5"
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                    />
                                 </svg>
-                                <span class="text-[13px] font-extrabold tracking-wide">Back</span>
+                                <span
+                                    class="text-[13px] font-extrabold tracking-wide"
+                                    >Back</span
+                                >
                             </button>
-                            
+
                             <!-- Item Info -->
-                            <div class="flex gap-5 items-start">
-                                <img :src="selectedProduct?.image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'" class="h-24 w-24 shrink-0 rounded-2xl object-cover border border-[#3B2314]/10 shadow-sm" />
+                            <div class="flex items-start gap-5">
+                                <img
+                                    :src="
+                                        selectedProduct?.image ||
+                                        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=400'
+                                    "
+                                    class="h-24 w-24 shrink-0 rounded-2xl border border-[#3B2314]/10 object-cover shadow-sm"
+                                />
                                 <div class="flex flex-col pt-1">
-                                    <h4 class="font-extrabold text-2xl text-[#3B2314] leading-tight">{{ selectedProduct?.name }}</h4>
+                                    <h4
+                                        class="text-2xl leading-tight font-extrabold text-[#3B2314]"
+                                    >
+                                        {{ selectedProduct?.name }}
+                                    </h4>
                                 </div>
                             </div>
-                            
+
                             <!-- Price Block (No Card) -->
-                            <div class="mt-4 flex items-center justify-between px-1">
-                                <span class="text-sm font-bold text-[#3B2314]/70">Harga</span>
-                                <p class="text-lg font-black text-[#3B2314]">Rp {{ parseInt(selectedProduct?.price).toLocaleString('id-ID') }}</p>
+                            <div
+                                class="mt-4 flex items-center justify-between px-1"
+                            >
+                                <span
+                                    class="text-sm font-bold text-[#3B2314]/70"
+                                    >Harga</span
+                                >
+                                <p class="text-lg font-black text-[#3B2314]">
+                                    Rp
+                                    {{
+                                        parseInt(
+                                            selectedProduct?.price,
+                                        ).toLocaleString('id-ID')
+                                    }}
+                                </p>
                             </div>
                         </div>
-                        
+
                         <!-- Add-ons Section -->
-                        <div v-if="additions && additions.length > 0" class="px-8 pb-8 pt-4 space-y-3">
-                            <h5 class="text-sm font-extrabold tracking-wide text-[#3B2314]">Pilih Add-on</h5>
+                        <div
+                            v-if="additions && additions.length > 0"
+                            class="space-y-3 px-8 pt-4 pb-8"
+                        >
+                            <h5
+                                class="text-sm font-extrabold tracking-wide text-[#3B2314]"
+                            >
+                                Pilih Add-on
+                            </h5>
                             <div class="space-y-2.5">
-                                <div v-for="addition in additions" :key="addition.name" 
-                                    @click="addition.selected = !addition.selected"
-                                    class="flex items-center justify-between bg-white/30 px-5 py-3.5 rounded-2xl border shadow-sm backdrop-blur-md transition-all duration-300 cursor-pointer select-none"
-                                    :class="addition.selected 
-                                        ? 'border-[#3B2314] bg-white/70 shadow-md translate-x-1' 
-                                        : 'border-white/40 hover:bg-white/50 hover:border-white/60'">
-                                    
+                                <div
+                                    v-for="addition in additions"
+                                    :key="addition.name"
+                                    @click="
+                                        addition.selected = !addition.selected
+                                    "
+                                    class="flex cursor-pointer items-center justify-between rounded-2xl border bg-white/30 px-5 py-3.5 shadow-sm backdrop-blur-md transition-all duration-300 select-none"
+                                    :class="
+                                        addition.selected
+                                            ? 'translate-x-1 border-[#3B2314] bg-white/70 shadow-md'
+                                            : 'border-white/40 hover:border-white/60 hover:bg-white/50'
+                                    "
+                                >
                                     <div class="flex items-center gap-3">
                                         <!-- Custom Checkbox -->
-                                        <div class="h-5 w-5 rounded-md border flex items-center justify-center transition-all duration-300 pointer-events-none"
-                                            :class="addition.selected 
-                                                ? 'bg-[#3B2314] border-[#3B2314]' 
-                                                : 'border-gray-300 bg-white'">
-                                            <svg v-if="addition.selected" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-3.5 w-3.5 text-white">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                        <div
+                                            class="pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border transition-all duration-300"
+                                            :class="
+                                                addition.selected
+                                                    ? 'border-[#3B2314] bg-[#3B2314]'
+                                                    : 'border-gray-300 bg-white'
+                                            "
+                                        >
+                                            <svg
+                                                v-if="addition.selected"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="3"
+                                                stroke="currentColor"
+                                                class="h-3.5 w-3.5 text-white"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="m4.5 12.75 6 6 9-13.5"
+                                                />
                                             </svg>
                                         </div>
-                                        <span class="text-base font-bold text-[#3B2314]">{{ addition.name }}</span>
+                                        <span
+                                            class="text-base font-bold text-[#3B2314]"
+                                            >{{ addition.name }}</span
+                                        >
                                     </div>
-                                    
-                                    <span v-if="addition.price > 0" class="text-xs font-black text-[#D4A373]">
-                                        +Rp {{ addition.price.toLocaleString('id-ID') }}
+
+                                    <span
+                                        v-if="addition.price > 0"
+                                        class="text-xs font-black text-[#D4A373]"
+                                    >
+                                        +Rp
+                                        {{
+                                            addition.price.toLocaleString(
+                                                'id-ID',
+                                            )
+                                        }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Bottom Action Bar -->
-                    <div class="w-full flex items-center justify-between border-t border-[#3B2314]/10 px-6 py-4 bg-[#F9EFE3]/90 backdrop-blur-2xl shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+                    <div
+                        class="flex w-full items-center justify-between border-t border-[#3B2314]/10 bg-[#F9EFE3]/90 px-6 py-4 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] backdrop-blur-2xl"
+                    >
                         <div class="flex flex-col items-start">
-                            <span class="text-[11px] font-bold text-[#3B2314]/60 uppercase tracking-widest leading-none mb-1">Total</span>
-                            <span class="text-xl font-black text-[#3B2314] leading-none">Rp {{ computedTotalPrice.toLocaleString('id-ID') }}</span>
+                            <span
+                                class="mb-1 text-[11px] leading-none font-bold tracking-widest text-[#3B2314]/60 uppercase"
+                                >Total</span
+                            >
+                            <span
+                                class="text-xl leading-none font-black text-[#3B2314]"
+                                >Rp
+                                {{
+                                    computedTotalPrice.toLocaleString('id-ID')
+                                }}</span
+                            >
                         </div>
                         <div class="flex items-center gap-4">
-                            <button type="button" @click="saveCartItem" class="bg-[#3B2314] text-[#FAEDCD] px-8 py-3 rounded-xl font-bold shadow-md hover:bg-[#2A180E] active:scale-95 transition text-[14px] leading-tight text-center">
+                            <button
+                                type="button"
+                                @click="saveCartItem"
+                                class="rounded-xl bg-[#3B2314] px-8 py-3 text-center text-[14px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                            >
                                 Simpan
                             </button>
                         </div>
@@ -981,7 +1178,7 @@ const submitPreviewOrder = () => {
     background: transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 
+    box-shadow:
         0 10px 30px 0 rgba(59, 35, 20, 0.25),
         inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
         inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
@@ -994,11 +1191,12 @@ const submitPreviewOrder = () => {
     right: 0;
     bottom: 0;
     height: 4.5px;
-    background: linear-gradient(90deg, 
-        #1e1008 0%, 
-        #e1af7d 25%, 
-        #3b2314 50%, 
-        #faedcd 75%, 
+    background: linear-gradient(
+        90deg,
+        #1e1008 0%,
+        #e1af7d 25%,
+        #3b2314 50%,
+        #faedcd 75%,
         #1e1008 100%
     );
     background-size: 200% 100%;
@@ -1023,10 +1221,11 @@ const submitPreviewOrder = () => {
     right: 0;
     bottom: 0;
     z-index: -2;
-    background: linear-gradient(-45deg, 
-        rgba(36, 21, 12, 0.8) 0%, 
-        rgba(85, 52, 30, 0.85) 30%, 
-        rgba(125, 85, 55, 0.75) 60%, 
+    background: linear-gradient(
+        -45deg,
+        rgba(36, 21, 12, 0.8) 0%,
+        rgba(85, 52, 30, 0.85) 30%,
+        rgba(125, 85, 55, 0.75) 60%,
         rgba(46, 27, 16, 0.85) 100%
     );
     background-size: 300% 300%;
@@ -1041,7 +1240,11 @@ const submitPreviewOrder = () => {
     right: 0;
     bottom: 0;
     z-index: -1;
-    background: linear-gradient(to bottom, rgba(26, 15, 8, 0.95) 0%, rgba(36, 21, 12, 0.3) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(26, 15, 8, 0.95) 0%,
+        rgba(36, 21, 12, 0.3) 100%
+    );
     pointer-events: none;
 }
 
@@ -1058,19 +1261,31 @@ const submitPreviewOrder = () => {
 }
 
 @keyframes borderGradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 @keyframes shine {
-    0% { transform: translateX(-150%) skewX(-25deg); }
-    50% { transform: translateX(150%) skewX(-25deg); }
-    100% { transform: translateX(150%) skewX(-25deg); }
+    0% {
+        transform: translateX(-150%) skewX(-25deg);
+    }
+    50% {
+        transform: translateX(150%) skewX(-25deg);
+    }
+    100% {
+        transform: translateX(150%) skewX(-25deg);
+    }
 }
 
 .animated-border {
-    background: linear-gradient(270deg, #3B2314, #1C0F07, #25150B, #523522);
+    background: linear-gradient(270deg, #3b2314, #1c0f07, #25150b, #523522);
     background-size: 400% 400%;
     animation: borderGradient 6s ease infinite;
 }
@@ -1087,7 +1302,7 @@ const submitPreviewOrder = () => {
         rgba(255, 255, 255, 0) 0%,
         rgba(255, 255, 255, 0.3) 50%,
         rgba(255, 255, 255, 0) 100%
-      );
+    );
     transform: translateX(-150%) skewX(-25deg);
     animation: shine 4.5s infinite ease-in-out;
     pointer-events: none;
@@ -1100,7 +1315,9 @@ const submitPreviewOrder = () => {
 }
 .modal-slide-enter-active .relative,
 .modal-slide-leave-active .relative {
-    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+    transition:
+        transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+        opacity 0.5s ease;
 }
 
 .modal-slide-enter-from {
@@ -1120,16 +1337,24 @@ const submitPreviewOrder = () => {
 }
 
 @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .animated-gradient-border {
-    background: linear-gradient(60deg, #3B2314, #D4A373, #5c3a21, #FAEDCD);
+    background: linear-gradient(60deg, #3b2314, #d4a373, #5c3a21, #faedcd);
     background-size: 300% 300%;
     animation: gradientMove 4s ease infinite;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
 }

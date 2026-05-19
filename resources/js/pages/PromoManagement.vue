@@ -1,23 +1,25 @@
 <script setup>
-import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref, computed, nextTick, watch } from 'vue';
 import axios from 'axios';
+import { ref, computed, nextTick, watch } from 'vue';
+import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
 // Receive banners from server
 const props = defineProps({
     banners: {
         type: Array,
-        default: () => []
-    }
+        default: () => [],
+    },
 });
 
 const localBanners = ref([...props.banners]);
 
 const triggerToast = (message, type = 'success') => {
-    window.dispatchEvent(new CustomEvent('zunoi-toast', {
-        detail: { message, type }
-    }));
+    window.dispatchEvent(
+        new CustomEvent('zunoi-toast', {
+            detail: { message, type },
+        }),
+    );
 };
 
 // Form state
@@ -28,7 +30,7 @@ const editingBannerId = ref(null);
 const form = ref({
     title: '',
     description: '',
-    is_active: true
+    is_active: true,
 });
 
 const fileInputRef = ref(null);
@@ -39,7 +41,7 @@ const showCropModal = ref(false);
 const rawImageSrc = ref('');
 const cropBoxRef = ref(null);
 const containerWidth = ref(480);
-const containerHeight = computed(() => containerWidth.value * 9 / 16);
+const containerHeight = computed(() => (containerWidth.value * 9) / 16);
 const imageLoaded = ref(false);
 const naturalWidth = ref(0);
 const naturalHeight = ref(0);
@@ -55,9 +57,13 @@ const savedPanY = ref(0);
 const zoom = ref(1.0);
 
 const layoutWidth = computed(() => {
-    if (!imageLoaded.value) return 0;
+    if (!imageLoaded.value) {
+return 0;
+}
+
     const rNat = naturalWidth.value / naturalHeight.value;
     const rCont = 16 / 9;
+
     if (rNat > rCont) {
         return containerHeight.value * rNat;
     } else {
@@ -66,9 +72,13 @@ const layoutWidth = computed(() => {
 });
 
 const layoutHeight = computed(() => {
-    if (!imageLoaded.value) return 0;
+    if (!imageLoaded.value) {
+return 0;
+}
+
     const rNat = naturalWidth.value / naturalHeight.value;
     const rCont = 16 / 9;
+
     if (rNat > rCont) {
         return containerHeight.value;
     } else {
@@ -81,14 +91,25 @@ const applyConstraints = () => {
     const hs = layoutHeight.value * zoom.value;
     const wc = containerWidth.value;
     const hc = containerHeight.value;
-    
+
     const limitX = Math.max(0, (ws - wc) / 2);
     const limitY = Math.max(0, (hs - hc) / 2);
-    
-    if (panX.value > limitX) panX.value = limitX;
-    if (panX.value < -limitX) panX.value = -limitX;
-    if (panY.value > limitY) panY.value = limitY;
-    if (panY.value < -limitY) panY.value = -limitY;
+
+    if (panX.value > limitX) {
+panX.value = limitX;
+}
+
+    if (panX.value < -limitX) {
+panX.value = -limitX;
+}
+
+    if (panY.value > limitY) {
+panY.value = limitY;
+}
+
+    if (panY.value < -limitY) {
+panY.value = -limitY;
+}
 };
 
 watch(zoom, () => {
@@ -105,7 +126,10 @@ const startDrag = (e) => {
 };
 
 const onDrag = (e) => {
-    if (!isDragging.value) return;
+    if (!isDragging.value) {
+return;
+}
+
     const dx = e.clientX - startX.value;
     const dy = e.clientY - startY.value;
     panX.value = savedPanX.value + dx;
@@ -114,7 +138,10 @@ const onDrag = (e) => {
 };
 
 const startDragTouch = (e) => {
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1) {
+return;
+}
+
     isDragging.value = true;
     startX.value = e.touches[0].clientX;
     startY.value = e.touches[0].clientY;
@@ -123,7 +150,10 @@ const startDragTouch = (e) => {
 };
 
 const onDragTouch = (e) => {
-    if (!isDragging.value || e.touches.length !== 1) return;
+    if (!isDragging.value || e.touches.length !== 1) {
+return;
+}
+
     const dx = e.touches[0].clientX - startX.value;
     const dy = e.touches[0].clientY - startY.value;
     panX.value = savedPanX.value + dx;
@@ -138,7 +168,10 @@ const endDrag = () => {
 // Handle file input selection
 const onFileSelected = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+
+    if (!file) {
+return;
+}
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -171,7 +204,9 @@ const onImageLoaded = (e) => {
 
 // Canvas-based cropping to exactly 1280x720 (16:9)
 const executeCrop = () => {
-    if (!imageLoaded.value) return;
+    if (!imageLoaded.value) {
+return;
+}
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280;
@@ -205,10 +240,14 @@ const openAddModal = () => {
     form.value = {
         title: '',
         description: '',
-        is_active: true
+        is_active: true,
     };
     croppedImageSrc.value = '';
-    if (fileInputRef.value) fileInputRef.value.value = '';
+
+    if (fileInputRef.value) {
+fileInputRef.value.value = '';
+}
+
     showFormModal.value = true;
 };
 
@@ -218,25 +257,34 @@ const openEditModal = (banner) => {
     form.value = {
         title: banner.title || '',
         description: banner.description || '',
-        is_active: banner.is_active
+        is_active: banner.is_active,
     };
     croppedImageSrc.value = banner.image_url;
-    if (fileInputRef.value) fileInputRef.value.value = '';
+
+    if (fileInputRef.value) {
+fileInputRef.value.value = '';
+}
+
     showFormModal.value = true;
 };
 
 const submitForm = async () => {
     if (!croppedImageSrc.value) {
-        triggerToast('Silakan pilih dan crop gambar banner terlebih dahulu!', 'error');
+        triggerToast(
+            'Silakan pilih dan crop gambar banner terlebih dahulu!',
+            'error',
+        );
+
         return;
     }
 
     isSubmitting.value = true;
+
     try {
         const payload = {
             title: form.value.title,
             description: form.value.description,
-            is_active: form.value.is_active ? 1 : 0
+            is_active: form.value.is_active ? 1 : 0,
         };
 
         // If it starts with data:image, it means a new crop was generated
@@ -245,26 +293,38 @@ const submitForm = async () => {
         }
 
         let response;
+
         if (isEditing.value) {
-            response = await axios.post(`/api/promos/${editingBannerId.value}`, payload);
+            response = await axios.post(
+                `/api/promos/${editingBannerId.value}`,
+                payload,
+            );
+
             if (response.data.success) {
-                const idx = localBanners.value.findIndex(b => b.id === editingBannerId.value);
+                const idx = localBanners.value.findIndex(
+                    (b) => b.id === editingBannerId.value,
+                );
+
                 if (idx !== -1) {
                     localBanners.value[idx] = response.data.banner;
                 }
+
                 triggerToast('Promo berhasil diperbarui!', 'success');
             }
         } else {
             response = await axios.post('/api/promos', payload);
+
             if (response.data.success) {
                 localBanners.value.unshift(response.data.banner);
                 triggerToast('Promo baru berhasil ditambahkan!', 'success');
             }
         }
+
         showFormModal.value = false;
     } catch (error) {
         console.error(error);
-        const errMsg = error.response?.data?.message || 'Gagal menyimpan promo.';
+        const errMsg =
+            error.response?.data?.message || 'Gagal menyimpan promo.';
         triggerToast(errMsg, 'error');
     } finally {
         isSubmitting.value = false;
@@ -281,12 +341,19 @@ const confirmDelete = (banner) => {
 };
 
 const executeDelete = async () => {
-    if (!bannerToDelete.value) return;
+    if (!bannerToDelete.value) {
+return;
+}
 
     try {
-        const response = await axios.delete(`/api/promos/${bannerToDelete.value.id}`);
+        const response = await axios.delete(
+            `/api/promos/${bannerToDelete.value.id}`,
+        );
+
         if (response.data.success) {
-            localBanners.value = localBanners.value.filter(b => b.id !== bannerToDelete.value.id);
+            localBanners.value = localBanners.value.filter(
+                (b) => b.id !== bannerToDelete.value.id,
+            );
             triggerToast('Promo berhasil dihapus!', 'success');
         }
     } catch (error) {
@@ -319,12 +386,13 @@ const executeDelete = async () => {
                             Kelola Promo & Banner
                         </h1>
                         <p class="text-xs text-gray-500">
-                            Atur banner promosi berasio 16:9 yang tampil di halaman pemesanan menu kafe.
+                            Atur banner promosi berasio 16:9 yang tampil di
+                            halaman pemesanan menu kafe.
                         </p>
                     </div>
                     <button
                         @click="openAddModal"
-                        class="flex items-center justify-center gap-2 rounded-2xl bg-[#3B2314] px-5 py-3 text-xs font-black text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-95 shadow-md shrink-0"
+                        class="flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#3B2314] px-5 py-3 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -346,7 +414,10 @@ const executeDelete = async () => {
             </div>
 
             <!-- List Banner Promo -->
-            <div v-if="localBanners.length === 0" class="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-[#D4A373]/30 bg-white py-16 px-4 text-center">
+            <div
+                v-if="localBanners.length === 0"
+                class="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-[#D4A373]/30 bg-white px-4 py-16 text-center"
+            >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -361,20 +432,28 @@ const executeDelete = async () => {
                         d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v4.5A2.25 2.25 0 0 0 2.25 13.5Z"
                     />
                 </svg>
-                <h3 class="text-sm font-bold text-[#3B2314]">Belum Ada Promo</h3>
-                <p class="mt-1 text-xs text-gray-400 max-w-xs">
-                    Unggah banner berasio 16:9 untuk dipajang di bagian atas halaman pemesanan pelanggan.
+                <h3 class="text-sm font-bold text-[#3B2314]">
+                    Belum Ada Promo
+                </h3>
+                <p class="mt-1 max-w-xs text-xs text-gray-400">
+                    Unggah banner berasio 16:9 untuk dipajang di bagian atas
+                    halaman pemesanan pelanggan.
                 </p>
             </div>
 
-            <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+                v-else
+                class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
                 <div
                     v-for="banner in localBanners"
                     :key="banner.id"
                     class="group overflow-hidden rounded-[24px] border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md"
                 >
                     <!-- Tampilan Banner 16:9 -->
-                    <div class="aspect-[16/9] w-full bg-gray-100 relative overflow-hidden">
+                    <div
+                        class="relative aspect-[16/9] w-full overflow-hidden bg-gray-100"
+                    >
                         <img
                             :src="banner.image_url"
                             :alt="banner.title || 'Promo'"
@@ -393,20 +472,26 @@ const executeDelete = async () => {
                     </div>
 
                     <!-- Informasi Promo & Aksi -->
-                    <div class="p-5 space-y-3">
+                    <div class="space-y-3 p-5">
                         <div>
-                            <h3 class="font-extrabold text-[#3B2314] line-clamp-1">
+                            <h3
+                                class="line-clamp-1 font-extrabold text-[#3B2314]"
+                            >
                                 {{ banner.title || 'Tanpa Judul' }}
                             </h3>
-                            <p class="text-xs text-gray-500 mt-1 line-clamp-2 min-h-[2rem]">
-                                {{ banner.description || 'Tidak ada deskripsi.' }}
+                            <p
+                                class="mt-1 line-clamp-2 min-h-[2rem] text-xs text-gray-500"
+                            >
+                                {{
+                                    banner.description || 'Tidak ada deskripsi.'
+                                }}
                             </p>
                         </div>
 
                         <div class="flex items-center gap-2 border-t pt-3">
                             <button
                                 @click="openEditModal(banner)"
-                                class="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-[#D4A373]/40 py-2 text-xs font-black text-[#3B2314] transition hover:bg-[#FAEDCD]/30 active:scale-98"
+                                class="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D4A373]/40 py-2 text-xs font-black text-[#3B2314] transition hover:bg-[#FAEDCD]/30 active:scale-98"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -426,7 +511,7 @@ const executeDelete = async () => {
                             </button>
                             <button
                                 @click="confirmDelete(banner)"
-                                class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-600 transition hover:bg-red-100 hover:border-red-300 active:scale-98"
+                                class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-600 transition hover:border-red-300 hover:bg-red-100 active:scale-98"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -452,21 +537,25 @@ const executeDelete = async () => {
         <!-- MODAL FORM PROMO (TAMBAH/EDIT) -->
         <div
             v-if="showFormModal"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-300"
         >
             <div
-                class="w-full max-w-lg scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300 flex flex-col max-h-[90vh]"
+                class="flex max-h-[90vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
             >
                 <!-- Header Modal -->
                 <div
                     class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white"
                 >
-                    <h3 class="text-sm font-extrabold truncate text-[#FAEDCD]">
-                        {{ isEditing ? 'Edit Banner Promo' : 'Tambah Banner Promo' }}
+                    <h3 class="truncate text-sm font-extrabold text-[#FAEDCD]">
+                        {{
+                            isEditing
+                                ? 'Edit Banner Promo'
+                                : 'Tambah Banner Promo'
+                        }}
                     </h3>
                     <button
                         @click="showFormModal = false"
-                        class="rounded-full p-1 text-[#FAEDCD]/80 hover:bg-[#FAEDCD]/10 hover:text-white transition"
+                        class="rounded-full p-1 text-[#FAEDCD]/80 transition hover:bg-[#FAEDCD]/10 hover:text-white"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -488,22 +577,32 @@ const executeDelete = async () => {
                 <!-- Form Body (Scrollable) -->
                 <form
                     @submit.prevent="submitForm"
-                    class="flex-1 overflow-y-auto p-6 space-y-5"
+                    class="flex-1 space-y-5 overflow-y-auto p-6"
                 >
                     <!-- Input File Gambar & Pratinjau Crop -->
                     <div class="space-y-2">
-                        <label class="block text-xs font-extrabold text-[#3B2314]/80">
+                        <label
+                            class="block text-xs font-extrabold text-[#3B2314]/80"
+                        >
                             Gambar Banner (Rasio 16:9) *
                         </label>
-                        
+
                         <!-- Box Pratinjau Ter-crop -->
-                        <div v-if="croppedImageSrc" class="aspect-[16/9] w-full bg-gray-50 border border-dashed border-[#D4A373]/40 rounded-2xl overflow-hidden relative group">
-                            <img :src="croppedImageSrc" class="h-full w-full object-cover" />
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition duration-200">
+                        <div
+                            v-if="croppedImageSrc"
+                            class="group relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-dashed border-[#D4A373]/40 bg-gray-50"
+                        >
+                            <img
+                                :src="croppedImageSrc"
+                                class="h-full w-full object-cover"
+                            />
+                            <div
+                                class="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
+                            >
                                 <button
                                     type="button"
                                     @click="() => fileInputRef.click()"
-                                    class="rounded-xl bg-[#FAEDCD] px-3.5 py-1.5 text-[11px] font-bold text-[#3B2314] hover:bg-white active:scale-95 transition"
+                                    class="rounded-xl bg-[#FAEDCD] px-3.5 py-1.5 text-[11px] font-bold text-[#3B2314] transition hover:bg-white active:scale-95"
                                 >
                                     Ubah Gambar
                                 </button>
@@ -514,7 +613,7 @@ const executeDelete = async () => {
                         <div
                             v-else
                             @click="() => fileInputRef.click()"
-                            class="flex flex-col items-center justify-center aspect-[16/9] w-full border-2 border-dashed border-[#D4A373]/30 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition py-6 text-center"
+                            class="flex aspect-[16/9] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D4A373]/30 bg-gray-50/50 py-6 text-center transition hover:bg-gray-50"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -522,7 +621,7 @@ const executeDelete = async () => {
                                 viewBox="0 0 24 24"
                                 stroke-width="1.5"
                                 stroke="currentColor"
-                                class="h-8 w-8 text-[#D4A373] mb-2"
+                                class="mb-2 h-8 w-8 text-[#D4A373]"
                             >
                                 <path
                                     stroke-linecap="round"
@@ -535,8 +634,13 @@ const executeDelete = async () => {
                                     d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
                                 />
                             </svg>
-                            <span class="text-[11px] font-bold text-[#3B2314]/80">Unggah & Crop Gambar</span>
-                            <span class="text-[10px] text-gray-400 mt-1">Format JPG, PNG, atau WEBP</span>
+                            <span
+                                class="text-[11px] font-bold text-[#3B2314]/80"
+                                >Unggah & Crop Gambar</span
+                            >
+                            <span class="mt-1 text-[10px] text-gray-400"
+                                >Format JPG, PNG, atau WEBP</span
+                            >
                         </div>
 
                         <input
@@ -550,56 +654,78 @@ const executeDelete = async () => {
 
                     <!-- Input Judul -->
                     <div class="space-y-1">
-                        <label class="block text-xs font-extrabold text-[#3B2314]/80">
+                        <label
+                            class="block text-xs font-extrabold text-[#3B2314]/80"
+                        >
                             Judul Promo (Opsional)
                         </label>
                         <input
                             v-model="form.title"
                             type="text"
                             placeholder="Contoh: Paket Coffee & Donut Hemat"
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-xs text-[#3B2314] placeholder-gray-400 focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] outline-none"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-xs text-[#3B2314] placeholder-gray-400 outline-none focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         />
                     </div>
 
                     <!-- Input Deskripsi -->
                     <div class="space-y-1">
-                        <label class="block text-xs font-extrabold text-[#3B2314]/80">
+                        <label
+                            class="block text-xs font-extrabold text-[#3B2314]/80"
+                        >
                             Deskripsi Promo (Opsional)
                         </label>
                         <textarea
                             v-model="form.description"
                             rows="3"
                             placeholder="Jelaskan detail promo atau diskon menarik di sini..."
-                            class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-xs text-[#3B2314] placeholder-gray-400 focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] outline-none resize-none"
+                            class="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-xs text-[#3B2314] placeholder-gray-400 outline-none focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         ></textarea>
                     </div>
 
                     <!-- Switch Aktif/Nonaktif -->
-                    <div class="flex items-center justify-between border-t pt-4">
+                    <div
+                        class="flex items-center justify-between border-t pt-4"
+                    >
                         <div>
-                            <span class="block text-xs font-extrabold text-[#3B2314]">Status Banner</span>
-                            <span class="block text-[10px] text-gray-400">Tampilkan promo langsung di halaman pemesanan.</span>
+                            <span
+                                class="block text-xs font-extrabold text-[#3B2314]"
+                                >Status Banner</span
+                            >
+                            <span class="block text-[10px] text-gray-400"
+                                >Tampilkan promo langsung di halaman
+                                pemesanan.</span
+                            >
                         </div>
                         <button
                             type="button"
                             @click="form.is_active = !form.is_active"
                             class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                            :class="form.is_active ? 'bg-emerald-500' : 'bg-gray-200'"
+                            :class="
+                                form.is_active
+                                    ? 'bg-emerald-500'
+                                    : 'bg-gray-200'
+                            "
                         >
                             <span
                                 class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                :class="form.is_active ? 'translate-x-5' : 'translate-x-0'"
+                                :class="
+                                    form.is_active
+                                        ? 'translate-x-5'
+                                        : 'translate-x-0'
+                                "
                             />
                         </button>
                     </div>
                 </form>
 
                 <!-- Footer Modal -->
-                <div class="border-t bg-gray-50 px-6 py-4 flex items-center justify-end gap-3">
+                <div
+                    class="flex items-center justify-end gap-3 border-t bg-gray-50 px-6 py-4"
+                >
                     <button
                         type="button"
                         @click="showFormModal = false"
-                        class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 active:scale-95 transition"
+                        class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50 active:scale-95"
                     >
                         Batal
                     </button>
@@ -607,7 +733,7 @@ const executeDelete = async () => {
                         type="button"
                         @click="submitForm"
                         :disabled="isSubmitting"
-                        class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] hover:bg-[#2A180E] active:scale-95 transition shadow-sm flex items-center gap-1.5 disabled:opacity-55"
+                        class="flex items-center gap-1.5 rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-55"
                     >
                         <span v-if="isSubmitting">Menyimpan...</span>
                         <span v-else>Simpan Promo</span>
@@ -619,19 +745,21 @@ const executeDelete = async () => {
         <!-- MODAL CROP GAMBAR 16:9 KUSTOM -->
         <div
             v-if="showCropModal"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-opacity duration-300"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md transition-opacity duration-300"
         >
             <div
-                class="w-full max-w-xl scale-100 transform overflow-hidden rounded-[32px] bg-white border border-[#D4A373]/30 shadow-2xl transition-all duration-300 flex flex-col max-h-[95vh]"
+                class="flex max-h-[95vh] w-full max-w-xl scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
             >
                 <!-- Header Crop Modal -->
-                <div class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white">
+                <div
+                    class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white"
+                >
                     <h3 class="text-sm font-extrabold text-[#FAEDCD]">
                         Pemotong Gambar Banner (16:9)
                     </h3>
                     <button
                         @click="showCropModal = false"
-                        class="rounded-full p-1 text-[#FAEDCD]/80 hover:bg-[#FAEDCD]/10 hover:text-white transition"
+                        class="rounded-full p-1 text-[#FAEDCD]/80 transition hover:bg-[#FAEDCD]/10 hover:text-white"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -651,15 +779,16 @@ const executeDelete = async () => {
                 </div>
 
                 <!-- Crop Body -->
-                <div class="flex-1 p-6 space-y-6 overflow-y-auto">
-                    <p class="text-[11px] text-gray-500 text-center">
-                        Geser gambar di dalam bingkai dan gunakan slider untuk memperbesar agar posisi crop pas 16:9.
+                <div class="flex-1 space-y-6 overflow-y-auto p-6">
+                    <p class="text-center text-[11px] text-gray-500">
+                        Geser gambar di dalam bingkai dan gunakan slider untuk
+                        memperbesar agar posisi crop pas 16:9.
                     </p>
 
                     <!-- Workspace Pemotong Gambar -->
                     <div
                         ref="cropBoxRef"
-                        class="aspect-[16/9] w-full bg-black relative overflow-hidden rounded-2xl border border-dashed border-[#D4A373]/60 cursor-move"
+                        class="relative aspect-[16/9] w-full cursor-move overflow-hidden rounded-2xl border border-dashed border-[#D4A373]/60 bg-black"
                         @mousedown="startDrag"
                         @mousemove="onDrag"
                         @mouseup="endDrag"
@@ -670,35 +799,49 @@ const executeDelete = async () => {
                     >
                         <img
                             :src="rawImageSrc"
-                            class="absolute select-none pointer-events-none max-w-none origin-center"
+                            class="pointer-events-none absolute max-w-none origin-center select-none"
                             :style="{
                                 width: layoutWidth + 'px',
                                 height: layoutHeight + 'px',
                                 transform: `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`,
                                 left: '50%',
-                                top: '50%'
+                                top: '50%',
                             }"
                             @load="onImageLoaded"
                         />
 
                         <!-- Grid Mask Visual overlay 16:9 -->
-                        <div class="absolute inset-0 pointer-events-none border border-white/40 flex flex-col justify-between">
-                            <div class="w-full flex justify-between">
-                                <div class="border-t-2 border-l-2 border-white w-6 h-6 m-3"></div>
-                                <div class="border-t-2 border-r-2 border-white w-6 h-6 m-3"></div>
+                        <div
+                            class="pointer-events-none absolute inset-0 flex flex-col justify-between border border-white/40"
+                        >
+                            <div class="flex w-full justify-between">
+                                <div
+                                    class="m-3 h-6 w-6 border-t-2 border-l-2 border-white"
+                                ></div>
+                                <div
+                                    class="m-3 h-6 w-6 border-t-2 border-r-2 border-white"
+                                ></div>
                             </div>
-                            <div class="w-full flex justify-between">
-                                <div class="border-b-2 border-l-2 border-white w-6 h-6 m-3"></div>
-                                <div class="border-b-2 border-r-2 border-white w-6 h-6 m-3"></div>
+                            <div class="flex w-full justify-between">
+                                <div
+                                    class="m-3 h-6 w-6 border-b-2 border-l-2 border-white"
+                                ></div>
+                                <div
+                                    class="m-3 h-6 w-6 border-r-2 border-b-2 border-white"
+                                ></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Slider Zoom -->
                     <div class="space-y-2">
-                        <div class="flex items-center justify-between text-xs font-bold text-[#3B2314]">
+                        <div
+                            class="flex items-center justify-between text-xs font-bold text-[#3B2314]"
+                        >
                             <span>Perbesar Gambar (Zoom)</span>
-                            <span class="font-mono text-[#D4A373]">{{ Math.round(zoom * 100) }}%</span>
+                            <span class="font-mono text-[#D4A373]"
+                                >{{ Math.round(zoom * 100) }}%</span
+                            >
                         </div>
                         <div class="flex items-center gap-3">
                             <svg
@@ -707,7 +850,7 @@ const executeDelete = async () => {
                                 viewBox="0 0 24 24"
                                 stroke-width="2"
                                 stroke="currentColor"
-                                class="h-4 w-4 text-gray-400 shrink-0"
+                                class="h-4 w-4 shrink-0 text-gray-400"
                             >
                                 <path
                                     stroke-linecap="round"
@@ -721,7 +864,7 @@ const executeDelete = async () => {
                                 min="1"
                                 max="3"
                                 step="0.01"
-                                class="w-full accent-[#3B2314] cursor-pointer"
+                                class="w-full cursor-pointer accent-[#3B2314]"
                             />
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -729,7 +872,7 @@ const executeDelete = async () => {
                                 viewBox="0 0 24 24"
                                 stroke-width="2.5"
                                 stroke="currentColor"
-                                class="h-4 w-4 text-[#3B2314] shrink-0"
+                                class="h-4 w-4 shrink-0 text-[#3B2314]"
                             >
                                 <path
                                     stroke-linecap="round"
@@ -742,18 +885,20 @@ const executeDelete = async () => {
                 </div>
 
                 <!-- Footer Crop Modal -->
-                <div class="border-t bg-gray-50 px-6 py-4 flex items-center justify-between">
+                <div
+                    class="flex items-center justify-between border-t bg-gray-50 px-6 py-4"
+                >
                     <button
                         type="button"
                         @click="showCropModal = false"
-                        class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 active:scale-95 transition"
+                        class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50 active:scale-95"
                     >
                         Batal
                     </button>
                     <button
                         type="button"
                         @click="executeCrop"
-                        class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] hover:bg-[#2A180E] active:scale-95 transition shadow-md"
+                        class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
                     >
                         Potong & Terapkan (16:9)
                     </button>
@@ -764,10 +909,10 @@ const executeDelete = async () => {
         <!-- MODAL KONFIRMASI HAPUS -->
         <div
             v-if="showConfirmModal"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-300"
         >
             <div
-                class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[28px] border border-red-100 bg-white p-6 shadow-2xl transition-all duration-300 flex flex-col text-center"
+                class="flex w-full max-w-sm scale-100 transform flex-col overflow-hidden rounded-[28px] border border-red-100 bg-white p-6 text-center shadow-2xl transition-all duration-300"
             >
                 <div
                     class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600"
@@ -791,18 +936,19 @@ const executeDelete = async () => {
                     Hapus Banner Promo?
                 </h3>
                 <p class="mt-2 text-xs text-gray-500">
-                    Tindakan ini permanen. Gambar banner akan dihapus dari server dan tidak dapat dikembalikan.
+                    Tindakan ini permanen. Gambar banner akan dihapus dari
+                    server dan tidak dapat dikembalikan.
                 </p>
                 <div class="mt-6 flex items-center justify-center gap-3">
                     <button
                         @click="showConfirmModal = false"
-                        class="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 active:scale-95 transition"
+                        class="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50 active:scale-95"
                     >
                         Batal
                     </button>
                     <button
                         @click="executeDelete"
-                        class="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 active:scale-95 transition shadow-sm"
+                        class="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-95"
                     >
                         Ya, Hapus
                     </button>
