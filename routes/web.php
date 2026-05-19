@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BaristaController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SettingController;
@@ -58,6 +59,12 @@ Route::get('/order/success/{secure_key}', [OrderController::class, 'success'])->
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/cashier', [OrderController::class, 'cashierIndex'])->name('cashier.index');
     Route::post('/api/orders/cashier', [OrderController::class, 'storeCashierOrder'])->name('orders.cashier.store');
+
+    // Barista Staff Management CRUD (Owner Only)
+    Route::get('/dashboard/staff', [BaristaController::class, 'index'])->name('staff.management');
+    Route::post('/api/staff', [BaristaController::class, 'store'])->name('staff.store');
+    Route::put('/api/staff/{user}', [BaristaController::class, 'update'])->name('staff.update');
+    Route::delete('/api/staff/{user}', [BaristaController::class, 'destroy'])->name('staff.destroy');
 
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
     Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');

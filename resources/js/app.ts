@@ -17,6 +17,7 @@ createInertiaApp({
             case lowerName === 'dashboard':
             case lowerName === 'menumanagement':
             case lowerName === 'tablemanagement':
+            case lowerName === 'staffmanagement':
             case lowerName === 'integrationsetup':
             case lowerName === 'promomanagement':
             case lowerName === 'cashier':
