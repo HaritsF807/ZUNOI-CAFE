@@ -14,7 +14,7 @@ class SettingController extends Controller
     public function integrationIndex()
     {
         $settings = [
-            'qris_manual_url' => Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'),
+            'qris_manual_url' => Setting::getValue('qris_manual_url', 'https://i.ibb.co.com/zTW39St0/G427647447-0703-A01-default.png'),
             'fonnte_token' => Setting::getValue('fonnte_token', 'TokenFonnteAnda123'),
             'tokopay_merchant_id' => Setting::getValue('tokopay_merchant_id', 'M-123456'),
             'tokopay_secret' => Setting::getValue('tokopay_secret', 'SecretKey...'),
