@@ -30,12 +30,14 @@ Route::get('/scan-required', function () {
 
 Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
-        $products = Product::with('category')->get();
+        $products = Product::with(['category', 'addons'])->get();
         $categories = Category::orderBy('name', 'asc')->get();
-
+        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        
         return inertia('Customer/MenuList', [
             'products' => $products,
             'categories' => $categories,
+            'banners' => $banners
         ]);
     })->name('order.index');
 
@@ -55,18 +57,21 @@ Route::get('/order/success/{secure_key}', [OrderController::class, 'success'])->
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
+    Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');
 
     Route::get('/dashboard/tables', function () {
         return inertia('TableManagement');
     })->name('table.management');
 
     Route::get('/dashboard/menu-preview', function () {
-        $products = Product::with('category')->get();
+        $products = Product::with(['category', 'addons'])->get();
         $categories = Category::orderBy('name', 'asc')->get();
+        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
         return inertia('MenuPreview', [
             'products' => $products,
             'categories' => $categories,
+            'banners' => $banners
         ]);
     })->name('menu.preview');
 
@@ -98,9 +103,20 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/api/products/{id}', [MenuController::class, 'deleteProduct']);
     Route::patch('/api/products/{id}/toggle-availability', [MenuController::class, 'toggleProductAvailability']);
 
+    // API Kelola Addon Menu
+    Route::post('/api/products/{product_id}/addons', [MenuController::class, 'storeAddon']);
+    Route::post('/api/products/{product_id}/addons/default', [MenuController::class, 'useDefaultAddons']);
+    Route::put('/api/product-addons/{id}', [MenuController::class, 'updateAddon']);
+    Route::delete('/api/product-addons/{id}', [MenuController::class, 'deleteAddon']);
+
     Route::post('/api/categories', [MenuController::class, 'storeCategory']);
     Route::put('/api/categories/{id}', [MenuController::class, 'updateCategory']);
     Route::delete('/api/categories/{id}', [MenuController::class, 'deleteCategory']);
+
+    // API Kelola Promo
+    Route::post('/api/promos', [\App\Http\Controllers\PromoController::class, 'storePromo']);
+    Route::post('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromo']);
+    Route::delete('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromo']);
 
     Route::get('/api/orders/live', [OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [OrderController::class, 'updateStatus']);

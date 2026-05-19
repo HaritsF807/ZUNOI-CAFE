@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAddon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ class MenuController extends Controller
     public function index()
     {
         $categories = Category::orderBy('name', 'asc')->get();
-        $products = Product::with('category')->orderBy('created_at', 'desc')->get();
+        $products = Product::with(['category', 'addons'])->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('MenuManagement', [
             'categories' => $categories,
@@ -183,6 +184,109 @@ class MenuController extends Controller
             'success' => true,
             'message' => 'Status ketersediaan menu berhasil diperbarui!',
             'is_available' => $product->is_available,
+        ]);
+    }
+
+    // --- MANAJEMEN ADDON PRODUK ---
+
+    public function storeAddon(Request $request, $productId)
+    {
+        $validated = $request->validate([
+            'addon_name' => 'required|string|max:100',
+            'extra_price' => 'required|numeric|min:0',
+            'category' => 'required|string|max:50'
+        ]);
+
+        $product = Product::findOrFail($productId);
+        
+        $addon = $product->addons()->create([
+            'addon_name' => $validated['addon_name'],
+            'extra_price' => $validated['extra_price'],
+            'category' => $validated['category']
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Add-on berhasil ditambahkan!',
+            'addon' => [
+                'id' => $addon->id,
+                'name' => $addon->addon_name,
+                'price' => (int) $addon->extra_price,
+                'category' => $addon->category
+            ]
+        ]);
+    }
+
+    public function updateAddon(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'addon_name' => 'required|string|max:100',
+            'extra_price' => 'required|numeric|min:0',
+            'category' => 'required|string|max:50'
+        ]);
+
+        $addon = ProductAddon::findOrFail($id);
+        $addon->update([
+            'addon_name' => $validated['addon_name'],
+            'extra_price' => $validated['extra_price'],
+            'category' => $validated['category']
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Add-on berhasil diperbarui!',
+            'addon' => [
+                'id' => $addon->id,
+                'name' => $addon->addon_name,
+                'price' => (int) $addon->extra_price,
+                'category' => $addon->category
+            ]
+        ]);
+    }
+
+    public function deleteAddon($id)
+    {
+        $addon = ProductAddon::findOrFail($id);
+        $addon->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Add-on berhasil dihapus!'
+        ]);
+    }
+
+    public function useDefaultAddons($productId)
+    {
+        $product = Product::findOrFail($productId);
+        
+        // Hapus addon yang sudah ada untuk menghindari duplikasi
+        $product->addons()->delete();
+        
+        $defaultAddons = [
+            ['addon_name' => 'Gula', 'extra_price' => 0, 'category' => 'sugar'],
+            ['addon_name' => 'Es Batu', 'extra_price' => 0, 'category' => 'ice'],
+            ['addon_name' => 'Whipped Cream', 'extra_price' => 5000, 'category' => 'topping'],
+            ['addon_name' => 'Espresso Shot', 'extra_price' => 7000, 'category' => 'topping'],
+        ];
+        
+        foreach ($defaultAddons as $addon) {
+            $product->addons()->create($addon);
+        }
+
+        // Kembalikan daftar addon terformat
+        $addons = $product->addons()->get()->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'name' => $a->addon_name,
+                'price' => (int) $a->extra_price,
+                'category' => $a->category
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Template addon standar berhasil diterapkan!',
+            'addons' => $addons
         ]);
     }
 }

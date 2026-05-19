@@ -55,8 +55,8 @@ const fetchTables = async () => {
 
 const addTable = async () => {
     if (!newTableName.value) {
-return;
-}
+        return;
+    }
 
     try {
         await axios.post('/api/tables', { table_name: newTableName.value });

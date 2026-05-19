@@ -1,7 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
 const triggerToast = (message, type = 'success') => {
@@ -109,8 +109,8 @@ const openEditCategory = (category) => {
 
 const saveCategory = async () => {
     if (!categoryForm.value.name) {
-return;
-}
+        return;
+    }
 
     try {
         if (isEditingCategory.value) {
@@ -305,6 +305,134 @@ const toggleAvailability = async (product) => {
     }
 };
 
+// --- MANAJEMEN ADDON ---
+const showAddonsModal = ref(false);
+const selectedProductForAddons = ref(null);
+const addonsList = ref([]);
+
+// Form Addon Baru / Edit Addon
+const addonForm = ref({
+    id: null,
+    addon_name: '',
+    extra_price: '',
+    category: 'topping',
+});
+const isEditingAddon = ref(false);
+
+const openManageAddons = (product) => {
+    selectedProductForAddons.value = product;
+    // Map addons dari additions (yang di-format oleh accessor Model)
+    addonsList.value = product.additions ? [...product.additions] : [];
+    resetAddonForm();
+    showAddonsModal.value = true;
+};
+
+const resetAddonForm = () => {
+    addonForm.value = {
+        id: null,
+        addon_name: '',
+        extra_price: '',
+        category: 'topping',
+    };
+    isEditingAddon.value = false;
+};
+
+const handleEditAddon = (addon) => {
+    addonForm.value = {
+        id: addon.id,
+        addon_name: addon.name,
+        extra_price: addon.price,
+        category: addon.category || 'topping',
+    };
+    isEditingAddon.value = true;
+};
+
+const saveAddon = async () => {
+    if (!addonForm.value.addon_name || addonForm.value.extra_price === '') {
+        triggerToast('Mohon isi Nama Add-on dan Harga!', 'error');
+
+        return;
+    }
+
+    try {
+        if (isEditingAddon.value) {
+            // Update
+            const response = await axios.put(
+                `/api/product-addons/${addonForm.value.id}`,
+                {
+                    addon_name: addonForm.value.addon_name,
+                    extra_price: addonForm.value.extra_price,
+                    category: addonForm.value.category,
+                },
+            );
+
+            if (response.data.success) {
+                // Update daftar lokal modal
+                const index = addonsList.value.findIndex(
+                    (a) => a.id === addonForm.value.id,
+                );
+
+                if (index !== -1) {
+                    addonsList.value[index] = response.data.addon;
+                }
+
+                triggerToast('Add-on berhasil diperbarui!', 'success');
+                resetAddonForm();
+                updateProductAddonsInLocalList();
+            }
+        } else {
+            // Tambah Baru
+            const response = await axios.post(
+                `/api/products/${selectedProductForAddons.value.id}/addons`,
+                {
+                    addon_name: addonForm.value.addon_name,
+                    extra_price: addonForm.value.extra_price,
+                    category: addonForm.value.category,
+                },
+            );
+
+            if (response.data.success) {
+                addonsList.value.push(response.data.addon);
+                triggerToast('Add-on berhasil ditambahkan!', 'success');
+                resetAddonForm();
+                updateProductAddonsInLocalList();
+            }
+        }
+    } catch (error) {
+        console.error('Gagal menyimpan addon', error);
+        triggerToast('Gagal menyimpan add-on.', 'error');
+    }
+};
+
+const deleteAddon = async (addonId) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus add-on ini?')) {
+return;
+}
+
+    try {
+        const response = await axios.delete(`/api/product-addons/${addonId}`);
+
+        if (response.data.success) {
+            addonsList.value = addonsList.value.filter((a) => a.id !== addonId);
+            triggerToast('Add-on berhasil dihapus!', 'success');
+            updateProductAddonsInLocalList();
+        }
+    } catch (error) {
+        console.error('Gagal menghapus addon', error);
+        triggerToast('Gagal menghapus add-on.', 'error');
+    }
+};
+
+const updateProductAddonsInLocalList = () => {
+    const pIndex = localProducts.value.findIndex(
+        (p) => p.id === selectedProductForAddons.value.id,
+    );
+
+    if (pIndex !== -1) {
+        localProducts.value[pIndex].additions = [...addonsList.value];
+    }
+};
+
 // --- REACTIVE FILTERING ---
 
 const filteredProducts = computed(() => {
@@ -329,6 +457,25 @@ const filteredProducts = computed(() => {
 
     return result;
 });
+
+// --- PAGINATION FOR PRODUCTS ---
+const currentPage = ref(1);
+const itemsPerPage = 4;
+
+watch([selectedCategoryFilter, searchProductQuery], () => {
+    currentPage.value = 1;
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredProducts.value.length / itemsPerPage);
+});
+
+const paginatedProducts = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+
+    return filteredProducts.value.slice(start, end);
+});
 </script>
 
 <template>
@@ -348,10 +495,6 @@ const filteredProducts = computed(() => {
                         class="flex items-center gap-2 text-2xl font-extrabold tracking-wide"
                     >
                         Kelola Menu & Kategori
-                        <span
-                            class="rounded-full bg-[#D4A373] px-2 py-0.5 align-middle text-[10px] font-black tracking-widest text-[#3B2314] uppercase"
-                            >Menu Admin</span
-                        >
                     </h2>
                     <p class="mt-1 text-xs text-gray-300">
                         Perbarui daftar makanan, kopi, atur stok habis, serta
@@ -410,15 +553,15 @@ const filteredProducts = computed(() => {
                     class="space-y-4 rounded-3xl border border-[#D4A373]/20 bg-white p-5 shadow-sm"
                 >
                     <div
-                        class="flex items-center justify-between border-b pb-3"
+                        class="flex items-center justify-between gap-2 border-b pb-3"
                     >
                         <h3
-                            class="text-sm font-black tracking-wider text-[#3B2314] uppercase"
+                            class="text-xs font-black tracking-wider whitespace-nowrap text-[#3B2314] uppercase"
                         >
                             Kategori Menu
                         </h3>
                         <span
-                            class="rounded-full border border-[#D4A373]/30 bg-[#FAEDCD] px-2 py-0.5 text-[10px] font-bold text-[#3B2314]"
+                            class="shrink-0 rounded-full border border-[#D4A373]/30 bg-[#FAEDCD] px-2 py-0.5 text-[9px] font-bold whitespace-nowrap text-[#3B2314]"
                         >
                             {{ localCategories.length }} Kategori
                         </span>
@@ -476,7 +619,7 @@ const filteredProducts = computed(() => {
                                 class="flex flex-1 items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition"
                                 :class="
                                     selectedCategoryFilter === category.id
-                                        ? 'rounded-xl bg-[#D4A373] text-[#3B2314] shadow-sm'
+                                        ? 'rounded-xl bg-[#3B2314] text-white shadow-sm'
                                         : 'text-gray-600'
                                 "
                             >
@@ -503,7 +646,7 @@ const filteredProducts = computed(() => {
                                     class="shrink-0 rounded-full px-2 py-0.5 text-[10px]"
                                     :class="
                                         selectedCategoryFilter === category.id
-                                            ? 'bg-[#3B2314]/10 text-[#3B2314]'
+                                            ? 'bg-white/10 text-white'
                                             : 'bg-gray-100 text-gray-500'
                                     "
                                 >
@@ -652,157 +795,255 @@ const filteredProducts = computed(() => {
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2" v-else>
-                        <div
-                            v-for="product in filteredProducts"
-                            :key="product.id"
-                            class="relative flex gap-4 rounded-2xl border border-[#D4A373]/20 bg-gradient-to-br from-white to-[#FAEDCD]/5 p-4 transition-all duration-300 hover:border-[#D4A373]/60 hover:shadow-md"
-                            :class="{
-                                'border-gray-200 bg-gray-50 opacity-60':
-                                    !product.is_available,
-                            }"
-                        >
-                            <!-- Foto Produk -->
+                    <div class="space-y-6" v-else>
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div
-                                class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
+                                v-for="product in paginatedProducts"
+                                :key="product.id"
+                                class="relative flex flex-col justify-between rounded-2xl border border-[#D4A373]/20 bg-gradient-to-br from-white to-[#FAEDCD]/5 p-4 transition-all duration-300 hover:border-[#D4A373]/60 hover:shadow-md"
+                                :class="{
+                                    'border-gray-200 bg-gray-50/80':
+                                        !product.is_available,
+                                }"
                             >
-                                <img
-                                    :src="
-                                        product.image ||
-                                        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=300&auto=format&fit=crop'
-                                    "
-                                    alt="Menu"
-                                    class="h-full w-full object-cover"
-                                />
-                            </div>
-
-                            <!-- Detail Produk -->
-                            <div
-                                class="flex min-w-0 flex-1 flex-col justify-between"
-                            >
-                                <div>
+                                <!-- Top Content: Image & Detail -->
+                                <div class="flex gap-4">
+                                    <!-- Foto Produk -->
                                     <div
-                                        class="mb-1 flex flex-wrap items-center gap-1.5"
+                                        class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
                                     >
-                                        <span
-                                            class="rounded-full border border-[#D4A373]/30 bg-[#FAEDCD] px-1.5 py-0.5 text-[9px] font-black tracking-wider text-[#3B2314] uppercase"
-                                        >
-                                            {{
-                                                product.category?.name || 'Kopi'
-                                            }}
-                                        </span>
-
-                                        <span
-                                            class="rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase"
-                                            :class="
-                                                product.is_available
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-600'
+                                        <img
+                                            :src="
+                                                product.image ||
+                                                'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=300&auto=format&fit=crop'
                                             "
-                                        >
-                                            {{
-                                                product.is_available
-                                                    ? 'Tersedia'
-                                                    : 'Habis'
-                                            }}
-                                        </span>
+                                            alt="Menu"
+                                            class="h-full w-full object-cover"
+                                        />
                                     </div>
-                                    <h4
-                                        class="truncate text-sm font-bold text-[#3B2314]"
-                                        :title="product.name"
+
+                                    <!-- Detail Produk -->
+                                    <div
+                                        class="flex min-w-0 flex-1 flex-col justify-between"
                                     >
-                                        {{ product.name }}
-                                    </h4>
-                                    <p
-                                        class="mt-0.5 line-clamp-1 text-[11px] text-gray-400"
-                                    >
-                                        {{
-                                            product.description ||
-                                            'Seduhan kopi nikmat khas Zunoi.'
-                                        }}
-                                    </p>
+                                        <div>
+                                            <div
+                                                class="mb-1 flex flex-wrap items-center gap-1.5"
+                                            >
+                                                <span
+                                                    class="rounded-full border border-[#D4A373]/30 bg-[#FAEDCD] px-1.5 py-0.5 text-[9px] font-black tracking-wider text-[#3B2314] uppercase"
+                                                >
+                                                    {{
+                                                        product.category
+                                                            ?.name || 'Kopi'
+                                                    }}
+                                                </span>
+
+                                                <span
+                                                    class="rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase"
+                                                    :class="
+                                                        product.is_available
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-red-100 text-red-600'
+                                                    "
+                                                >
+                                                    {{
+                                                        product.is_available
+                                                            ? 'Tersedia'
+                                                            : 'Habis'
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <h4
+                                                class="truncate text-sm font-bold text-[#3B2314]"
+                                                :title="product.name"
+                                            >
+                                                {{ product.name }}
+                                            </h4>
+                                            <p
+                                                class="mt-0.5 line-clamp-1 text-[11px] text-gray-400"
+                                            >
+                                                {{
+                                                    product.description ||
+                                                    'Seduhan kopi nikmat khas Zunoi.'
+                                                }}
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="mt-2 flex items-center justify-between border-t border-[#D4A373]/10 pt-2"
+                                        >
+                                            <span
+                                                class="text-xs font-black text-[#3B2314]"
+                                                >Rp
+                                                {{
+                                                    parseInt(
+                                                        product.price,
+                                                    ).toLocaleString('id-ID')
+                                                }}</span
+                                            >
+
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <!-- Edit -->
+                                                <button
+                                                    @click="
+                                                        openEditProduct(product)
+                                                    "
+                                                    class="rounded-lg border border-transparent p-1.5 text-blue-500 hover:border-blue-100 hover:bg-blue-50"
+                                                    title="Edit Menu"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke-width="2.5"
+                                                        stroke="currentColor"
+                                                        class="h-3.5 w-3.5"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                                                        />
+                                                    </svg>
+                                                </button>
+
+                                                <!-- Kelola Addons -->
+                                                <button
+                                                    @click="
+                                                        openManageAddons(
+                                                            product,
+                                                        )
+                                                    "
+                                                    class="rounded-lg border border-transparent p-1.5 text-amber-600 hover:border-amber-100 hover:bg-amber-50"
+                                                    title="Kelola Add-on"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke-width="2.5"
+                                                        stroke="currentColor"
+                                                        class="h-3.5 w-3.5"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
+                                                        />
+                                                    </svg>
+                                                </button>
+
+                                                <!-- Hapus -->
+                                                <button
+                                                    @click="
+                                                        deleteProduct(
+                                                            product.id,
+                                                            product.name,
+                                                        )
+                                                    "
+                                                    class="rounded-lg border border-transparent p-1.5 text-red-500 hover:border-red-100 hover:bg-red-50"
+                                                    title="Hapus Menu"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke-width="2.5"
+                                                        stroke="currentColor"
+                                                        class="h-3.5 w-3.5"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <!-- Bottom Content: Set Habis / Set Ada spanning full width -->
                                 <div
-                                    class="mt-2 flex items-center justify-between border-t border-[#D4A373]/10 pt-2"
+                                    class="mt-3 border-t border-[#D4A373]/10 pt-3"
                                 >
-                                    <span
-                                        class="text-xs font-black text-[#3B2314]"
-                                        >Rp
-                                        {{
-                                            parseInt(
-                                                product.price,
-                                            ).toLocaleString('id-ID')
-                                        }}</span
+                                    <button
+                                        @click="toggleAvailability(product)"
+                                        class="w-full transform rounded-xl border py-2 text-center text-xs font-black tracking-wider transition active:scale-[0.98]"
+                                        :class="
+                                            product.is_available
+                                                ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100/70'
+                                                : 'border-green-200 bg-green-50 text-green-600 hover:bg-green-100/70'
+                                        "
                                     >
-
-                                    <div class="flex items-center gap-2">
-                                        <!-- Toggle Ketersediaan Instan -->
-                                        <button
-                                            @click="toggleAvailability(product)"
-                                            class="transform rounded-lg border px-2 py-1 text-[10px] font-bold transition active:scale-95"
-                                            :class="
-                                                product.is_available
-                                                    ? 'border-red-200 bg-red-50 text-red-500 hover:bg-red-100'
-                                                    : 'border-green-200 bg-green-50 text-green-600 hover:bg-green-100'
-                                            "
-                                        >
-                                            {{
-                                                product.is_available
-                                                    ? 'Set Habis'
-                                                    : 'Set Ada'
-                                            }}
-                                        </button>
-
-                                        <!-- Edit -->
-                                        <button
-                                            @click="openEditProduct(product)"
-                                            class="rounded-lg border border-transparent p-1.5 text-blue-500 hover:border-blue-100 hover:bg-blue-50"
-                                            title="Edit Menu"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="2.5"
-                                                stroke="currentColor"
-                                                class="h-3.5 w-3.5"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                                                />
-                                            </svg>
-                                        </button>
-
-                                        <!-- Hapus -->
-                                        <button
-                                            @click="
-                                                deleteProduct(
-                                                    product.id,
-                                                    product.name,
-                                                )
-                                            "
-                                            class="rounded-lg border border-transparent p-1.5 text-red-500 hover:border-red-100 hover:bg-red-50"
-                                            title="Hapus Menu"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="2.5"
-                                                stroke="currentColor"
-                                                class="h-3.5 w-3.5"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                        {{
+                                            product.is_available
+                                                ? 'Set Habis (Tandai Kosong)'
+                                                : 'Set Ada (Tandai Tersedia)'
+                                        }}
+                                    </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- PAGINATION CONTROLS -->
+                        <div
+                            v-if="totalPages > 1"
+                            class="flex flex-col items-center justify-between gap-4 border-t border-[#D4A373]/10 pt-6 sm:flex-row"
+                        >
+                            <span class="text-xs font-bold text-gray-500">
+                                Menampilkan
+                                {{ (currentPage - 1) * itemsPerPage + 1 }} -
+                                {{
+                                    Math.min(
+                                        currentPage * itemsPerPage,
+                                        filteredProducts.length,
+                                    )
+                                }}
+                                dari {{ filteredProducts.length }} menu
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <!-- Prev -->
+                                <button
+                                    @click="
+                                        currentPage > 1 ? currentPage-- : null
+                                    "
+                                    :disabled="currentPage === 1"
+                                    class="rounded-xl border border-[#D4A373]/20 bg-white px-3 py-1.5 text-xs font-bold text-[#3B2314] transition hover:bg-[#FAEDCD]/20 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                                >
+                                    Sebelumnya
+                                </button>
+
+                                <!-- Page numbers -->
+                                <button
+                                    v-for="page in totalPages"
+                                    :key="page"
+                                    @click="currentPage = page"
+                                    class="h-8 w-8 rounded-xl text-xs font-black transition active:scale-95"
+                                    :class="
+                                        currentPage === page
+                                            ? 'bg-[#3B2314] text-white shadow-sm'
+                                            : 'border border-[#D4A373]/20 bg-white text-[#3B2314] hover:bg-[#FAEDCD]/10'
+                                    "
+                                >
+                                    {{ page }}
+                                </button>
+
+                                <!-- Next -->
+                                <button
+                                    @click="
+                                        currentPage < totalPages
+                                            ? currentPage++
+                                            : null
+                                    "
+                                    :disabled="currentPage === totalPages"
+                                    class="rounded-xl border border-[#D4A373]/20 bg-white px-3 py-1.5 text-xs font-bold text-[#3B2314] transition hover:bg-[#FAEDCD]/20 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                                >
+                                    Berikutnya
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1084,6 +1325,218 @@ const filteredProducts = computed(() => {
                     class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg"
                 >
                     Simpan Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MANAGE ADDONS -->
+    <div
+        v-if="showAddonsModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
+    >
+        <div
+            class="flex max-h-[85vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+        >
+            <!-- Modal Header -->
+            <div
+                class="relative shrink-0 border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"
+            >
+                <button
+                    @click="showAddonsModal = false"
+                    class="absolute top-4 right-4 text-gray-300 transition hover:text-white"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2.5"
+                        stroke="currentColor"
+                        class="h-5 w-5"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 18 18 6M6 6l12 12"
+                        />
+                    </svg>
+                </button>
+                <h3 class="text-md truncate px-8 font-extrabold text-[#FAEDCD]">
+                    Kelola Add-on: {{ selectedProductForAddons?.name }}
+                </h3>
+                <p
+                    class="text-[9px] font-bold tracking-widest text-[#D4A373] uppercase"
+                >
+                    Zunoi Caffe Addon Customization
+                </p>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="flex-1 space-y-6 overflow-y-auto p-6">
+                <!-- Add / Edit Addon Form -->
+                <div
+                    class="space-y-4 rounded-2xl border border-gray-200 bg-[#FAEDCD]/15 p-5 shadow-sm"
+                >
+                    <h4
+                        class="text-xs font-black tracking-wider text-[#3B2314] uppercase"
+                    >
+                        {{
+                            isEditingAddon
+                                ? 'Edit Add-on'
+                                : 'Tambah Add-on Baru'
+                        }}
+                    </h4>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Name -->
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-extrabold text-[#3B2314]/80"
+                                >Nama Add-on *</label
+                            >
+                            <input
+                                v-model="addonForm.addon_name"
+                                type="text"
+                                placeholder="Contoh: Caramel Sauce, Oat Milk"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            />
+                        </div>
+
+                        <!-- Price -->
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-extrabold text-[#3B2314]/80"
+                                >Harga Tambahan (Rp) *</label
+                            >
+                            <input
+                                v-model="addonForm.extra_price"
+                                type="number"
+                                placeholder="Contoh: 4000"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            />
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-end gap-2 border-t border-[#D4A373]/10 pt-2"
+                    >
+                        <button
+                            v-if="isEditingAddon"
+                            type="button"
+                            @click="resetAddonForm"
+                            class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            @click="saveAddon"
+                            class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-95"
+                        >
+                            {{ isEditingAddon ? 'Simpan' : 'Tambah' }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Existing Addons List -->
+                <div class="space-y-3">
+                    <h4
+                        class="border-b pb-2 text-xs font-black tracking-wider text-[#3B2314] uppercase"
+                    >
+                        Daftar Add-on Aktif ({{ addonsList.length }})
+                    </h4>
+
+                    <div
+                        v-if="addonsList.length === 0"
+                        class="py-8 text-center text-xs text-gray-400"
+                    >
+                        Belum ada add-on untuk menu ini.
+                    </div>
+
+                    <div v-else class="divide-y divide-gray-100">
+                        <div
+                            v-for="addon in addonsList"
+                            :key="addon.id"
+                            class="flex items-center justify-between py-3"
+                        >
+                            <div>
+                                <span
+                                    class="text-sm font-bold text-[#3B2314]"
+                                    >{{ addon.name }}</span
+                                >
+                                <div class="mt-0.5 flex items-center gap-1.5">
+                                    <span
+                                        class="font-mono text-xs font-extrabold text-gray-500"
+                                    >
+                                        + Rp
+                                        {{
+                                            parseInt(
+                                                addon.price,
+                                            ).toLocaleString('id-ID')
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <!-- Edit Addon -->
+                                <button
+                                    @click="handleEditAddon(addon)"
+                                    class="rounded-lg p-1.5 text-blue-500 transition hover:bg-blue-50"
+                                    title="Edit Addon"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="2.5"
+                                        stroke="currentColor"
+                                        class="h-3.5 w-3.5"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <!-- Delete Addon -->
+                                <button
+                                    @click="deleteAddon(addon.id)"
+                                    class="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50"
+                                    title="Hapus Addon"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="2.5"
+                                        stroke="currentColor"
+                                        class="h-3.5 w-3.5"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div
+                class="flex shrink-0 justify-end border-t border-[#D4A373]/10 bg-gray-50 p-4"
+            >
+                <button
+                    @click="showAddonsModal = false"
+                    class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                >
+                    Tutup
                 </button>
             </div>
         </div>

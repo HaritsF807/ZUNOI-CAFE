@@ -76,8 +76,8 @@ const fetchTables = async () => {
 
 const addTable = async () => {
     if (!newTableName.value) {
-return;
-}
+        return;
+    }
 
     try {
         await axios.post('/api/tables', { table_name: newTableName.value });
@@ -163,8 +163,8 @@ const saveIntegration = () => {
 // Filtered Orders berdasarkan tab yang dipilih
 const filteredOrders = computed(() => {
     if (currentTab.value === 'all') {
-return orders.value;
-}
+        return orders.value;
+    }
 
     return orders.value.filter((o) => o.status === currentTab.value);
 });
@@ -232,8 +232,8 @@ const deleteTable = async (id, tableName) => {
             `Apakah Anda yakin ingin menghapus ${tableName}? Seluruh data barcode meja ini akan dinonaktifkan.`,
         )
     ) {
-return;
-}
+        return;
+    }
 
     try {
         const response = await axios.delete(`/api/tables/${id}`);
