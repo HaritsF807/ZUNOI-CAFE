@@ -61,12 +61,9 @@ provide('triggerToast', triggerToast);
 
 <template>
     <div class="flex min-h-screen bg-[#FAEDCD] font-sans text-gray-800">
-        <aside
-            class="sticky top-0 z-30 flex h-screen w-64 flex-col justify-between bg-[#3B2314] text-[#FAEDCD] transition-all duration-300"
-            :class="{
-                'w-64': isSidebarOpen,
-                'w-20 overflow-hidden': !isSidebarOpen,
-            }"
+        <aside 
+            class="bg-[#3B2314] text-[#FAEDCD] h-screen sticky top-0 flex flex-col justify-between transition-all duration-300 z-30"
+            :class="isSidebarOpen ? 'w-64' : 'w-20 overflow-hidden'"
         >
             <div class="flex flex-1 flex-col overflow-y-auto">
                 <!-- Sidebar Header -->
@@ -176,6 +173,37 @@ provide('triggerToast', triggerToast);
                             />
                         </svg>
                         <span v-if="isSidebarOpen">Kelola Meja</span>
+                    </Link>
+
+                    <Link
+                        :href="'/dashboard/promos'"
+                        class="flex items-center gap-3 rounded-xl px-4 py-3 transition duration-200"
+                        :class="
+                            usePage().url.startsWith('/dashboard/promos')
+                                ? 'bg-[#D4A373] font-bold text-[#3B2314] shadow-md'
+                                : 'text-gray-300 hover:bg-[#FAEDCD]/10 hover:text-white'
+                        "
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            class="h-5 w-5"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a2.25 2.25 0 0 0 3.181 0l5.103-5.103a2.25 2.25 0 0 0 0-3.181l-9.581-9.581A2.25 2.25 0 0 0 10.432 3h-.864Z"
+                            />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M7.5 7.5h.008v.008H7.5V7.5Z"
+                            />
+                        </svg>
+                        <span v-if="isSidebarOpen">Kelola Promo</span>
                     </Link>
 
                     <Link
@@ -339,9 +367,6 @@ provide('triggerToast', triggerToast);
 
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                        <p class="text-xs font-bold text-[#3B2314]">
-                            {{ user.name }}
-                        </p>
                         <p
                             class="font-mono text-[10px] font-bold tracking-widest text-gray-500 uppercase"
                         >
