@@ -29,6 +29,14 @@ const cartTotal = computed(() => {
     return form.cart_items.reduce((total, item) => total + (item.price * item.quantity), 0);
 });
 
+const taxTotal = computed(() => {
+    return Math.round(cartTotal.value * 0.02);
+});
+
+const finalTotal = computed(() => {
+    return cartTotal.value + taxTotal.value;
+});
+
 const handleFileChange = (e) => {
     form.payment_proof = e.target.files[0];
 };
@@ -120,18 +128,18 @@ const submitOrder = () => {
                         </div>
 
                         <!-- Price Details Summary -->
-                        <div v-if="form.cart_items.length > 0" class="pt-3 border-t border-gray-100 space-y-2 text-xs">
-                            <div class="flex justify-between text-gray-500 font-medium">
+                        <div v-if="form.cart_items.length > 0" class="pt-3 border-t border-gray-100 space-y-2 text-xs text-[#3B2314]">
+                            <div class="flex justify-between text-gray-600 font-medium">
                                 <span>Subtotal</span>
                                 <span>Rp {{ cartTotal.toLocaleString('id-ID') }}</span>
                             </div>
-                            <div class="flex justify-between text-gray-500 font-medium">
-                                <span>Pajak (0%)</span>
-                                <span>Rp 0</span>
+                            <div class="flex justify-between text-gray-600 font-medium">
+                                <span>Pajak (2%)</span>
+                                <span>Rp {{ taxTotal.toLocaleString('id-ID') }}</span>
                             </div>
-                            <div class="flex justify-between text-[#3B2314] font-extrabold text-sm pt-1.5 border-t border-dashed">
+                            <div class="flex justify-between text-[#3B2314] font-black text-sm pt-1.5 border-t border-dashed">
                                 <span>Total Pembayaran</span>
-                                <span>Rp {{ cartTotal.toLocaleString('id-ID') }}</span>
+                                <span>Rp {{ finalTotal.toLocaleString('id-ID') }}</span>
                             </div>
                         </div>
                     </div>
@@ -198,7 +206,7 @@ const submitOrder = () => {
                     </div>
 
                     <button type="submit" class="w-full bg-[#D4A373] text-[#3B2314] font-black py-4 rounded-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-wider" :disabled="form.cart_items.length === 0" :class="{'opacity-50 cursor-not-allowed': form.cart_items.length === 0}">
-                        Bayar Sekarang &bull; Rp {{ cartTotal.toLocaleString('id-ID') }}
+                        Bayar Sekarang &bull; Rp {{ finalTotal.toLocaleString('id-ID') }}
                     </button>
                 </div>
             </form>
