@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     qris_manual_url: String,
@@ -35,6 +36,47 @@ onUnmounted(() => {
     document.documentElement.style.backgroundColor = originalBgColor;
 });
 
+const voucherCodeInput = ref('');
+const appliedVoucher = ref(null);
+const discountAmount = ref(0);
+const voucherError = ref('');
+const isCheckingVoucher = ref(false);
+
+const applyVoucher = async () => {
+    if (!voucherCodeInput.value.trim()) return;
+
+    isCheckingVoucher.value = true;
+    voucherError.value = '';
+
+    try {
+        const response = await axios.post('/api/vouchers/validate', {
+            code: voucherCodeInput.value.trim(),
+            subtotal: cartTotal.value
+        });
+
+        if (response.data.success) {
+            appliedVoucher.value = response.data.voucher;
+            discountAmount.value = response.data.discount_amount;
+            voucherError.value = '';
+            triggerToast('Voucher berhasil diterapkan!');
+        }
+    } catch (error) {
+        voucherError.value = error.response?.data?.message || 'Kode voucher tidak valid!';
+        appliedVoucher.value = null;
+        discountAmount.value = 0;
+    } finally {
+        isCheckingVoucher.value = false;
+    }
+};
+
+const removeVoucher = () => {
+    appliedVoucher.value = null;
+    discountAmount.value = 0;
+    voucherCodeInput.value = '';
+    voucherError.value = '';
+    triggerToast('Voucher dihapus.', 'error');
+};
+
 const cartTotal = computed(() => {
     return form.value.cart_items.reduce(
         (total, item) => total + item.price * item.quantity,
@@ -43,11 +85,11 @@ const cartTotal = computed(() => {
 });
 
 const taxTotal = computed(() => {
-    return Math.round(cartTotal.value * 0.02);
+    return 0;
 });
 
 const finalTotal = computed(() => {
-    return cartTotal.value + taxTotal.value;
+    return Math.max(0, cartTotal.value - discountAmount.value);
 });
 
 // State Custom Toast Notification
@@ -228,6 +270,8 @@ const submitPreviewOrder = () => {
                 payment_method: form.value.payment_method,
                 total_price: finalTotal.value,
                 items: JSON.stringify(form.value.cart_items),
+                voucher_code: appliedVoucher.value ? appliedVoucher.value.code : '',
+                discount_amount: discountAmount.value,
             },
         });
     }, 1500);
@@ -551,6 +595,46 @@ const submitPreviewOrder = () => {
                             </p>
                         </div>
 
+                        <!-- Voucher Promo -->
+                        <div v-if="form.cart_items.length > 0" class="space-y-2 border-t border-dashed pt-3">
+                            <label class="text-[11px] font-black text-gray-500 uppercase tracking-wider block">Voucher Promo</label>
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="voucherCodeInput"
+                                    type="text"
+                                    :disabled="appliedVoucher !== null"
+                                    placeholder="Masukkan kode voucher..."
+                                    class="flex-1 bg-white text-gray-700 text-xs px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A373] uppercase font-bold placeholder-normal disabled:bg-gray-100 disabled:text-gray-400"
+                                />
+                                <button
+                                    v-if="!appliedVoucher"
+                                    type="button"
+                                    @click="applyVoucher"
+                                    :disabled="isCheckingVoucher || !voucherCodeInput.trim()"
+                                    class="px-4 py-2.5 bg-[#3B2314] hover:bg-[#2A180E] disabled:bg-gray-300 text-white rounded-xl text-xs font-bold transition shrink-0 active:scale-95"
+                                >
+                                    {{ isCheckingVoucher ? '...' : 'Terapkan' }}
+                                </button>
+                                <button
+                                    v-else
+                                    type="button"
+                                    @click="removeVoucher"
+                                    class="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition shrink-0 border border-red-200 active:scale-95"
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                            <p v-if="voucherError" class="text-[10px] font-bold text-red-500 mt-1">
+                                {{ voucherError }}
+                            </p>
+                            <p v-if="appliedVoucher" class="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                                </svg>
+                                Voucher "{{ appliedVoucher.name }}" berhasil diterapkan!
+                            </p>
+                        </div>
+
                         <!-- Price Details Summary -->
                         <div
                             v-if="form.cart_items.length > 0"
@@ -568,12 +652,15 @@ const submitPreviewOrder = () => {
                                 >
                             </div>
                             <div
-                                class="flex justify-between font-medium text-gray-600"
+                                v-if="discountAmount > 0"
+                                class="flex justify-between font-bold text-emerald-600"
                             >
-                                <span>Pajak (2%)</span>
+                                <span>Diskon Voucher ({{ appliedVoucher?.code }})</span>
                                 <span
-                                    >Rp
-                                    {{ taxTotal.toLocaleString('id-ID') }}</span
+                                    >-Rp
+                                    {{
+                                        discountAmount.toLocaleString('id-ID')
+                                    }}</span
                                 >
                             </div>
                             <div

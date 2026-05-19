@@ -55,6 +55,9 @@ Route::middleware(['verify_table_session'])->group(function () {
 
 Route::get('/order/success/{secure_key}', [OrderController::class, 'success'])->name('order.success');
 
+// Validasi Voucher (Public untuk Guest & Cashier)
+Route::post('/api/vouchers/validate', [\App\Http\Controllers\PromoController::class, 'validateVoucher']);
+
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/cashier', [OrderController::class, 'cashierIndex'])->name('cashier.index');
@@ -100,6 +103,8 @@ Route::middleware(['auth'])->group(function () {
             'payment_method' => $request->query('payment_method'),
             'total_price' => $request->query('total_price'),
             'items' => $request->query('items'),
+            'voucher_code' => $request->query('voucher_code'),
+            'discount_amount' => $request->query('discount_amount'),
         ]);
     })->name('menu.preview.success');
 
@@ -127,6 +132,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/promos', [\App\Http\Controllers\PromoController::class, 'storePromo']);
     Route::post('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromo']);
     Route::delete('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromo']);
+
+    // API Kelola Voucher
+    Route::post('/api/vouchers', [\App\Http\Controllers\PromoController::class, 'storeVoucher']);
+    Route::post('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'updateVoucher']);
+    Route::delete('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'deleteVoucher']);
 
     Route::get('/api/orders/live', [OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [OrderController::class, 'updateStatus']);

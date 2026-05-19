@@ -4,15 +4,20 @@ import axios from 'axios';
 import { ref, computed, nextTick, watch } from 'vue';
 import ZunoiAdminLayout from '@/layouts/ZunoiAdminLayout.vue';
 
-// Receive banners from server
+// Receive banners and vouchers from server
 const props = defineProps({
     banners: {
+        type: Array,
+        default: () => [],
+    },
+    vouchers: {
         type: Array,
         default: () => [],
     },
 });
 
 const localBanners = ref([...props.banners]);
+const localVouchers = ref([...props.vouchers]);
 
 const triggerToast = (message, type = 'success') => {
     window.dispatchEvent(
@@ -364,6 +369,132 @@ return;
         bannerToDelete.value = null;
     }
 };
+
+// Voucher form & state variables
+const showVoucherModal = ref(false);
+const isEditingVoucher = ref(false);
+const editingVoucherId = ref(null);
+const isSubmittingVoucher = ref(false);
+
+const voucherForm = ref({
+    code: '',
+    name: '',
+    discount_type: 'percentage',
+    discount_value: 0,
+    min_purchase: 0,
+    is_active: true,
+});
+
+const openAddVoucherModal = () => {
+    isEditingVoucher.value = false;
+    editingVoucherId.value = null;
+    voucherForm.value = {
+        code: '',
+        name: '',
+        discount_type: 'percentage',
+        discount_value: 0,
+        min_purchase: 0,
+        is_active: true,
+    };
+    showVoucherModal.value = true;
+};
+
+const openEditVoucherModal = (voucher) => {
+    isEditingVoucher.value = true;
+    editingVoucherId.value = voucher.id;
+    voucherForm.value = {
+        code: voucher.code,
+        name: voucher.name,
+        discount_type: voucher.discount_type,
+        discount_value: parseFloat(voucher.discount_value),
+        min_purchase: parseFloat(voucher.min_purchase),
+        is_active: !!voucher.is_active,
+    };
+    showVoucherModal.value = true;
+};
+
+const submitVoucherForm = async () => {
+    isSubmittingVoucher.value = true;
+    try {
+        const payload = {
+            ...voucherForm.value,
+            is_active: voucherForm.value.is_active ? 1 : 0
+        };
+        
+        let response;
+        if (isEditingVoucher.value) {
+            response = await axios.post(`/api/vouchers/${editingVoucherId.value}`, payload);
+            if (response.data.success) {
+                const idx = localVouchers.value.findIndex(v => v.id === editingVoucherId.value);
+                if (idx !== -1) {
+                    localVouchers.value[idx] = response.data.voucher;
+                }
+                triggerToast('Voucher berhasil diperbarui!', 'success');
+            }
+        } else {
+            response = await axios.post('/api/vouchers', payload);
+            if (response.data.success) {
+                localVouchers.value.unshift(response.data.voucher);
+                triggerToast('Voucher baru berhasil ditambahkan!', 'success');
+            }
+        }
+        showVoucherModal.value = false;
+    } catch (error) {
+        console.error(error);
+        const errMsg = error.response?.data?.message || 'Gagal menyimpan voucher.';
+        triggerToast(errMsg, 'error');
+    } finally {
+        isSubmittingVoucher.value = false;
+    }
+};
+
+const showVoucherDeleteModal = ref(false);
+const voucherToDelete = ref(null);
+
+const confirmDeleteVoucher = (voucher) => {
+    voucherToDelete.value = voucher;
+    showVoucherDeleteModal.value = true;
+};
+
+const executeDeleteVoucher = async () => {
+    if (!voucherToDelete.value) return;
+    
+    try {
+        const response = await axios.delete(`/api/vouchers/${voucherToDelete.value.id}`);
+        if (response.data.success) {
+            localVouchers.value = localVouchers.value.filter(v => v.id !== voucherToDelete.value.id);
+            triggerToast('Voucher berhasil dihapus!', 'success');
+        }
+    } catch (error) {
+        console.error(error);
+        triggerToast('Gagal menghapus voucher.', 'error');
+    } finally {
+        showVoucherDeleteModal.value = false;
+        voucherToDelete.value = null;
+    }
+};
+
+const toggleVoucherStatus = async (voucher) => {
+    try {
+        const newStatus = !voucher.is_active;
+        const response = await axios.post(`/api/vouchers/${voucher.id}`, {
+            code: voucher.code,
+            name: voucher.name,
+            discount_type: voucher.discount_type,
+            discount_value: voucher.discount_value,
+            min_purchase: voucher.min_purchase,
+            is_active: newStatus ? 1 : 0
+        });
+        
+        if (response.data.success) {
+            voucher.is_active = newStatus;
+            triggerToast(`Voucher berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`, 'success');
+        }
+    } catch (error) {
+        console.error(error);
+        triggerToast('Gagal mengubah status voucher.', 'error');
+    }
+};
 </script>
 
 <template>
@@ -415,34 +546,7 @@ return;
 
             <!-- List Banner Promo -->
             <div
-                v-if="localBanners.length === 0"
-                class="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-[#D4A373]/30 bg-white px-4 py-16 text-center"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="mb-4 h-12 w-12 text-[#D4A373]/60"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v4.5A2.25 2.25 0 0 0 2.25 13.5Z"
-                    />
-                </svg>
-                <h3 class="text-sm font-bold text-[#3B2314]">
-                    Belum Ada Promo
-                </h3>
-                <p class="mt-1 max-w-xs text-xs text-gray-400">
-                    Unggah banner berasio 16:9 untuk dipajang di bagian atas
-                    halaman pemesanan pelanggan.
-                </p>
-            </div>
-
-            <div
-                v-else
+                v-if="localBanners.length > 0"
                 class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
                 <div
@@ -511,6 +615,166 @@ return;
                             </button>
                             <button
                                 @click="confirmDelete(banner)"
+                                class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-600 transition hover:border-red-300 hover:bg-red-100 active:scale-98"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="h-4 w-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Pembatas & Heading Kelola Voucher -->
+            <div class="relative overflow-hidden rounded-[32px] border border-[#D4A373]/20 bg-white p-6 shadow-sm md:p-8">
+                <div class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"></div>
+                <div class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-2xl font-black text-[#3B2314]">
+                            Kelola Voucher Promo
+                        </h2>
+                        <p class="text-xs text-gray-500">
+                            Buat, edit, dan atur kupon diskon nominal atau persentase untuk pemesanan pelanggan.
+                        </p>
+                    </div>
+                    <button
+                        @click="openAddVoucherModal"
+                        class="flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#3B2314] px-5 py-3 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="h-4 w-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 4.5v15m7.5-7.5h-15"
+                            />
+                        </svg>
+                        Tambah Voucher
+                    </button>
+                </div>
+            </div>
+
+            <!-- List Voucher Promo -->
+            <div v-if="localVouchers.length === 0" class="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-[#D4A373]/30 bg-white px-4 py-16 text-center">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="mb-4 h-12 w-12 text-[#D4A373]/60"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
+                    />
+                </svg>
+                <h3 class="text-sm font-bold text-[#3B2314]">Belum Ada Voucher</h3>
+                <p class="mt-1 max-w-xs text-xs text-gray-400">
+                    Mulai buat voucher promo diskon persentase atau nominal untuk menarik minat pelanggan.
+                </p>
+            </div>
+
+            <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div
+                    v-for="voucher in localVouchers"
+                    :key="voucher.id"
+                    class="group overflow-hidden rounded-[24px] border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                >
+                    <!-- Header Voucher Card -->
+                    <div class="relative bg-gradient-to-r from-[#3B2314] to-[#4e301d] p-5 text-white flex flex-col gap-2">
+                        <!-- Switch Toggle Active Status -->
+                        <div class="absolute top-4 right-4 flex items-center gap-1.5 bg-black/25 backdrop-blur-sm rounded-full py-1 px-2.5">
+                            <span class="text-[9px] font-black uppercase text-[#FAEDCD]">
+                                {{ voucher.is_active ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                            <button 
+                                @click="toggleVoucherStatus(voucher)"
+                                class="relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                :class="voucher.is_active ? 'bg-emerald-500' : 'bg-gray-400'"
+                            >
+                                <span 
+                                    class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                    :class="voucher.is_active ? 'translate-x-3' : 'translate-x-0'"
+                                ></span>
+                            </button>
+                        </div>
+                        
+                        <span class="inline-block self-start rounded-lg bg-[#FAEDCD] px-3 py-1 text-xs font-black text-[#3B2314] tracking-wider uppercase shadow-sm">
+                            {{ voucher.code }}
+                        </span>
+                        
+                        <h3 class="text-sm font-extrabold text-[#FAEDCD] line-clamp-1 mt-1">
+                            {{ voucher.name }}
+                        </h3>
+                    </div>
+
+                    <!-- Detail & Action Voucher -->
+                    <div class="p-5 flex-1 flex flex-col justify-between gap-4">
+                        <div class="space-y-2 text-xs">
+                            <div class="flex items-center justify-between text-gray-500">
+                                <span>Tipe Potongan</span>
+                                <span class="font-bold text-[#3B2314] uppercase">
+                                    {{ voucher.discount_type === 'percentage' ? 'Persentase (%)' : 'Nominal (Rupiah)' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-gray-500">
+                                <span>Nilai Potongan</span>
+                                <span class="font-extrabold text-emerald-600">
+                                    {{ voucher.discount_type === 'percentage' ? `${parseFloat(voucher.discount_value)}%` : `Rp ${parseFloat(voucher.discount_value).toLocaleString('id-ID')}` }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-gray-500">
+                                <span>Minimal Belanja</span>
+                                <span class="font-bold text-[#3B2314]">
+                                    Rp {{ parseFloat(voucher.min_purchase).toLocaleString('id-ID') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Aksi Button -->
+                        <div class="flex items-center gap-2 border-t pt-3">
+                            <button
+                                @click="openEditVoucherModal(voucher)"
+                                class="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D4A373]/40 py-2 text-xs font-black text-[#3B2314] transition hover:bg-[#FAEDCD]/30 active:scale-98"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="h-3.5 w-3.5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                                    />
+                                </svg>
+                                Edit
+                            </button>
+                            <button
+                                @click="confirmDeleteVoucher(voucher)"
                                 class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-600 transition hover:border-red-300 hover:bg-red-100 active:scale-98"
                             >
                                 <svg
@@ -948,6 +1212,195 @@ return;
                     </button>
                     <button
                         @click="executeDelete"
+                        class="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-95"
+                    >
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL FORM VOUCHER (TAMBAH/EDIT) -->
+        <div
+            v-if="showVoucherModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-300"
+        >
+            <div
+                class="flex max-h-[90vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            >
+                <!-- Header Modal -->
+                <div
+                    class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white"
+                >
+                    <h3 class="truncate text-sm font-extrabold text-[#FAEDCD]">
+                        {{ isEditingVoucher ? 'Edit Voucher Promo' : 'Tambah Voucher Baru' }}
+                    </h3>
+                    <button
+                        @click="showVoucherModal = false"
+                        class="rounded-full p-1 text-[#FAEDCD]/80 transition hover:bg-[#FAEDCD]/10 hover:text-white"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="h-5 w-5"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M6 18 18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form Body -->
+                <form @submit.prevent="submitVoucherForm" class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <!-- Kode Voucher -->
+                    <div>
+                        <label class="mb-1 block text-xs font-bold text-gray-700">Kode Voucher</label>
+                        <input
+                            v-model="voucherForm.code"
+                            type="text"
+                            placeholder="Contoh: COFFEEHEBAT"
+                            required
+                            class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-bold uppercase text-[#3B2314] placeholder-[#3B2314]/30 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        />
+                        <p class="mt-1 text-[10px] text-gray-400">Kode unik yang diinput oleh pelanggan saat checkout.</p>
+                    </div>
+
+                    <!-- Nama Voucher -->
+                    <div>
+                        <label class="mb-1 block text-xs font-bold text-gray-700">Nama Voucher</label>
+                        <input
+                            v-model="voucherForm.name"
+                            type="text"
+                            placeholder="Contoh: Diskon Kopi 10%"
+                            required
+                            class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-[#3B2314] placeholder-gray-400 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        />
+                    </div>
+
+                    <!-- Grid: Tipe Potongan & Nilai Potongan -->
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-xs font-bold text-gray-700">Tipe Potongan</label>
+                            <select
+                                v-model="voucherForm.discount_type"
+                                class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            >
+                                <option value="percentage">Persentase (%)</option>
+                                <option value="nominal">Nominal (Rupiah)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-bold text-gray-700">
+                                {{ voucherForm.discount_type === 'percentage' ? 'Nilai Potongan (%)' : 'Nilai Potongan (Rp)' }}
+                            </label>
+                            <input
+                                v-model.number="voucherForm.discount_value"
+                                type="number"
+                                min="0"
+                                required
+                                class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Minimal Pembelian -->
+                    <div>
+                        <label class="mb-1 block text-xs font-bold text-gray-700">Minimal Pembelian (Rp)</label>
+                        <input
+                            v-model.number="voucherForm.min_purchase"
+                            type="number"
+                            min="0"
+                            required
+                            class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        />
+                    </div>
+
+                    <!-- Status Aktif Switch -->
+                    <div class="flex items-center justify-between rounded-xl bg-gray-50 p-3.5 border">
+                        <div>
+                            <span class="block text-xs font-extrabold text-[#3B2314]">Aktifkan Voucher</span>
+                            <span class="text-[10px] text-gray-500">Tentukan apakah voucher ini bisa langsung digunakan oleh pelanggan.</span>
+                        </div>
+                        <button
+                            type="button"
+                            @click="voucherForm.is_active = !voucherForm.is_active"
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                            :class="voucherForm.is_active ? 'bg-emerald-500' : 'bg-gray-300'"
+                        >
+                            <span
+                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                :class="voucherForm.is_active ? 'translate-x-5' : 'translate-x-0'"
+                            ></span>
+                        </button>
+                    </div>
+
+                    <!-- Footer Modal Buttons -->
+                    <div class="flex items-center justify-end gap-3 border-t pt-4 mt-6">
+                        <button
+                            type="button"
+                            @click="showVoucherModal = false"
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50 active:scale-95"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="isSubmittingVoucher"
+                            class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
+                        >
+                            {{ isSubmittingVoucher ? 'Menyimpan...' : 'Simpan Voucher' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL KONFIRMASI HAPUS VOUCHER -->
+        <div
+            v-if="showVoucherDeleteModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-300"
+        >
+            <div
+                class="flex w-full max-w-sm scale-100 transform flex-col overflow-hidden rounded-[28px] border border-red-100 bg-white p-6 text-center shadow-2xl transition-all duration-300"
+            >
+                <div
+                    class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        class="h-6 w-6"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                        />
+                    </svg>
+                </div>
+                <h3 class="text-sm font-black text-gray-800">
+                    Hapus Voucher Promo?
+                </h3>
+                <p class="mt-2 text-xs text-gray-500">
+                    Tindakan ini permanen. Voucher <b>{{ voucherToDelete?.code }}</b> akan dihapus dari sistem dan tidak dapat digunakan lagi.
+                </p>
+                <div class="mt-6 flex items-center justify-center gap-3">
+                    <button
+                        @click="showVoucherDeleteModal = false"
+                        class="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50 active:scale-95"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        @click="executeDeleteVoucher"
                         class="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-95"
                     >
                         Ya, Hapus

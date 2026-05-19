@@ -57,6 +57,48 @@ const selectedTableId = ref<number | ''>('');
 const selectedPaymentMethod = ref<'cash' | 'qris_manual' | 'qris_tokopay'>('cash');
 const generalNotes = ref('');
 
+// Voucher state
+const voucherCodeInput = ref('');
+const appliedVoucher = ref<any>(null);
+const discountAmount = ref(0);
+const voucherError = ref('');
+const isCheckingVoucher = ref(false);
+
+const applyVoucher = async () => {
+    if (!voucherCodeInput.value.trim()) return;
+
+    isCheckingVoucher.value = true;
+    voucherError.value = '';
+
+    try {
+        const response = await axios.post('/api/vouchers/validate', {
+            code: voucherCodeInput.value.trim(),
+            subtotal: subtotal.value
+        });
+
+        if (response.data.success) {
+            appliedVoucher.value = response.data.voucher;
+            discountAmount.value = response.data.discount_amount;
+            voucherError.value = '';
+            triggerToast('Voucher berhasil diterapkan!');
+        }
+    } catch (error: any) {
+        voucherError.value = error.response?.data?.message || 'Kode voucher tidak valid!';
+        appliedVoucher.value = null;
+        discountAmount.value = 0;
+    } finally {
+        isCheckingVoucher.value = false;
+    }
+};
+
+const removeVoucher = () => {
+    appliedVoucher.value = null;
+    discountAmount.value = 0;
+    voucherCodeInput.value = '';
+    voucherError.value = '';
+    triggerToast('Voucher dihapus.', 'error');
+};
+
 // Reset table selection when order type changes to takeaway
 watch(orderType, (newType) => {
     if (newType === 'takeaway') {
@@ -94,7 +136,10 @@ const subtotal = computed(() => {
 });
 
 const tax = computed(() => 0); // Can be set if needed
-const total = computed(() => subtotal.value + tax.value);
+const total = computed(() => {
+    const afterDiscount = Math.max(0, subtotal.value - discountAmount.value);
+    return afterDiscount + tax.value;
+});
 
 // Cart Actions
 const openNoteModal = (product: Product) => {
@@ -214,7 +259,8 @@ const submitCashierOrder = async () => {
                 price: item.price,
                 notes: item.notes
             })),
-            notes: generalNotes.value
+            notes: generalNotes.value,
+            voucher_code: appliedVoucher.value ? appliedVoucher.value.code : null
         });
         
         if (response.data.success) {
@@ -228,6 +274,10 @@ const submitCashierOrder = async () => {
             customerPhone.value = '';
             selectedTableId.value = '';
             generalNotes.value = '';
+            appliedVoucher.value = null;
+            discountAmount.value = 0;
+            voucherCodeInput.value = '';
+            voucherError.value = '';
         }
     } catch (error: any) {
         const errMsg = error.response?.data?.message || 'Gagal menyimpan pesanan.';
@@ -580,11 +630,55 @@ const formatPrice = (price: number) => {
                         ></textarea>
                     </div>
 
+                    <!-- Voucher Promo -->
+                    <div class="space-y-1.5 pt-2 border-t border-dashed">
+                        <label class="text-xs font-extrabold text-[#3B2314] uppercase tracking-wider block">Voucher Promo</label>
+                        <div class="flex gap-2">
+                            <input
+                                v-model="voucherCodeInput"
+                                type="text"
+                                :disabled="appliedVoucher !== null"
+                                placeholder="Masukkan kode voucher..."
+                                class="flex-1 bg-white text-gray-700 text-xs px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A373] uppercase font-bold placeholder-normal disabled:bg-gray-100 disabled:text-gray-400"
+                            />
+                            <button
+                                v-if="!appliedVoucher"
+                                type="button"
+                                @click="applyVoucher"
+                                :disabled="isCheckingVoucher || !voucherCodeInput.trim()"
+                                class="px-4 py-2.5 bg-[#3B2314] hover:bg-[#2A180E] disabled:bg-gray-300 text-white rounded-xl text-xs font-bold transition shrink-0 active:scale-95"
+                            >
+                                {{ isCheckingVoucher ? '...' : 'Terapkan' }}
+                            </button>
+                            <button
+                                v-else
+                                type="button"
+                                @click="removeVoucher"
+                                class="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition shrink-0 border border-red-200 active:scale-95"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                        <p v-if="voucherError" class="text-[10px] font-bold text-red-500 mt-1">
+                            {{ voucherError }}
+                        </p>
+                        <p v-if="appliedVoucher" class="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                            </svg>
+                            Voucher "{{ appliedVoucher.name }}" berhasil diterapkan!
+                        </p>
+                    </div>
+
                     <!-- Receipt Summary -->
                     <div class="pt-4 border-t border-gray-200/80 space-y-2">
                         <div class="flex justify-between text-sm text-gray-500 font-bold">
                             <span>Subtotal</span>
                             <span>{{ formatPrice(subtotal) }}</span>
+                        </div>
+                        <div v-if="discountAmount > 0" class="flex justify-between text-sm text-emerald-600 font-bold">
+                            <span>Diskon Voucher ({{ appliedVoucher?.code }})</span>
+                            <span>-{{ formatPrice(discountAmount) }}</span>
                         </div>
                         <div class="flex justify-between text-base text-gray-800 font-extrabold">
                             <span>Total Tagihan</span>

@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     qris_manual_url: String,
@@ -16,6 +17,8 @@ const form = useForm({
     cart_items: [],
     payment_proof: null,
     notes: '',
+    voucher_code: '',
+    discount_amount: 0,
 });
 
 let originalBgColor = '';
@@ -42,12 +45,59 @@ const cartTotal = computed(() => {
     );
 });
 
+// Voucher states
+const voucherCodeInput = ref('');
+const appliedVoucher = ref(null);
+const discountAmount = ref(0);
+const voucherError = ref('');
+const isCheckingVoucher = ref(false);
+
+const applyVoucher = async () => {
+    if (!voucherCodeInput.value.trim()) return;
+
+    isCheckingVoucher.value = true;
+    voucherError.value = '';
+
+    try {
+        const response = await axios.post('/api/vouchers/validate', {
+            code: voucherCodeInput.value.trim(),
+            subtotal: cartTotal.value
+        });
+
+        if (response.data.success) {
+            appliedVoucher.value = response.data.voucher;
+            discountAmount.value = response.data.discount_amount;
+            form.voucher_code = response.data.voucher.code;
+            form.discount_amount = response.data.discount_amount;
+            voucherError.value = '';
+        }
+    } catch (error) {
+        console.error(error);
+        voucherError.value = error.response?.data?.message || 'Kode voucher tidak valid!';
+        appliedVoucher.value = null;
+        discountAmount.value = 0;
+        form.voucher_code = '';
+        form.discount_amount = 0;
+    } finally {
+        isCheckingVoucher.value = false;
+    }
+};
+
+const removeVoucher = () => {
+    appliedVoucher.value = null;
+    discountAmount.value = 0;
+    voucherCodeInput.value = '';
+    form.voucher_code = '';
+    form.discount_amount = 0;
+    voucherError.value = '';
+};
+
 const taxTotal = computed(() => {
-    return Math.round(cartTotal.value * 0.02);
+    return 0;
 });
 
 const finalTotal = computed(() => {
-    return cartTotal.value + taxTotal.value;
+    return Math.max(0, cartTotal.value - discountAmount.value);
 });
 
 const handleFileChange = (e) => {
@@ -500,6 +550,53 @@ return;
                             </p>
                         </div>
 
+                        <!-- Voucher Input Form -->
+                        <div v-if="form.cart_items.length > 0" class="border-t border-gray-100 pt-3 pb-2">
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Voucher / Kupon Promo</label>
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="voucherCodeInput"
+                                    type="text"
+                                    placeholder="Masukkan kode voucher..."
+                                    :disabled="appliedVoucher"
+                                    class="flex-1 rounded-xl border border-gray-300 px-3 py-2 text-xs text-[#3B2314] font-bold uppercase placeholder-[#3B2314]/40 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] disabled:bg-gray-100 disabled:text-gray-400"
+                                />
+                                <button
+                                    v-if="!appliedVoucher"
+                                    @click="applyVoucher"
+                                    type="button"
+                                    :disabled="isCheckingVoucher || !voucherCodeInput.trim()"
+                                    class="rounded-xl bg-[#3B2314] px-4 py-2 text-xs font-black text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
+                                >
+                                    {{ isCheckingVoucher ? 'Mengecek...' : 'Terapkan' }}
+                                </button>
+                                <button
+                                    v-else
+                                    @click="removeVoucher"
+                                    type="button"
+                                    class="rounded-xl bg-red-50 border border-red-200 px-4 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-95"
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                            
+                            <!-- Success Message -->
+                            <p v-if="appliedVoucher" class="mt-1.5 text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.52Z" clip-rule="evenodd" />
+                                </svg>
+                                Voucher <b>{{ appliedVoucher.name }}</b> berhasil diterapkan!
+                            </p>
+                            
+                            <!-- Error Message -->
+                            <p v-if="voucherError" class="mt-1.5 text-[11px] font-bold text-red-600 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                                </svg>
+                                {{ voucherError }}
+                            </p>
+                        </div>
+
                         <!-- Price Details Summary -->
                         <div
                             v-if="form.cart_items.length > 0"
@@ -516,14 +613,13 @@ return;
                                     }}</span
                                 >
                             </div>
+                            <!-- Discount Amount Row -->
                             <div
-                                class="flex justify-between font-medium text-gray-600"
+                                v-if="appliedVoucher"
+                                class="flex justify-between font-bold text-emerald-600"
                             >
-                                <span>Pajak (2%)</span>
-                                <span
-                                    >Rp
-                                    {{ taxTotal.toLocaleString('id-ID') }}</span
-                                >
+                                <span>Potongan Voucher ({{ appliedVoucher.code }})</span>
+                                <span>- Rp {{ discountAmount.toLocaleString('id-ID') }}</span>
                             </div>
                             <div
                                 class="flex justify-between border-t border-dashed pt-1.5 text-sm font-black text-[#3B2314]"
