@@ -37,7 +37,7 @@ Route::middleware(['verify_table_session'])->group(function () {
     Route::post('/order/store', [\App\Http\Controllers\OrderController::class, 'store'])->name('order.store');
 });
 
-Route::get('/order/success/{id}', [\App\Http\Controllers\OrderController::class, 'success'])->name('order.success');
+Route::get('/order/success/{secure_key}', [\App\Http\Controllers\OrderController::class, 'success'])->name('order.success');
 
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {

@@ -77,7 +77,7 @@ class OrderController extends Controller
         // Set timestamp pesanan agar akses /order & /checkout kadaluarsa dalam 5 menit
         session(['order_placed_at' => time()]);
 
-        return redirect()->route('order.success', ['id' => $order->id]);
+        return redirect()->route('order.success', ['secure_key' => $order->secure_key]);
     }
 
     // Endpoint API untuk Polling Dashboard Barista
@@ -176,7 +176,7 @@ class OrderController extends Controller
                     }
                     
                     $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
-                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->id}") . "\n\n" .
+                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->secure_key}") . "\n\n" .
                                 "*Pesanan Anda saat ini sedang DIPROSES oleh Barista Zunoi!* Silakan bersantai sejenak, kami akan mengabari Anda setelah pesanan siap disajikan. ☕💛";
                 } else {
                     $payStatusText = $order->payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR';
@@ -199,7 +199,7 @@ class OrderController extends Controller
                     }
                     
                     $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
-                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->id}") . "\n\n" .
+                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->secure_key}") . "\n\n" .
                                 "*Barista Zunoi sedang memproses pesanan Anda dengan penuh cinta!* Mohon tunggu sejenak, kami akan memberikan notifikasi setelah pesanan Anda selesai disiapkan. ☕💛";
                 }
                 $fonnte->sendMessage($order->customer_phone, $message);
@@ -228,7 +228,7 @@ class OrderController extends Controller
                            "*Daftar Pesanan:*\n" .
                            "{$itemList}\n" .
                            "━━━━━━━━━━━━━━━━━━\n\n" .
-                           "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->id}") . "\n\n" .
+                           "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->secure_key}") . "\n\n" .
                            "{$deliveryInstruction}\n\n" .
                            "Terima kasih banyak telah memesan di Zunoi Caffe. Semoga hari Anda menyenangkan dan penuh energi positif! ☕💛";
                 
@@ -246,9 +246,9 @@ class OrderController extends Controller
     }
 
     // Halaman sukses sederhana
-    public function success($id)
+    public function success($secure_key)
     {
-        $order = Order::with(['items.product', 'table'])->findOrFail($id);
+        $order = Order::with(['items.product', 'table'])->where('secure_key', $secure_key)->firstOrFail();
         return inertia('Customer/Success', ['order' => $order]);
     }
 }

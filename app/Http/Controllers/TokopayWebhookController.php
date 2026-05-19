@@ -58,7 +58,7 @@ class TokopayWebhookController extends Controller
                     }
                     
                     $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
-                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->id}") . "\n\n" .
+                                "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->secure_key}") . "\n\n" .
                                 "Pesanan Anda telah diteruskan ke Barista kami dan sedang dalam antrean pengerjaan. Kami akan mengirimkan notifikasi lagi begitu pesanan Anda mulai diproses. Selamat menunggu! 💛";
 
                     $fonnte = new FonnteService();
@@ -121,7 +121,7 @@ class TokopayWebhookController extends Controller
                 }
                 
                 $message .= "━━━━━━━━━━━━━━━━━━\n\n" .
-                            "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->id}") . "\n\n" .
+                            "🧾 *Struk/Invoice Online:* " . url("/order/success/{$order->secure_key}") . "\n\n" .
                             "Pesanan Anda telah diteruskan ke Barista kami dan sedang dalam antrean pengerjaan. Kami akan mengirimkan notifikasi lagi begitu pesanan Anda mulai diproses. Selamat menunggu! 💛";
 
                 $fonnte = new FonnteService();
