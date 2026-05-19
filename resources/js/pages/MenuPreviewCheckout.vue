@@ -96,7 +96,7 @@ const submitPreviewOrder = () => {
 
         <!-- Sticky Header -->
         <header
-            class="sticky top-0 z-40 bg-[#3B2314] py-3 text-[#FAEDCD] shadow-md"
+            class="glass-header sticky top-0 z-40 py-3 text-[#FAEDCD]"
         >
             <div
                 class="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8"
@@ -662,3 +662,21 @@ const submitPreviewOrder = () => {
         </Transition>
     </div>
 </template>
+
+<style scoped>
+.glass-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    overflow: hidden;
+    background: linear-gradient(to bottom, rgba(36, 21, 12, 0.85) 0%, rgba(59, 35, 20, 0.8) 50%, rgba(92, 62, 38, 0.75) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 4.5px solid rgba(225, 175, 125, 0.35);
+    box-shadow: 
+        0 10px 30px 0 rgba(59, 35, 20, 0.25),
+        inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+</style>

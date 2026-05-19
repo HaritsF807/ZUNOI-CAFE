@@ -72,7 +72,7 @@ const filteredProducts = computed(() => {
     >
         <!-- Sticky Header -->
         <header
-            class="sticky top-0 z-40 bg-[#3B2314] py-3 text-[#FAEDCD] shadow-md"
+            class="glass-header sticky top-0 z-40 py-3 text-[#FAEDCD]"
         >
             <div
                 class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
@@ -236,7 +236,7 @@ const filteredProducts = computed(() => {
 
         <!-- Bottom Gradient Overlay -->
         <div
-            class="pointer-events-none fixed right-0 -bottom-1 left-0 z-40 h-20 bg-gradient-to-t from-[#3B2314] via-[#3B2314]/80 to-transparent"
+            class="pointer-events-none fixed right-0 -bottom-4 left-0 z-40 h-20 bg-gradient-to-t from-[#3B2314] via-[#3B2314]/45 to-transparent"
         ></div>
 
         <!-- Floating Cart Container (Fixed at viewport bottom) -->
@@ -246,7 +246,7 @@ const filteredProducts = computed(() => {
             <!-- Main Floating Cart Button -->
             <Link
                 :href="'/checkout'"
-                class="pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl bg-gradient-to-br from-[#5C3E26] via-[#3B2314] to-[#24150c] px-6 py-4 font-black text-[#FAEDCD] shadow-[0_10px_30px_rgba(59,35,20,0.45)] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_35px_rgba(59,35,20,0.6)] active:scale-95 md:max-w-md lg:max-w-lg"
+                class="glass-glossy-btn pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl px-6 py-4 font-black text-[#FAEDCD] transition-all duration-300 hover:scale-105 active:scale-95 md:max-w-md lg:max-w-lg"
             >
                 <span class="flex items-center gap-2 text-sm">
                     <svg
@@ -275,3 +275,85 @@ const filteredProducts = computed(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.glass-glossy-btn {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(92, 62, 38, 0.75) 0%, rgba(59, 35, 20, 0.8) 50%, rgba(36, 21, 12, 0.85) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2.5px solid rgba(250, 237, 205, 0.35);
+    box-shadow: 
+        0 10px 30px 0 rgba(59, 35, 20, 0.45),
+        inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+/* 3D Convex Gloss reflection on upper half */
+.glass-glossy-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Sweeping glossy light beam sheen */
+.glass-glossy-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 100%);
+    transform: translate3d(-180%, 0, 0) skewX(-25deg);
+    pointer-events: none;
+    z-index: 2;
+    will-change: transform;
+    animation: btn-shine 6s infinite ease-in-out;
+}
+
+.glass-glossy-btn:hover {
+    border-color: rgba(250, 237, 205, 0.45);
+    box-shadow: 
+        0 10px 35px 0 rgba(59, 35, 20, 0.55),
+        inset 0 0 10px 0 rgba(255, 255, 255, 0.35),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    overflow: hidden;
+    background: linear-gradient(to bottom, rgba(36, 21, 12, 0.85) 0%, rgba(59, 35, 20, 0.8) 50%, rgba(92, 62, 38, 0.75) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 4.5px solid rgba(225, 175, 125, 0.35);
+    box-shadow: 
+        0 10px 30px 0 rgba(59, 35, 20, 0.25),
+        inset 0 0 8px 0 rgba(255, 255, 255, 0.25),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+@keyframes btn-shine {
+    0% {
+        transform: translate3d(-180%, 0, 0) skewX(-25deg);
+    }
+    12% {
+        transform: translate3d(180%, 0, 0) skewX(-25deg);
+    }
+    100% {
+        transform: translate3d(180%, 0, 0) skewX(-25deg);
+    }
+}
+</style>
