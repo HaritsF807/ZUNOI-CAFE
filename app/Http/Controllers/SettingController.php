@@ -108,9 +108,7 @@ class SettingController extends Controller
                 ->sum('total_price');
 
             $titleRecap = $isSingleDay ? "REKAP PENJUALAN HARIAN" : "REKAP PENJUALAN PERIODE";
-            $messageIntro = $isSingleDay 
-                ? "Halo Owner, berikut adalah rekapan transaksi penjualan untuk hari ini:"
-                : "Halo Owner, berikut adalah rekapan transaksi penjualan untuk periode tersebut:";
+            $messageIntro = "Berikut adalah rincian rekapan transaksi penjualan:";
 
             $message = "📊 *LAPORAN {$titleRecap}* 📊\n".
                        "☕ *ZUNOI CAFFE* ☕\n\n".
