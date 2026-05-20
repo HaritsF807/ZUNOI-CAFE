@@ -44,9 +44,13 @@ Route::middleware(['verify_table_session'])->group(function () {
 
     Route::get('/checkout', function () {
         $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        $promotions = \App\Models\Promotion::where('is_active', true)
+            ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
+            ->get();
 
         return inertia('Customer/Cart', [
             'qris_manual_url' => $qrisUrl,
+            'promotions' => $promotions,
         ]);
     })->name('order.checkout');
 
@@ -90,9 +94,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard/menu-preview/checkout', function () {
         $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        $promotions = \App\Models\Promotion::where('is_active', true)
+            ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
+            ->get();
 
         return inertia('MenuPreviewCheckout', [
             'qris_manual_url' => $qrisUrl,
+            'promotions' => $promotions,
         ]);
     })->name('menu.preview.checkout');
 
@@ -105,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
             'items' => $request->query('items'),
             'voucher_code' => $request->query('voucher_code'),
             'discount_amount' => $request->query('discount_amount'),
+            'promo_discount_amount' => $request->query('promo_discount_amount'),
         ]);
     })->name('menu.preview.success');
 
@@ -137,6 +146,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/vouchers', [\App\Http\Controllers\PromoController::class, 'storeVoucher']);
     Route::post('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'updateVoucher']);
     Route::delete('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'deleteVoucher']);
+
+    // API Kelola Potongan & Buy 1 Get 1
+    Route::post('/api/promotions', [\App\Http\Controllers\PromoController::class, 'storePromotion']);
+    Route::post('/api/promotions/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromotion']);
+    Route::delete('/api/promotions/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromotion']);
 
     Route::get('/api/orders/live', [OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [OrderController::class, 'updateStatus']);

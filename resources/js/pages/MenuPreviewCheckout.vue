@@ -5,6 +5,10 @@ import axios from 'axios';
 
 const props = defineProps({
     qris_manual_url: String,
+    promotions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const isQrZoomed = ref(false);
@@ -88,8 +92,143 @@ const taxTotal = computed(() => {
     return 0;
 });
 
+const activePromotions = computed(() => props.promotions || []);
+
+const appliedPromotionsList = computed(() => {
+    const list = [];
+    if (!activePromotions.value || activePromotions.value.length === 0) {
+        return list;
+    }
+
+    // Map cart items by product id for easy lookup
+    const cartMap = {};
+    form.value.cart_items.forEach((item) => {
+        const prodId = parseInt(item.id);
+        if (!cartMap[prodId]) {
+            cartMap[prodId] = {
+                quantity: 0,
+                price: parseFloat(item.price),
+                basePrice: parseFloat(item.basePrice || item.price)
+            };
+        }
+        cartMap[prodId].quantity += parseInt(item.quantity);
+    });
+
+    activePromotions.value.forEach((promo) => {
+        const buyProductId = parseInt(promo.buy_product_id);
+        const buyQtyRequired = parseInt(promo.buy_quantity);
+        const bundlingProductId = promo.bundling_product_id ? parseInt(promo.bundling_product_id) : null;
+        const getProductId = promo.get_product_id ? parseInt(promo.get_product_id) : null;
+        const getQtyRequired = promo.get_quantity ? parseInt(promo.get_quantity) : 1;
+
+        if (!cartMap[buyProductId]) {
+            return;
+        }
+
+        const buyCartQty = cartMap[buyProductId].quantity;
+
+        if (promo.type === 'bundling' && bundlingProductId) {
+            if (!cartMap[bundlingProductId]) {
+                return;
+            }
+
+            const bundCartQty = cartMap[bundlingProductId].quantity;
+            const numBundles = Math.min(Math.floor(buyCartQty / buyQtyRequired), bundCartQty);
+
+            if (numBundles > 0) {
+                let discountVal = 0;
+                if (promo.discount_type === 'nominal') {
+                    discountVal = parseFloat(promo.discount_value) * numBundles;
+                } else if (promo.discount_type === 'percentage') {
+                    const buyUnitPrice = cartMap[buyProductId].basePrice;
+                    const bundUnitPrice = cartMap[bundlingProductId].basePrice;
+                    const singleBundlePrice = (buyUnitPrice * buyQtyRequired) + bundUnitPrice;
+                    discountVal = (parseFloat(promo.discount_value) / 100) * singleBundlePrice * numBundles;
+                }
+
+                if (discountVal > 0) {
+                    list.push({
+                        id: promo.id,
+                        name: promo.name,
+                        discount: discountVal
+                    });
+                }
+            }
+        } else if (promo.type === 'buy_get' && getProductId) {
+            if (!cartMap[getProductId]) {
+                return;
+            }
+
+            const getCartQty = cartMap[getProductId].quantity;
+
+            if (buyProductId === getProductId) {
+                // Buy X Get Y of same product
+                const requiredCombo = buyQtyRequired + getQtyRequired;
+                const numCombos = Math.floor(buyCartQty / requiredCombo);
+
+                if (numCombos > 0) {
+                    const itemUnitPrice = cartMap[getProductId].basePrice;
+                    const discountedQty = numCombos * getQtyRequired;
+                    let discountVal = 0;
+
+                    if (promo.discount_type === 'free') {
+                        discountVal = itemUnitPrice * discountedQty;
+                    } else if (promo.discount_type === 'percentage') {
+                        discountVal = (parseFloat(promo.discount_value) / 100) * itemUnitPrice * discountedQty;
+                    } else if (promo.discount_type === 'nominal') {
+                        discountVal = parseFloat(promo.discount_value) * discountedQty;
+                    }
+
+                    if (discountVal > 0) {
+                        list.push({
+                            id: promo.id,
+                            name: promo.name,
+                            discount: discountVal
+                        });
+                    }
+                }
+            } else {
+                // Buy X Get Y of different product
+                const numCombos = Math.floor(buyCartQty / buyQtyRequired);
+
+                if (numCombos > 0) {
+                    const maxDiscountedQty = numCombos * getQtyRequired;
+                    const actualDiscountedQty = Math.min(maxDiscountedQty, getCartQty);
+
+                    if (actualDiscountedQty > 0) {
+                        const itemUnitPrice = cartMap[getProductId].basePrice;
+                        let discountVal = 0;
+
+                        if (promo.discount_type === 'free') {
+                            discountVal = itemUnitPrice * actualDiscountedQty;
+                        } else if (promo.discount_type === 'percentage') {
+                            discountVal = (parseFloat(promo.discount_value) / 100) * itemUnitPrice * actualDiscountedQty;
+                        } else if (promo.discount_type === 'nominal') {
+                            discountVal = parseFloat(promo.discount_value) * actualDiscountedQty;
+                        }
+
+                        if (discountVal > 0) {
+                            list.push({
+                                id: promo.id,
+                                name: promo.name,
+                                discount: discountVal
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    return list;
+});
+
+const promoDiscountTotal = computed(() => {
+    return appliedPromotionsList.value.reduce((sum, item) => sum + item.discount, 0);
+});
+
 const finalTotal = computed(() => {
-    return Math.max(0, cartTotal.value - discountAmount.value);
+    return Math.max(0, cartTotal.value - discountAmount.value - promoDiscountTotal.value);
 });
 
 // State Custom Toast Notification
@@ -272,6 +411,7 @@ const submitPreviewOrder = () => {
                 items: JSON.stringify(form.value.cart_items),
                 voucher_code: appliedVoucher.value ? appliedVoucher.value.code : '',
                 discount_amount: discountAmount.value,
+                promo_discount_amount: promoDiscountTotal.value,
             },
         });
     }, 1500);
@@ -662,6 +802,20 @@ const submitPreviewOrder = () => {
                                         discountAmount.toLocaleString('id-ID')
                                     }}</span
                                 >
+                            </div>
+                            <!-- Auto Promotions Row -->
+                            <div
+                                v-for="promo in appliedPromotionsList"
+                                :key="promo.id"
+                                class="flex justify-between font-bold text-emerald-600 animate-fade-in"
+                            >
+                                <span class="flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 shrink-0 text-emerald-600">
+                                        <path fill-rule="evenodd" d="M5.5 3a2.5 2.5 0 0 0-2.5 2.5v11a2.5 2.5 0 0 0 2.5 2.5h11a2.5 2.5 0 0 0 2.5-2.5v-11a2.5 2.5 0 0 0-2.5-2.5h-11Zm3 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm5-5a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" clip-rule="evenodd" />
+                                    </svg>
+                                    {{ promo.name }}
+                                </span>
+                                <span>- Rp {{ promo.discount.toLocaleString('id-ID') }}</span>
                             </div>
                             <div
                                 class="flex justify-between border-t border-dashed pt-1.5 text-sm font-black text-[#3B2314]"

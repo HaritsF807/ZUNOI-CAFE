@@ -13,7 +13,7 @@ class Order extends Model
     protected $fillable = [
         'table_id', 'secure_key', 'customer_name', 'customer_phone', 'total_price',
         'order_type', 'payment_method', 'payment_status', 'order_status', 'payment_proof', 'notes',
-        'voucher_code', 'discount_amount',
+        'voucher_code', 'discount_amount', 'promo_discount_amount',
     ];
 
     protected static function boot()

@@ -58,7 +58,13 @@ class OrderController extends Controller
             }
         }
 
-        $finalPrice = $totalPrice - $discountAmount;
+        // Hitung potongan promo otomatis (bundling & buy 1 get 1)
+        $promoDiscountAmount = $this->calculatePromoDiscount($validated['cart_items']);
+
+        $finalPrice = $totalPrice - $discountAmount - $promoDiscountAmount;
+        if ($finalPrice < 0) {
+            $finalPrice = 0;
+        }
 
         // Simpan bukti pembayaran ke database sebagai Base64 jika ada
         $proofUrl = null;
@@ -83,6 +89,7 @@ class OrderController extends Controller
             'notes' => $validated['notes'] ?? null,
             'voucher_code' => $voucherCode,
             'discount_amount' => $discountAmount,
+            'promo_discount_amount' => $promoDiscountAmount,
         ]);
 
         // Simpan Item Pesanan
@@ -177,8 +184,8 @@ class OrderController extends Controller
 
         $order = Order::with('items.product')->findOrFail($id);
 
-        // Jika status order diterima (processing) dan pembayaran via QRIS Manual, set juga status pembayaran menjadi paid (LUNAS)
-        if ($validated['order_status'] === 'processing' && $order->payment_method === 'qris_manual') {
+        // Jika status order diterima (processing), set juga status pembayaran menjadi paid (LUNAS)
+        if ($validated['order_status'] === 'processing') {
             $order->payment_status = 'paid';
         }
 
@@ -210,6 +217,20 @@ class OrderController extends Controller
                 $typeName = $order->order_type === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Takeaway (Bawa Pulang)';
                 $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
 
+                $pricingBreakdown = '';
+                $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                if ($hasDiscount) {
+                    $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
+                    $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
+                    if ((float)$order->discount_amount > 0) {
+                        $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    }
+                    if ((float)$order->promo_discount_amount > 0) {
+                        $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                    }
+                }
+                $pricingBreakdown .= '💰 *Total Tagihan:* Rp ' . number_format($order->total_price, 0, ',', '.');
+
                 if ($order->payment_method === 'qris_manual') {
                     $message = "☕ *ZUNOI CAFFE - PEMBAYARAN TERVERIFIKASI* ☕\n\n".
                                "Halo *{$order->customer_name}*, terima kasih! Bukti pembayaran QRIS Anda telah berhasil kami verifikasi.\n\n".
@@ -219,7 +240,7 @@ class OrderController extends Controller
                                "📅 *Waktu:* {$timeFormatted} WIB\n".
                                "🛋️ *Tipe:* {$typeName}\n".
                                "💳 *Metode:* QRIS Manual (Toko)\n".
-                               '💰 *Total Tagihan:* Rp '.number_format($order->total_price, 0, ',', '.')."\n".
+                               $pricingBreakdown."\n".
                                "💵 *Status:* LUNAS (Terverifikasi)\n\n".
                                "*Daftar Pesanan:*\n".
                                "{$itemList}\n";
@@ -242,7 +263,7 @@ class OrderController extends Controller
                                "📅 *Waktu:* {$timeFormatted} WIB\n".
                                "🛋️ *Tipe:* {$typeName}\n".
                                "💳 *Metode:* {$methodText}\n".
-                               '💰 *Total Tagihan:* Rp '.number_format($order->total_price, 0, ',', '.')."\n".
+                               $pricingBreakdown."\n".
                                "💵 *Status Pembayaran:* {$payStatusText}\n\n".
                                "*Daftar Pesanan:*\n".
                                "{$itemList}\n";
@@ -269,6 +290,20 @@ class OrderController extends Controller
                     ? '*Barista kami akan segera mengantarkan pesanan Anda langsung ke meja Anda. Silakan duduk manis dan bersiap menikmati!*'
                     : '*Silakan ambil pesanan Anda di meja Barista/Kasir Zunoi Caffe.*';
 
+                $pricingBreakdown = '';
+                $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                if ($hasDiscount) {
+                    $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
+                    $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
+                    if ((float)$order->discount_amount > 0) {
+                        $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    }
+                    if ((float)$order->promo_discount_amount > 0) {
+                        $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                    }
+                }
+                $pricingBreakdown .= '💰 *Total Belanja:* Rp ' . number_format($order->total_price, 0, ',', '.');
+
                 $message = "☕ *ZUNOI CAFFE - PESANAN SELESAI* ☕\n\n".
                            "Halo *{$order->customer_name}*, kabar gembira! Pesanan Anda telah selesai disiapkan dan siap dinikmati!\n\n".
                            "*Rincian Transaksi:*\n".
@@ -276,7 +311,7 @@ class OrderController extends Controller
                            "🆔 *ID Pesanan:* #{$order->id}\n".
                            "📅 *Waktu:* {$timeFormatted} WIB\n".
                            "🛋️ *Tipe:* {$typeName}\n".
-                           '💰 *Total Belanja:* Rp '.number_format($order->total_price, 0, ',', '.')."\n".
+                           $pricingBreakdown."\n".
                            "💵 *Status:* LUNAS (Disajikan)\n\n".
                            "*Daftar Pesanan:*\n".
                            "{$itemList}\n".
@@ -312,11 +347,15 @@ class OrderController extends Controller
         $products = \App\Models\Product::with(['category', 'addons'])->where('is_available', true)->get();
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         $tables = \App\Models\Table::orderBy('table_name', 'asc')->get();
+        $promotions = \App\Models\Promotion::where('is_active', true)
+            ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
+            ->get();
 
         return inertia('Cashier', [
             'products' => $products,
             'categories' => $categories,
             'tables' => $tables,
+            'promotions' => $promotions,
         ]);
     }
 
@@ -358,7 +397,13 @@ class OrderController extends Controller
             }
         }
 
-        $finalPrice = $totalPrice - $discountAmount;
+        // Hitung potongan promo otomatis (bundling & buy 1 get 1)
+        $promoDiscountAmount = $this->calculatePromoDiscount($validated['cart_items']);
+
+        $finalPrice = $totalPrice - $discountAmount - $promoDiscountAmount;
+        if ($finalPrice < 0) {
+            $finalPrice = 0;
+        }
 
         // Tentukan status awal
         // Jika bayar tunai (cash), otomatis Lunas (paid) dan langsung Diproses (processing)
@@ -383,6 +428,7 @@ class OrderController extends Controller
             'notes' => $validated['notes'] ?? null,
             'voucher_code' => $voucherCode,
             'discount_amount' => $discountAmount,
+            'promo_discount_amount' => $promoDiscountAmount,
         ]);
 
         // Simpan Items
@@ -401,5 +447,127 @@ class OrderController extends Controller
             'message' => 'Pesanan kasir berhasil dibuat!',
             'order' => $order->load(['table', 'items.product']),
         ]);
+    }
+
+    /**
+     * Hitung diskon dari promo bundling & buy 1 get 1 otomatis secara aman di backend.
+     */
+    private function calculatePromoDiscount($cartItems)
+    {
+        $promoDiscount = 0;
+
+        if (!\Illuminate\Support\Facades\Schema::hasTable('promotions')) {
+            return 0;
+        }
+
+        $activePromos = \App\Models\Promotion::where('is_active', true)->get();
+        if ($activePromos->isEmpty()) {
+            return 0;
+        }
+
+        // Map cart items by product id for easy lookup
+        $cartMap = [];
+        foreach ($cartItems as $item) {
+            $prodId = (int)$item['id'];
+            if (!isset($cartMap[$prodId])) {
+                $cartMap[$prodId] = [
+                    'quantity' => 0,
+                    'price' => (float)$item['price'],
+                    'base_price' => (float)($item['basePrice'] ?? $item['price'])
+                ];
+            }
+            $cartMap[$prodId]['quantity'] += (int)$item['quantity'];
+        }
+
+        // Load all required products from database to ensure base prices are correct and secure
+        $productIds = array_keys($cartMap);
+        $products = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+        foreach ($cartMap as $id => &$val) {
+            if ($products->has($id)) {
+                $val['base_price'] = (float)$products->get($id)->price;
+            }
+        }
+        unset($val);
+
+        foreach ($activePromos as $promo) {
+            $buyProductId = (int)$promo->buy_product_id;
+            $buyQtyRequired = (int)$promo->buy_quantity;
+            $bundlingProductId = $promo->bundling_product_id ? (int)$promo->bundling_product_id : null;
+            $getProductId = $promo->get_product_id ? (int)$promo->get_product_id : null;
+            $getQtyRequired = $promo->get_quantity ? (int)$promo->get_quantity : 1;
+
+            if (!isset($cartMap[$buyProductId])) {
+                continue;
+            }
+
+            $buyCartQty = $cartMap[$buyProductId]['quantity'];
+
+            if ($promo->type === 'bundling' && $bundlingProductId) {
+                if (!isset($cartMap[$bundlingProductId])) {
+                    continue;
+                }
+
+                $bundCartQty = $cartMap[$bundlingProductId]['quantity'];
+                $numBundles = min(floor($buyCartQty / $buyQtyRequired), $bundCartQty);
+
+                if ($numBundles > 0) {
+                    if ($promo->discount_type === 'nominal') {
+                        $promoDiscount += (float)$promo->discount_value * $numBundles;
+                    } elseif ($promo->discount_type === 'percentage') {
+                        $buyUnitPrice = $cartMap[$buyProductId]['base_price'];
+                        $bundUnitPrice = $cartMap[$bundlingProductId]['base_price'];
+                        $singleBundlePrice = ($buyUnitPrice * $buyQtyRequired) + $bundUnitPrice;
+                        $promoDiscount += ((float)$promo->discount_value / 100) * $singleBundlePrice * $numBundles;
+                    }
+                }
+            } elseif ($promo->type === 'buy_get' && $getProductId) {
+                if (!isset($cartMap[$getProductId])) {
+                    continue;
+                }
+
+                $getCartQty = $cartMap[$getProductId]['quantity'];
+
+                if ($buyProductId === $getProductId) {
+                    // Buy X Get Y of same product
+                    $requiredCombo = $buyQtyRequired + $getQtyRequired;
+                    $numCombos = floor($buyCartQty / $requiredCombo);
+
+                    if ($numCombos > 0) {
+                        $itemUnitPrice = $cartMap[$getProductId]['base_price'];
+                        $discountedQty = $numCombos * $getQtyRequired;
+
+                        if ($promo->discount_type === 'free') {
+                            $promoDiscount += $itemUnitPrice * $discountedQty;
+                        } elseif ($promo->discount_type === 'percentage') {
+                            $promoDiscount += ((float)$promo->discount_value / 100) * $itemUnitPrice * $discountedQty;
+                        } elseif ($promo->discount_type === 'nominal') {
+                            $promoDiscount += (float)$promo->discount_value * $discountedQty;
+                        }
+                    }
+                } else {
+                    // Buy X Get Y of different product
+                    $numCombos = floor($buyCartQty / $buyQtyRequired);
+
+                    if ($numCombos > 0) {
+                        $maxDiscountedQty = $numCombos * $getQtyRequired;
+                        $actualDiscountedQty = min($maxDiscountedQty, $getCartQty);
+
+                        if ($actualDiscountedQty > 0) {
+                            $itemUnitPrice = $cartMap[$getProductId]['base_price'];
+
+                            if ($promo->discount_type === 'free') {
+                                $promoDiscount += $itemUnitPrice * $actualDiscountedQty;
+                            } elseif ($promo->discount_type === 'percentage') {
+                                $promoDiscount += ((float)$promo->discount_value / 100) * $itemUnitPrice * $actualDiscountedQty;
+                            } elseif ($promo->discount_type === 'nominal') {
+                                $promoDiscount += (float)$promo->discount_value * $actualDiscountedQty;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $promoDiscount;
     }
 }

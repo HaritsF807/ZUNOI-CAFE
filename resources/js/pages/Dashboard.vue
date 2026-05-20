@@ -263,6 +263,7 @@ const stats = computed(() => {
     return {
         totalRevenue: totalRev,
         pendingCount: orders.value.filter((o) => o.status === 'pending').length,
+        processingCount: orders.value.filter((o) => o.status === 'processing').length,
         activeTables: tables.value.length,
         dineInPercent: activeOrders.length
             ? Math.round((dineInCount / activeOrders.length) * 100)
@@ -654,7 +655,7 @@ onUnmounted(() => {
                         </button>
                         <button
                             @click="currentTab = 'processing'"
-                            class="flex-1 rounded-xl px-4 py-2 transition-all duration-200 md:flex-none"
+                            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 transition-all duration-200 md:flex-none"
                             :class="
                                 currentTab === 'processing'
                                     ? 'bg-yellow-500 text-white shadow-sm'
@@ -662,6 +663,10 @@ onUnmounted(() => {
                             "
                         >
                             Diproses
+                            <span
+                                class="h-1.5 w-1.5 rounded-full bg-red-400"
+                                v-if="stats.processingCount > 0"
+                            ></span>
                         </button>
                         <button
                             @click="currentTab = 'completed'"

@@ -10,6 +10,7 @@ const props = defineProps({
     items: String, // JSON string
     voucher_code: String,
     discount_amount: [Number, String],
+    promo_discount_amount: [Number, String],
 });
 
 const subtotal = computed(() => {
@@ -254,7 +255,7 @@ const mockOrderId = computed(() => {
                             </span>
                         </div>
                         <div
-                            v-if="discount_amount > 0"
+                            v-if="discount_amount > 0 || promo_discount_amount > 0"
                             class="flex justify-between text-[10px] font-bold text-gray-500"
                         >
                             <span>Subtotal</span>
@@ -269,6 +270,15 @@ const mockOrderId = computed(() => {
                             <span>Voucher ({{ voucher_code }})</span>
                             <span>
                                 - Rp {{ parseInt(discount_amount).toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            v-if="promo_discount_amount > 0"
+                            class="flex justify-between text-[10px] font-bold text-emerald-600"
+                        >
+                            <span>Potongan Promo Otomatis</span>
+                            <span>
+                                - Rp {{ parseInt(promo_discount_amount).toLocaleString('id-ID') }}
                             </span>
                         </div>
                         <div

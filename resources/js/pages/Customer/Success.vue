@@ -7,7 +7,10 @@ const props = defineProps({
 });
 
 const subtotal = computed(() => {
-    return props.order.items.reduce((sum, item) => sum + (item.quantity * item.price_at_sale), 0);
+    return props.order.items.reduce((sum, item) => {
+        const price = parseFloat(item.price_at_sale || item.price || 0);
+        return sum + (item.quantity * price);
+    }, 0);
 });
 
 let originalBgColor = '';
@@ -228,7 +231,7 @@ onUnmounted(() => {
                             </span>
                         </div>
                         <div
-                            v-if="order.discount_amount > 0"
+                            v-if="Number(order.discount_amount || 0) > 0 || Number(order.promo_discount_amount || 0) > 0"
                             class="flex justify-between text-[10px] font-bold text-gray-500"
                         >
                             <span>Subtotal</span>
@@ -237,12 +240,21 @@ onUnmounted(() => {
                             </span>
                         </div>
                         <div
-                            v-if="order.discount_amount > 0"
+                            v-if="Number(order.discount_amount || 0) > 0"
                             class="flex justify-between text-[10px] font-bold text-emerald-600"
                         >
                             <span>Voucher ({{ order.voucher_code }})</span>
                             <span>
                                 - Rp {{ parseInt(order.discount_amount).toLocaleString('id-ID') }}
+                            </span>
+                        </div>
+                        <div
+                            v-if="Number(order.promo_discount_amount || 0) > 0"
+                            class="flex justify-between text-[10px] font-bold text-emerald-600"
+                        >
+                            <span>Potongan Promo Otomatis</span>
+                            <span>
+                                - Rp {{ parseInt(order.promo_discount_amount).toLocaleString('id-ID') }}
                             </span>
                         </div>
                         <div

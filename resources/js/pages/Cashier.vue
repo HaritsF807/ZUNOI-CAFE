@@ -36,10 +36,28 @@ interface CartItem extends Product {
     notes: string;
 }
 
+interface Promotion {
+    id: number;
+    name: string;
+    type: string;
+    buy_product_id: number;
+    buy_quantity: number;
+    bundling_product_id: number | null;
+    get_product_id: number | null;
+    get_quantity: number | null;
+    discount_type: string;
+    discount_value: string | number;
+    is_active: boolean;
+    buy_product?: any;
+    bundling_product?: any;
+    get_product?: any;
+}
+
 const props = defineProps<{
     products: Product[];
     categories: Category[];
     tables: Table[];
+    promotions?: Promotion[];
 }>();
 
 // Search & Category Filter State
@@ -135,9 +153,144 @@ const subtotal = computed(() => {
     return cart.value.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 });
 
+const activePromotions = computed(() => props.promotions || []);
+
+const appliedPromotionsList = computed(() => {
+    const list: Array<{ id: number; name: string; discount: number }> = [];
+    if (!activePromotions.value || activePromotions.value.length === 0) {
+        return list;
+    }
+
+    // Map cart items by product id for easy lookup
+    const cartMap: Record<number, { quantity: number; price: number; basePrice: number }> = {};
+    cart.value.forEach((item) => {
+        const prodId = item.id;
+        if (!cartMap[prodId]) {
+            cartMap[prodId] = {
+                quantity: 0,
+                price: Number(item.price),
+                basePrice: Number(item.price)
+            };
+        }
+        cartMap[prodId].quantity += Number(item.quantity);
+    });
+
+    activePromotions.value.forEach((promo) => {
+        const buyProductId = Number(promo.buy_product_id);
+        const buyQtyRequired = Number(promo.buy_quantity);
+        const bundlingProductId = promo.bundling_product_id ? Number(promo.bundling_product_id) : null;
+        const getProductId = promo.get_product_id ? Number(promo.get_product_id) : null;
+        const getQtyRequired = promo.get_quantity ? Number(promo.get_quantity) : 1;
+
+        if (!cartMap[buyProductId]) {
+            return;
+        }
+
+        const buyCartQty = cartMap[buyProductId].quantity;
+
+        if (promo.type === 'bundling' && bundlingProductId) {
+            if (!cartMap[bundlingProductId]) {
+                return;
+            }
+
+            const bundCartQty = cartMap[bundlingProductId].quantity;
+            const numBundles = Math.min(Math.floor(buyCartQty / buyQtyRequired), bundCartQty);
+
+            if (numBundles > 0) {
+                let discountVal = 0;
+                if (promo.discount_type === 'nominal') {
+                    discountVal = Number(promo.discount_value) * numBundles;
+                } else if (promo.discount_type === 'percentage') {
+                    const buyUnitPrice = cartMap[buyProductId].basePrice;
+                    const bundUnitPrice = cartMap[bundlingProductId].basePrice;
+                    const singleBundlePrice = (buyUnitPrice * buyQtyRequired) + bundUnitPrice;
+                    discountVal = (Number(promo.discount_value) / 100) * singleBundlePrice * numBundles;
+                }
+
+                if (discountVal > 0) {
+                    list.push({
+                        id: promo.id,
+                        name: promo.name,
+                        discount: discountVal
+                    });
+                }
+            }
+        } else if (promo.type === 'buy_get' && getProductId) {
+            if (!cartMap[getProductId]) {
+                return;
+            }
+
+            const getCartQty = cartMap[getProductId].quantity;
+
+            if (buyProductId === getProductId) {
+                // Buy X Get Y of same product
+                const requiredCombo = buyQtyRequired + getQtyRequired;
+                const numCombos = Math.floor(buyCartQty / requiredCombo);
+
+                if (numCombos > 0) {
+                    const itemUnitPrice = cartMap[getProductId].basePrice;
+                    const discountedQty = numCombos * getQtyRequired;
+                    let discountVal = 0;
+
+                    if (promo.discount_type === 'free') {
+                        discountVal = itemUnitPrice * discountedQty;
+                    } else if (promo.discount_type === 'percentage') {
+                        discountVal = (Number(promo.discount_value) / 100) * itemUnitPrice * discountedQty;
+                    } else if (promo.discount_type === 'nominal') {
+                        discountVal = Number(promo.discount_value) * discountedQty;
+                    }
+
+                    if (discountVal > 0) {
+                        list.push({
+                            id: promo.id,
+                            name: promo.name,
+                            discount: discountVal
+                        });
+                    }
+                }
+            } else {
+                // Buy X Get Y of different product
+                const numCombos = Math.floor(buyCartQty / buyQtyRequired);
+
+                if (numCombos > 0) {
+                    const maxDiscountedQty = numCombos * getQtyRequired;
+                    const actualDiscountedQty = Math.min(maxDiscountedQty, getCartQty);
+
+                    if (actualDiscountedQty > 0) {
+                        const itemUnitPrice = cartMap[getProductId].basePrice;
+                        let discountVal = 0;
+
+                        if (promo.discount_type === 'free') {
+                            discountVal = itemUnitPrice * actualDiscountedQty;
+                        } else if (promo.discount_type === 'percentage') {
+                            discountVal = (Number(promo.discount_value) / 100) * itemUnitPrice * actualDiscountedQty;
+                        } else if (promo.discount_type === 'nominal') {
+                            discountVal = Number(promo.discount_value) * actualDiscountedQty;
+                        }
+
+                        if (discountVal > 0) {
+                            list.push({
+                                id: promo.id,
+                                name: promo.name,
+                                discount: discountVal
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    return list;
+});
+
+const promoDiscountTotal = computed(() => {
+    return appliedPromotionsList.value.reduce((sum, item) => sum + item.discount, 0);
+});
+
 const tax = computed(() => 0); // Can be set if needed
 const total = computed(() => {
-    const afterDiscount = Math.max(0, subtotal.value - discountAmount.value);
+    const afterDiscount = Math.max(0, subtotal.value - discountAmount.value - promoDiscountTotal.value);
     return afterDiscount + tax.value;
 });
 
@@ -680,6 +833,15 @@ const formatPrice = (price: number) => {
                             <span>Diskon Voucher ({{ appliedVoucher?.code }})</span>
                             <span>-{{ formatPrice(discountAmount) }}</span>
                         </div>
+                        <!-- Auto Promotions Row -->
+                        <div
+                            v-for="promo in appliedPromotionsList"
+                            :key="promo.id"
+                            class="flex justify-between text-sm text-emerald-600 font-bold"
+                        >
+                            <span>Potongan Promo ({{ promo.name }})</span>
+                            <span>-{{ formatPrice(promo.discount) }}</span>
+                        </div>
                         <div class="flex justify-between text-base text-gray-800 font-extrabold">
                             <span>Total Tagihan</span>
                             <span class="text-[#3B2314]">{{ formatPrice(total) }}</span>
@@ -813,7 +975,15 @@ const formatPrice = (price: number) => {
                     <div class="space-y-1 text-sm">
                         <div class="flex justify-between font-bold">
                             <span>Subtotal:</span>
-                            <span>{{ formatPrice(createdOrder.total_price) }}</span>
+                            <span>{{ formatPrice(createdOrder.items?.reduce((sum: number, item: any) => sum + (item.price_at_sale * item.quantity), 0) || createdOrder.total_price) }}</span>
+                        </div>
+                        <div v-if="createdOrder.discount_amount > 0" class="flex justify-between text-emerald-600 font-bold">
+                            <span>Voucher ({{ createdOrder.voucher_code || 'Voucher' }}):</span>
+                            <span>-{{ formatPrice(createdOrder.discount_amount) }}</span>
+                        </div>
+                        <div v-if="createdOrder.promo_discount_amount > 0" class="flex justify-between text-emerald-600 font-bold">
+                            <span>Potongan Promo:</span>
+                            <span>-{{ formatPrice(createdOrder.promo_discount_amount) }}</span>
                         </div>
                         <div class="flex justify-between text-base font-extrabold text-gray-800 border-t border-dashed border-gray-300 pt-2">
                             <span>Total Akhir:</span>

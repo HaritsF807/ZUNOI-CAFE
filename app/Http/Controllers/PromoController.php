@@ -12,12 +12,32 @@ class PromoController extends Controller
     // Render the Promo Management dashboard page
     public function index()
     {
+        // Auto-run migrations if promotions table or orders columns don't exist yet
+        if (!\Illuminate\Support\Facades\Schema::hasTable('promotions') || !\Illuminate\Support\Facades\Schema::hasColumn('orders', 'promo_discount_amount')) {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('migrate --force');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Auto-migration failed: ' . $e->getMessage());
+            }
+        }
+
         $banners = Banner::orderBy('created_at', 'desc')->get();
         $vouchers = \App\Models\Voucher::orderBy('created_at', 'desc')->get();
+        
+        $promotions = [];
+        if (\Illuminate\Support\Facades\Schema::hasTable('promotions')) {
+            $promotions = \App\Models\Promotion::with(['buyProduct', 'bundlingProduct', 'getProduct'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        
+        $products = \App\Models\Product::orderBy('name', 'asc')->get();
 
         return Inertia::render('PromoManagement', [
             'banners' => $banners,
-            'vouchers' => $vouchers
+            'vouchers' => $vouchers,
+            'promotions' => $promotions,
+            'products' => $products
         ]);
     }
 
@@ -301,6 +321,90 @@ class PromoController extends Controller
         }
 
         $banner->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Promo berhasil dihapus!'
+        ]);
+    }
+
+    // Save a new promo deal (bundling or buy get)
+    public function storePromotion(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'type' => 'required|in:bundling,buy_get',
+            'buy_product_id' => 'required|exists:products,id',
+            'buy_quantity' => 'required|integer|min:1',
+            'bundling_product_id' => 'required_if:type,bundling|nullable|exists:products,id',
+            'get_product_id' => 'required_if:type,buy_get|nullable|exists:products,id',
+            'get_quantity' => 'required_if:type,buy_get|nullable|integer|min:1',
+            'discount_type' => 'required|in:percentage,nominal,free',
+            'discount_value' => 'required|numeric|min:0',
+            'is_active' => 'required|boolean',
+        ], [
+            'name.required' => 'Nama promo wajib diisi!',
+            'buy_product_id.required' => 'Produk utama wajib dipilih!',
+            'bundling_product_id.required_if' => 'Produk bundling wajib dipilih!',
+            'get_product_id.required_if' => 'Produk bonus wajib dipilih!',
+            'discount_type.required' => 'Tipe potongan wajib dipilih!',
+            'discount_value.required' => 'Nilai potongan wajib diisi!',
+        ]);
+
+        $promotion = \App\Models\Promotion::create($validated);
+        
+        // Load relationships
+        $promotion->load(['buyProduct', 'bundlingProduct', 'getProduct']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Promo baru berhasil ditambahkan!',
+            'promotion' => $promotion
+        ]);
+    }
+
+    // Update an existing promo deal
+    public function updatePromotion(Request $request, $id)
+    {
+        $promotion = \App\Models\Promotion::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'type' => 'required|in:bundling,buy_get',
+            'buy_product_id' => 'required|exists:products,id',
+            'buy_quantity' => 'required|integer|min:1',
+            'bundling_product_id' => 'required_if:type,bundling|nullable|exists:products,id',
+            'get_product_id' => 'required_if:type,buy_get|nullable|exists:products,id',
+            'get_quantity' => 'required_if:type,buy_get|nullable|integer|min:1',
+            'discount_type' => 'required|in:percentage,nominal,free',
+            'discount_value' => 'required|numeric|min:0',
+            'is_active' => 'required|boolean',
+        ], [
+            'name.required' => 'Nama promo wajib diisi!',
+            'buy_product_id.required' => 'Produk utama wajib dipilih!',
+            'bundling_product_id.required_if' => 'Produk bundling wajib dipilih!',
+            'get_product_id.required_if' => 'Produk bonus wajib dipilih!',
+            'discount_type.required' => 'Tipe potongan wajib dipilih!',
+            'discount_value.required' => 'Nilai potongan wajib diisi!',
+        ]);
+
+        $promotion->update($validated);
+        
+        // Load relationships
+        $promotion->load(['buyProduct', 'bundlingProduct', 'getProduct']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Promo berhasil diperbarui!',
+            'promotion' => $promotion
+        ]);
+    }
+
+    // Delete a promo deal
+    public function deletePromotion($id)
+    {
+        $promotion = \App\Models\Promotion::findOrFail($id);
+        $promotion->delete();
 
         return response()->json([
             'success' => true,
