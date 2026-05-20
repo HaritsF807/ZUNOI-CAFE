@@ -833,6 +833,7 @@ onUnmounted(() => {
                                                 class="text-[9px] text-[#D4A373] italic"
                                                 >({{ item.notes }})</span
                                             >
+                                        </div>
                                     </div>
 
                                     <!-- Voucher / Discount Details (Admin Only View) -->
