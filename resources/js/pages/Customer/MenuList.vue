@@ -185,11 +185,12 @@ return;
 
     localStorage.setItem('zunoi_cart', JSON.stringify(cart.value));
 
-    // Tampilkan animasi +1 tanpa menutup modal
+    // Tampilkan animasi +1 dan tutup modal otomatis setelah delay
     showAddAnimation.value = true;
     setTimeout(() => {
         showAddAnimation.value = false;
-    }, 600);
+        closeSelectionModal();
+    }, 500);
 };
 </script>
 

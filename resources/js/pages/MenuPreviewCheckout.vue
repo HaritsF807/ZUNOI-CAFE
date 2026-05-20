@@ -257,12 +257,54 @@ const submitOrder = () => {
     });
 };
 
+const recalculateVoucher = async () => {
+    if (appliedVoucher.value) {
+        try {
+            const response = await axios.post('/api/vouchers/validate', {
+                code: appliedVoucher.value.code,
+                subtotal: cartTotal.value
+            });
+            if (response.data.success) {
+                appliedVoucher.value = response.data.voucher;
+                discountAmount.value = response.data.discount_amount;
+                voucherError.value = '';
+            }
+        } catch (error) {
+            console.error(error);
+            removeVoucher();
+        }
+    }
+};
+
+const increaseQuantity = (index) => {
+    form.value.cart_items[index].quantity++;
+    localStorage.setItem(
+        'zunoi_preview_cart',
+        JSON.stringify(form.value.cart_items),
+    );
+    recalculateVoucher();
+};
+
+const decreaseQuantity = (index) => {
+    if (form.value.cart_items[index].quantity > 1) {
+        form.value.cart_items[index].quantity--;
+        localStorage.setItem(
+            'zunoi_preview_cart',
+            JSON.stringify(form.value.cart_items),
+        );
+        recalculateVoucher();
+    } else {
+        removeCartItem(index);
+    }
+};
+
 const removeCartItem = (index) => {
     form.value.cart_items.splice(index, 1);
     localStorage.setItem(
         'zunoi_preview_cart',
         JSON.stringify(form.value.cart_items),
     );
+    recalculateVoucher();
 };
 
 const defaultAdditions = [
@@ -640,17 +682,36 @@ const submitPreviewOrder = () => {
                                             {{ item.name }}
                                         </p>
                                         <div class="mt-0.5 flex flex-col">
-                                            <p
-                                                class="text-[10px] font-semibold text-gray-400"
-                                            >
-                                                {{ item.quantity }}x &bull; Rp
-                                                {{
-                                                    (
-                                                        item.basePrice ||
-                                                        item.price
-                                                    ).toLocaleString('id-ID')
-                                                }}
-                                            </p>
+                                            <div class="mt-1.5 flex items-center gap-2">
+                                                <div class="flex items-center rounded-lg bg-[#FAEDCD]/50 border border-[#D4A373]/20 p-0.5 shadow-sm">
+                                                    <button
+                                                        @click="decreaseQuantity(index)"
+                                                        type="button"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-75 shadow-sm"
+                                                    >
+                                                        <span class="text-xs font-black leading-none">-</span>
+                                                    </button>
+                                                    <span class="px-2.5 text-xs font-black text-[#3B2314]">
+                                                        {{ item.quantity }}
+                                                    </span>
+                                                    <button
+                                                        @click="increaseQuantity(index)"
+                                                        type="button"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-75 shadow-sm"
+                                                    >
+                                                        <span class="text-xs font-black leading-none">+</span>
+                                                    </button>
+                                                </div>
+                                                <span class="text-[10px] font-bold text-gray-400">
+                                                    &bull; Rp
+                                                    {{
+                                                        (
+                                                            item.basePrice ||
+                                                            item.price
+                                                        ).toLocaleString('id-ID')
+                                                    }}
+                                                </span>
+                                            </div>
                                             <p
                                                 class="mt-0.5 text-[11px] font-extrabold text-[#3B2314]"
                                             >
