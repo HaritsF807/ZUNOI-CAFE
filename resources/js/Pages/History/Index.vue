@@ -32,10 +32,17 @@ watch(dateRange, (newVal, oldVal) => {
 // Modal state
 const showProofModal = ref(false);
 const currentProofImage = ref('');
+const showDetailsModal = ref(false);
+const selectedOrder = ref<any>(null);
 
 const openProofModal = (proofStr: string) => {
     currentProofImage.value = proofStr;
     showProofModal.value = true;
+};
+
+const openDetailsModal = (order: any) => {
+    selectedOrder.value = order;
+    showDetailsModal.value = true;
 };
 
 onMounted(() => {
@@ -260,6 +267,12 @@ const getStatusLabel = (status: string) => {
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-gray-500 text-xs font-medium">{{ order.created_at }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button @click="openDetailsModal(order)" class="text-xs font-bold text-[#3B2314] hover:text-[#D4A373] transition inline-flex items-center gap-1">
+                                    Lihat Detail
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -337,6 +350,102 @@ const getStatusLabel = (status: string) => {
                 </div>
                 <div class="p-6 flex justify-center bg-gray-100">
                     <img :src="currentProofImage" class="max-h-[60vh] object-contain rounded-xl shadow-sm border border-gray-200" alt="Bukti Pembayaran" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Details Modal -->
+        <div v-if="showDetailsModal && selectedOrder" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showDetailsModal = false">
+            <div class="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full transform transition-all duration-300 flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-[#3B2314] text-white">
+                    <div>
+                        <h3 class="text-lg font-bold">Rincian Transaksi #{{ selectedOrder.id }}</h3>
+                        <p class="text-xs text-[#FAEDCD] opacity-90 mt-0.5">ID Transaksi: TRX-{{ selectedOrder.id }} • {{ selectedOrder.created_at }}</p>
+                    </div>
+                    <button @click="showDetailsModal = false" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                
+                <!-- Body -->
+                <div class="p-6 overflow-y-auto bg-gray-50 flex-1">
+                    <!-- Customer & Order Info -->
+                    <div class="grid grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Pelanggan / Meja</p>
+                            <p class="text-sm font-bold text-[#3B2314]">{{ selectedOrder.customer_name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipe Pesanan</p>
+                            <p class="text-sm font-bold text-gray-700 capitalize">{{ selectedOrder.order_type || 'Dine-In' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status Pesanan</p>
+                            <span :class="['px-2 py-0.5 text-xs font-bold rounded-md border inline-block mt-1', getStatusColor(selectedOrder.order_status)]">
+                                {{ getStatusLabel(selectedOrder.order_status) }}
+                            </span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status Pembayaran</p>
+                            <span :class="['px-2 py-0.5 text-xs font-bold rounded-md border inline-block mt-1', getStatusColor(selectedOrder.payment_status)]">
+                                {{ getStatusLabel(selectedOrder.payment_status) }}
+                            </span>
+                            <span v-if="selectedOrder.payment_method" class="text-xs text-gray-500 font-medium ml-2 block mt-1">Via {{ selectedOrder.payment_method }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Daftar Pesanan</h4>
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+                        <div v-for="(item, index) in selectedOrder.items" :key="index" class="p-4 border-b border-gray-50 last:border-0 flex justify-between gap-4">
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-gray-800">{{ item.quantity }}x {{ item.name }}</p>
+                                <!-- Addons -->
+                                <ul v-if="item.addons && item.addons.length > 0" class="mt-1.5 space-y-0.5">
+                                    <li v-for="(addon, aIndex) in item.addons" :key="aIndex" class="text-xs text-gray-500 flex items-center before:content-[''] before:w-1 before:h-1 before:bg-gray-300 before:rounded-full before:mr-2">
+                                        {{ addon.name }} (+{{ formatIDR(addon.price) }})
+                                    </li>
+                                </ul>
+                                <p v-if="item.notes" class="text-xs text-[#D4A373] italic mt-1.5 flex items-start gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 mt-0.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.89 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.89l13.416-13.416zm0 0L19.5 7.125" /></svg>
+                                    {{ item.notes }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-[#3B2314]">{{ formatIDR(item.price_at_sale * item.quantity + (item.addons?.reduce((sum: number, a: any) => sum + a.price, 0) || 0) * item.quantity) }}</p>
+                                <p class="text-[10px] text-gray-400 mt-1">{{ formatIDR(item.price_at_sale) }} / item</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes (Order Level) -->
+                    <div v-if="selectedOrder.notes" class="mb-6 bg-[#FAEDCD]/30 border border-[#D4A373]/30 p-3 rounded-xl">
+                        <p class="text-[10px] font-bold text-[#D4A373] uppercase tracking-wider mb-1">Catatan Pesanan</p>
+                        <p class="text-sm text-[#3B2314]">{{ selectedOrder.notes }}</p>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span>{{ formatIDR(selectedOrder.total_price + (selectedOrder.discount_amount || 0) + (selectedOrder.promo_discount_amount || 0)) }}</span>
+                            </div>
+                            <div v-if="selectedOrder.discount_amount > 0" class="flex justify-between text-red-500">
+                                <span>Diskon Manual</span>
+                                <span>- {{ formatIDR(selectedOrder.discount_amount) }}</span>
+                            </div>
+                            <div v-if="selectedOrder.promo_discount_amount > 0" class="flex justify-between text-red-500">
+                                <span>Diskon Promo</span>
+                                <span>- {{ formatIDR(selectedOrder.promo_discount_amount) }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                            <span class="text-sm font-bold text-gray-800">Total Bayar</span>
+                            <span class="text-xl font-black text-[#3B2314]">{{ formatIDR(selectedOrder.total_price) }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -34,4 +34,7 @@ export default defineConfig({
     ssr: {
         noExternal: ['@vuepic/vue-datepicker'],
     },
+    server: {
+        host: '127.0.0.1',
+    }
 });
