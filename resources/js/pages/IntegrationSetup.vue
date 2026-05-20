@@ -46,7 +46,7 @@ const saveIntegration = () => {
         <div class="mx-auto max-w-7xl space-y-8 text-gray-800">
             <!-- HEADER SECTION -->
             <div
-                class="relative flex flex-col items-start justify-between overflow-hidden rounded-3xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
+                class="relative flex flex-col items-start justify-between overflow-hidden rounded-xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
             >
                 <div
                     class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
@@ -70,7 +70,7 @@ const saveIntegration = () => {
 
             <!-- GATEWAY INTEGRATIONS BLOCK (Owner Only) -->
             <div
-                class="overflow-hidden rounded-3xl border border-[#D4A373]/20 bg-white shadow-sm"
+                class="overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white shadow-sm"
             >
                 <div class="border-b border-gray-100 p-6">
                     <h3
@@ -110,7 +110,7 @@ const saveIntegration = () => {
                     >
                         <!-- Fonnte Setup -->
                         <div
-                            class="flex flex-col justify-between rounded-2xl border bg-gray-50 p-5"
+                            class="flex flex-col justify-between rounded-lg border bg-gray-50 p-5"
                         >
                             <div>
                                 <h4
@@ -158,7 +158,7 @@ const saveIntegration = () => {
 
                         <!-- Tokopay Setup -->
                         <div
-                            class="flex flex-col justify-between rounded-2xl border bg-gray-50 p-5"
+                            class="flex flex-col justify-between rounded-lg border bg-gray-50 p-5"
                         >
                             <div>
                                 <h4
@@ -201,7 +201,7 @@ const saveIntegration = () => {
 
                         <!-- QRIS Statis Manual -->
                         <div
-                            class="rounded-2xl border bg-gray-50 p-5 md:col-span-2"
+                            class="rounded-lg border bg-gray-50 p-5 md:col-span-2"
                         >
                             <h4
                                 class="mb-3 flex items-center gap-1.5 text-sm font-extrabold text-gray-700"

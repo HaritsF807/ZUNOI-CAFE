@@ -136,7 +136,34 @@ class OrderController extends Controller
                 ];
             });
 
-        return response()->json($orders);
+        // Ambil info kasir/barista/owner yang sedang shift/aktif hari ini (dalam 24 jam terakhir)
+        $activeUserIds = \Illuminate\Support\Facades\DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->where('last_activity', '>=', time() - 24 * 3600)
+            ->pluck('user_id')
+            ->unique()
+            ->toArray();
+
+        if (empty($activeUserIds)) {
+            $activeUserIds = [auth()->id()];
+        }
+
+        $activeStaff = \App\Models\User::whereIn('id', $activeUserIds)
+            ->whereIn('role', ['barista', 'owner'])
+            ->get(['id', 'name', 'email', 'role'])
+            ->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'role' => $u->role === 'owner' ? 'Owner / Manager' : 'Barista / Kasir',
+                ];
+            });
+
+        return response()->json([
+            'orders' => $orders,
+            'active_staff' => $activeStaff,
+        ]);
     }
 
     // Memperbarui status pesanan dari dashboard barista

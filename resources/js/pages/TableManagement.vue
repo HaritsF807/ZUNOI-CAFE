@@ -131,7 +131,7 @@ onMounted(() => {
         <div class="mx-auto max-w-7xl space-y-8 text-gray-800">
             <!-- HEADER SECTION -->
             <div
-                class="relative flex flex-col items-start justify-between overflow-hidden rounded-3xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
+                class="relative flex flex-col items-start justify-between overflow-hidden rounded-xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
             >
                 <div
                     class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
@@ -155,7 +155,7 @@ onMounted(() => {
 
             <!-- MEJA & QR CODES LIST SECTION -->
             <div
-                class="space-y-6 overflow-hidden rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm"
+                class="space-y-6 overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm"
             >
                 <div
                     class="flex flex-col items-start justify-between gap-4 border-b border-gray-100 pb-5 sm:flex-row sm:items-center"
@@ -229,7 +229,7 @@ onMounted(() => {
                     <div
                         v-for="table in tables"
                         :key="table.id"
-                        class="group relative flex transform flex-col items-center justify-center rounded-3xl border border-[#D4A373]/20 bg-gradient-to-b from-white to-[#FAEDCD]/10 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#D4A373]/60 hover:shadow-lg"
+                        class="group relative flex transform flex-col items-center justify-center rounded-xl border border-[#D4A373]/20 bg-gradient-to-b from-white to-[#FAEDCD]/10 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#D4A373]/60 hover:shadow-lg"
                     >
                         <!-- Delete Button (Top-Right) -->
                         <button
@@ -275,7 +275,7 @@ onMounted(() => {
 
                         <!-- QR Code Preview -->
                         <div
-                            class="relative mb-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-transform duration-300 group-hover:scale-105"
+                            class="relative mb-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm transition-transform duration-300 group-hover:scale-105"
                         >
                             <img
                                 :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${appUrl}/meja/${table.secure_token}`"
@@ -331,7 +331,7 @@ onMounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm transition-all duration-300"
     >
         <div
-            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <!-- Modal Header -->
             <div
@@ -389,7 +389,7 @@ onMounted(() => {
                 class="flex flex-col items-center justify-center bg-gradient-to-b from-white to-[#FAEDCD]/10 p-8"
             >
                 <div
-                    class="mb-4 rounded-3xl border border-[#D4A373]/25 bg-white p-4 shadow-md"
+                    class="mb-4 rounded-xl border border-[#D4A373]/25 bg-white p-4 shadow-md"
                 >
                     <img
                         :src="`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${appUrl}/meja/${selectedTableForQr.secure_token}`"
@@ -406,7 +406,7 @@ onMounted(() => {
 
                 <button
                     @click="downloadQr(selectedTableForQr)"
-                    class="flex w-full transform items-center justify-center gap-1.5 rounded-2xl bg-[#3B2314] py-3 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
+                    class="flex w-full transform items-center justify-center gap-1.5 rounded-lg bg-[#3B2314] py-3 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -434,7 +434,7 @@ onMounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <div
                 class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"

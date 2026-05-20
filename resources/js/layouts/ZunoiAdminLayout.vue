@@ -60,7 +60,7 @@ provide('triggerToast', triggerToast);
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-[#FAEDCD] font-sans text-gray-800">
+    <div class="flex min-h-screen bg-slate-50 font-sans text-gray-800">
         <aside
             class="sticky top-0 z-30 flex h-screen flex-col justify-between bg-[#3B2314] text-[#FAEDCD] transition-all duration-300"
             :class="{

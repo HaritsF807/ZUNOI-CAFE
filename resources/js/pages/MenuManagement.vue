@@ -485,7 +485,7 @@ const paginatedProducts = computed(() => {
         <div class="mx-auto max-w-7xl space-y-8 text-gray-800">
             <!-- HEADER SECTION -->
             <div
-                class="relative flex flex-col items-start justify-between overflow-hidden rounded-3xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
+                class="relative flex flex-col items-start justify-between overflow-hidden rounded-xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
             >
                 <div
                     class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
@@ -550,7 +550,7 @@ const paginatedProducts = computed(() => {
             <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-4">
                 <!-- KOLOM KATEGORI (KIRI) -->
                 <div
-                    class="space-y-4 rounded-3xl border border-[#D4A373]/20 bg-white p-5 shadow-sm"
+                    class="space-y-4 rounded-xl border border-[#D4A373]/20 bg-white p-5 shadow-sm"
                 >
                     <div
                         class="flex items-center justify-between gap-2 border-b pb-3"
@@ -716,7 +716,7 @@ const paginatedProducts = computed(() => {
 
                 <!-- KOLOM PRODUK (KANAN) -->
                 <div
-                    class="space-y-6 rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm lg:col-span-3"
+                    class="space-y-6 rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm lg:col-span-3"
                 >
                     <!-- Pencarian & Kontrol -->
                     <div
@@ -800,7 +800,7 @@ const paginatedProducts = computed(() => {
                             <div
                                 v-for="product in paginatedProducts"
                                 :key="product.id"
-                                class="relative flex flex-col justify-between rounded-2xl border border-[#D4A373]/20 bg-gradient-to-br from-white to-[#FAEDCD]/5 p-4 transition-all duration-300 hover:border-[#D4A373]/60 hover:shadow-md"
+                                class="relative flex flex-col justify-between rounded-lg border border-[#D4A373]/20 bg-gradient-to-br from-white to-[#FAEDCD]/5 p-4 transition-all duration-300 hover:border-[#D4A373]/60 hover:shadow-md"
                                 :class="{
                                     'border-gray-200 bg-gray-50/80':
                                         !product.is_available,
@@ -1058,7 +1058,7 @@ const paginatedProducts = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="w-full max-w-md scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-md scale-100 transform overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <div
                 class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"
@@ -1182,7 +1182,7 @@ const paginatedProducts = computed(() => {
                     <div v-if="imageInputType === 'file'" class="space-y-3">
                         <div class="flex w-full items-center justify-center">
                             <label
-                                class="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-200 hover:bg-gray-100"
+                                class="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-200 hover:bg-gray-100"
                             >
                                 <div
                                     class="flex flex-col items-center justify-center pt-5 pb-6"
@@ -1336,7 +1336,7 @@ const paginatedProducts = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="flex max-h-[85vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="flex max-h-[85vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <!-- Modal Header -->
             <div
@@ -1375,7 +1375,7 @@ const paginatedProducts = computed(() => {
             <div class="flex-1 space-y-6 overflow-y-auto p-6">
                 <!-- Add / Edit Addon Form -->
                 <div
-                    class="space-y-4 rounded-2xl border border-gray-200 bg-[#FAEDCD]/15 p-5 shadow-sm"
+                    class="space-y-4 rounded-lg border border-gray-200 bg-[#FAEDCD]/15 p-5 shadow-sm"
                 >
                     <h4
                         class="text-xs font-black tracking-wider text-[#3B2314] uppercase"
@@ -1548,7 +1548,7 @@ const paginatedProducts = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <div
                 class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"
@@ -1625,7 +1625,7 @@ const paginatedProducts = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-sm scale-100 transform overflow-hidden rounded-xl border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <div
                 class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"

@@ -14,6 +14,7 @@ const triggerToast = (message, type = 'success') => {
 
 const user = usePage().props.auth.user;
 const orders = ref([]);
+const activeStaff = ref([]);
 const tables = ref([]);
 const newTableName = ref('');
 
@@ -73,7 +74,8 @@ let pollInterval;
 const fetchOrders = async () => {
     try {
         const response = await axios.get('/api/orders/live');
-        orders.value = response.data;
+        orders.value = response.data.orders;
+        activeStaff.value = response.data.active_staff;
     } catch (error) {
         console.error('Gagal mengambil data live orders', error);
     }
@@ -312,7 +314,7 @@ onUnmounted(() => {
         <div class="mx-auto max-w-7xl space-y-8 text-gray-800">
             <!-- HEADER SECTION -->
             <div
-                class="relative flex flex-col items-start justify-between overflow-hidden rounded-3xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
+                class="relative flex flex-col items-start justify-between overflow-hidden rounded-xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
             >
                 <div
                     class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
@@ -377,11 +379,47 @@ onUnmounted(() => {
                 </div>
             </div>
 
+            <!-- ACTIVE STAFF ON SHIFT (Owner Only) -->
+            <div v-if="user.role === 'owner'" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3B2314] text-[#FAEDCD]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 21c-2.243 0-4.352-.648-6.124-1.772a4.125 4.125 0 0 1 7.533-2.493M15 9.75a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 8.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-black text-[#3B2314]">Staf & Shift Aktif Hari Ini</h3>
+                            <p class="text-[10px] text-gray-400">Daftar barista dan kasir yang login ke sistem dalam 24 jam terakhir.</p>
+                        </div>
+                    </div>
+                    <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold text-green-800 border border-green-200 flex items-center gap-1">
+                        <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        {{ activeStaff.length }} Online
+                    </span>
+                </div>
+                
+                <div class="flex flex-wrap gap-4">
+                    <div v-for="staff in activeStaff" :key="staff.id" class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-2.5 shadow-sm min-w-[200px] flex-1 md:flex-none">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAEDCD] font-bold text-[#3B2314] uppercase text-xs">
+                            {{ staff.name.charAt(0) }}
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-gray-800">{{ staff.name }}</p>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                <p class="text-[9px] font-black tracking-wider uppercase text-gray-400">{{ staff.role }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ANALYTICS CARDS (Warm & Clean UI) -->
             <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <!-- Card 1: Revenue -->
                 <div
-                    class="group rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
+                    class="group rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                 >
                     <div class="mb-3 flex items-center justify-between">
                         <span
@@ -406,7 +444,7 @@ onUnmounted(() => {
 
                 <!-- Card 2: Pending Orders -->
                 <div
-                    class="rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
+                    class="rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                     :class="{
                         'border-red-300 bg-red-50/10 ring-2 ring-red-100':
                             stats.pendingCount > 0,
@@ -418,7 +456,7 @@ onUnmounted(() => {
                             >Pesanan Pending</span
                         >
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 font-bold text-red-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 font-bold text-red-600"
                         >
                             <span
                                 class="relative flex h-3 w-3"
@@ -465,7 +503,7 @@ onUnmounted(() => {
 
                 <!-- Card 3: Active Tables -->
                 <div
-                    class="rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
+                    class="rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                 >
                     <div class="mb-3 flex items-center justify-between">
                         <span
@@ -473,7 +511,7 @@ onUnmounted(() => {
                             >Jumlah Meja</span
                         >
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-100 font-bold text-orange-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 font-bold text-orange-600"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -503,7 +541,7 @@ onUnmounted(() => {
 
                 <!-- Card 4: Ratio -->
                 <div
-                    class="rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
+                    class="rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                 >
                     <div class="mb-3 flex items-center justify-between">
                         <span
@@ -511,7 +549,7 @@ onUnmounted(() => {
                             >Rasio Dine-in</span
                         >
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-100 font-bold text-teal-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 font-bold text-teal-600"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -548,7 +586,7 @@ onUnmounted(() => {
 
             <!-- LIVE ORDERS BLOCK (Filter Tabs, Cards, & Real Action Buttons) -->
             <div
-                class="overflow-hidden rounded-3xl border border-[#D4A373]/20 bg-white shadow-sm"
+                class="overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white shadow-sm"
             >
                 <div
                     class="flex flex-col items-start justify-between gap-4 border-b border-gray-100 p-6 md:flex-row md:items-center"
@@ -570,7 +608,7 @@ onUnmounted(() => {
 
                     <!-- Tabs Filter Modern -->
                     <div
-                        class="flex w-full rounded-2xl border bg-gray-100 p-1.5 text-xs font-bold md:w-auto"
+                        class="flex w-full rounded-lg border bg-gray-100 p-1.5 text-xs font-bold md:w-auto"
                     >
                         <button
                             @click="currentTab = 'all'"
@@ -888,7 +926,7 @@ onUnmounted(() => {
                 @click.self="showProofModal = false"
             >
                 <div
-                    class="animate-scale-in relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-6 shadow-2xl"
+                    class="animate-scale-in relative w-full max-w-lg overflow-hidden rounded-xl bg-white p-6 shadow-2xl"
                 >
                     <!-- Header -->
                     <div
@@ -936,7 +974,7 @@ onUnmounted(() => {
 
                     <!-- Image -->
                     <div
-                        class="flex max-h-[60vh] items-center justify-center overflow-y-auto rounded-2xl border bg-gray-50 p-2"
+                        class="flex max-h-[60vh] items-center justify-center overflow-y-auto rounded-lg border bg-gray-50 p-2"
                     >
                         <img
                             :src="selectedProofUrl"
@@ -971,7 +1009,7 @@ onUnmounted(() => {
                 class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                 @click.self="closeDetailModal"
             >
-                <div class="animate-scale-in relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="animate-scale-in relative w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
                     <!-- Header -->
                     <div class="flex items-center justify-between border-b p-5">
                         <div>

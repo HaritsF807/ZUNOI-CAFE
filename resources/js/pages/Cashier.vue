@@ -302,7 +302,7 @@ const formatPrice = (price: number) => {
     <ZunoiAdminLayout>
         <div class="flex flex-col h-auto lg:h-[calc(100vh-185px)] lg:flex-row gap-6 p-1 min-w-0">
             <!-- LEFT PANEL: Menu Catalog -->
-            <div class="flex flex-col flex-1 bg-white rounded-3xl shadow-xl overflow-hidden border border-[#D4A373]/20 min-w-0">
+            <div class="flex flex-col flex-1 bg-white rounded-xl shadow-xl overflow-hidden border border-[#D4A373]/20 min-w-0">
                 <!-- Search & Header -->
                 <div class="p-6 bg-[#3B2314] text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -316,7 +316,7 @@ const formatPrice = (price: number) => {
                             v-model="searchCatalogQuery"
                             type="text"
                             placeholder="Cari menu kopi, kue..."
-                            class="w-full bg-white/10 text-white placeholder-white/50 text-sm pl-10 pr-4 py-2.5 rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-transparent transition"
+                            class="w-full bg-white/10 text-white placeholder-white/50 text-sm pl-10 pr-4 py-2.5 rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-transparent transition"
                         />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -373,7 +373,7 @@ const formatPrice = (price: number) => {
                         <div
                             v-for="product in filteredProducts"
                             :key="product.id"
-                            class="bg-white rounded-2xl p-4 shadow-md border border-[#D4A373]/10 hover:border-[#D4A373]/40 transition hover:shadow-lg flex flex-col justify-between"
+                            class="bg-white rounded-lg p-4 shadow-md border border-[#D4A373]/10 hover:border-[#D4A373]/40 transition hover:shadow-lg flex flex-col justify-between"
                         >
                             <div>
                                 <!-- Image or placeholder -->
@@ -428,7 +428,7 @@ const formatPrice = (price: number) => {
             </div>
 
             <!-- RIGHT PANEL: Cart & Form -->
-            <div class="w-full lg:w-96 flex flex-col bg-white rounded-3xl shadow-xl overflow-hidden border border-[#D4A373]/20 shrink-0 min-w-0">
+            <div class="w-full lg:w-96 flex flex-col bg-white rounded-xl shadow-xl overflow-hidden border border-[#D4A373]/20 shrink-0 min-w-0">
                 <!-- Header -->
                 <div class="p-6 border-b border-[#D4A373]/10 flex items-center justify-between bg-gray-50 shrink-0">
                     <div class="flex items-center gap-2">
@@ -525,7 +525,7 @@ const formatPrice = (price: number) => {
                 <!-- Order Details Form (No internal scrollbar) -->
                 <div class="p-6 bg-gray-50/50 space-y-4 flex-1">
                     <!-- Order Type Toggle -->
-                    <div class="grid grid-cols-2 bg-gray-200 p-1 rounded-2xl border border-gray-300">
+                    <div class="grid grid-cols-2 bg-gray-200 p-1 rounded-lg border border-gray-300">
                         <button
                             @click="orderType = 'dine_in'"
                             class="py-2 text-xs font-bold text-center rounded-xl transition duration-200 flex items-center justify-center gap-1.5"
@@ -690,7 +690,7 @@ const formatPrice = (price: number) => {
                     <button
                         @click="submitCashierOrder"
                         :disabled="isSubmitting"
-                        class="w-full py-4.5 bg-[#3B2314] hover:bg-[#D4A373] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FAEDCD] hover:text-[#3B2314] disabled:text-white rounded-2xl text-sm font-extrabold tracking-widest uppercase transition flex items-center justify-center gap-2 shadow-md"
+                        class="w-full py-4.5 bg-[#3B2314] hover:bg-[#D4A373] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FAEDCD] hover:text-[#3B2314] disabled:text-white rounded-xl text-sm font-extrabold tracking-widest uppercase transition flex items-center justify-center gap-2 shadow-md"
                     >
                         <span v-if="isSubmitting">Menyimpan...</span>
                         <span v-else class="flex items-center gap-2">
@@ -707,7 +707,7 @@ const formatPrice = (price: number) => {
 
         <!-- MODAL: Custom Notes -->
         <div v-if="showNoteModal && activeProductForNote" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
                 <div class="p-6 bg-[#3B2314] text-white flex items-center justify-between">
                     <div>
                         <h3 class="text-lg font-extrabold tracking-wide">Tambahkan Catatan Menu</h3>
@@ -754,7 +754,7 @@ const formatPrice = (price: number) => {
 
         <!-- MODAL: Success Receipt -->
         <div v-if="showSuccessModal && createdOrder" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
+            <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
                 <div class="p-6 bg-green-700 text-white flex items-center justify-between">
                     <div>
                         <h3 class="text-lg font-extrabold tracking-wide">Pemesanan Kasir Berhasil!</h3>

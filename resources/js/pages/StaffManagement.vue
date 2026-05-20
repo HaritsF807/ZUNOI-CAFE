@@ -161,7 +161,7 @@ const formatLocalDate = (dateStr: string) => {
         <div class="mx-auto max-w-7xl space-y-8 text-gray-800">
             <!-- HEADER SECTION -->
             <div
-                class="relative flex flex-col items-start justify-between overflow-hidden rounded-3xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
+                class="relative flex flex-col items-start justify-between overflow-hidden rounded-xl border border-[#D4A373]/30 bg-[#3B2314] p-6 text-[#FAEDCD] shadow-xl md:flex-row md:items-center"
             >
                 <div
                     class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
@@ -190,8 +190,8 @@ const formatLocalDate = (dateStr: string) => {
 
             <!-- STATS SECTION -->
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                <div class="rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm flex items-center gap-4">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-[#D4A373]">
+                <div class="rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm flex items-center gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-50 text-[#D4A373]">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 20.8M15 19.128a11.386 11.386 0 0 1-4.911 1.672M10.089 20.8A11.302 11.302 0 0 1 4.5 18.75m5.589 2.05A11.21 11.21 0 0 1 4.5 18.75m0 0V16.5A4.125 4.125 0 0 1 8.56 12.35m-4.06 6.4A11.37 11.37 0 0 1 3 15.75m0 0v-2.25A4.125 4.125 0 0 1 7.125 9.375M2.625 10.5h1.125c.375 0 .625-.125.75-.375l.5-.875m10.125.375h1.125c.375 0 .625-.125.75-.375l.5-.875M12 2.25a3.375 3.375 0 1 0 0 6.75 3.375 3.375 0 0 0 0-6.75ZM19.5 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5ZM4.5 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" />
                         </svg>
@@ -204,7 +204,7 @@ const formatLocalDate = (dateStr: string) => {
             </div>
 
             <!-- BARISTA LIST TABLE SECTION -->
-            <div class="overflow-hidden rounded-3xl border border-[#D4A373]/20 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white shadow-sm">
                 <div class="border-b border-gray-100 p-6">
                     <h3 class="text-md font-bold text-[#3B2314]">Daftar Staf Barista Aktif</h3>
                     <p class="text-xs text-gray-400 mt-0.5">Berikut adalah akun staf yang diizinkan untuk mengelola transaksi POS dan kasir.</p>
@@ -268,7 +268,7 @@ const formatLocalDate = (dateStr: string) => {
 
         <!-- MODAL: TAMBAH BARISTA -->
         <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
                 <div class="p-6 bg-[#3B2314] text-[#FAEDCD] flex items-center justify-between">
                     <div>
                         <h3 class="text-md font-extrabold tracking-wide">Pendaftaran Barista Baru</h3>
@@ -330,7 +330,7 @@ const formatLocalDate = (dateStr: string) => {
 
         <!-- MODAL: UBAH BARISTA -->
         <div v-if="showEditModal && selectedBarista" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-[#D4A373]/20 transition-all duration-300">
                 <div class="p-6 bg-[#3B2314] text-[#FAEDCD] flex items-center justify-between">
                     <div>
                         <h3 class="text-md font-extrabold tracking-wide">Ubah Informasi Barista</h3>
@@ -395,7 +395,7 @@ const formatLocalDate = (dateStr: string) => {
 
         <!-- MODAL: CUSTOM CONFIRMATION DIALOG -->
         <div v-if="showConfirmModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-red-100 transition-all duration-300">
+            <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border border-red-100 transition-all duration-300">
                 <div class="p-6 bg-red-600 text-white flex items-center gap-3">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-5">
