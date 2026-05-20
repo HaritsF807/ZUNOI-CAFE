@@ -281,7 +281,24 @@ class OrderController extends Controller
     // Halaman Kasir POS
     public function cashierIndex()
     {
-        $products = \App\Models\Product::with(['category', 'addons'])->where('is_available', true)->get();
+        $products = \App\Models\Product::with(['category', 'assignedAddons'])->where('is_available', true)->get()->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'category_id' => $product->category_id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'image' => $product->image,
+                'is_available' => $product->is_available,
+                'addons' => $product->assignedAddons->map(function ($addon) {
+                    return [
+                        'id' => $addon->id,
+                        'name' => $addon->addon_name,
+                        'price' => (int) $addon->extra_price,
+                    ];
+                })
+            ];
+        });
         $categories = \App\Models\Category::orderBy('name', 'asc')->get();
         $tables = \App\Models\Table::orderBy('table_name', 'asc')->get();
 

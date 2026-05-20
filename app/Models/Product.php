@@ -19,4 +19,17 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    /**
+     * Add-ons yang di-assign ke produk ini (many-to-many via pivot).
+     */
+    public function assignedAddons()
+    {
+        return $this->belongsToMany(
+            ProductAddon::class,
+            'product_addon_assignments',
+            'product_id',
+            'product_addon_id'
+        )->withTimestamps();
+    }
 }

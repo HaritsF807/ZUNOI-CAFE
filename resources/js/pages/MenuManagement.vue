@@ -1116,9 +1116,10 @@ const paginatedProducts = computed(() => {
                         v-model="productForm.name"
                         type="text"
                         placeholder="Contoh: Es Latte Gula Aren"
-                        class="w-full rounded-xl border-gray-200 px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                     />
                 </div>
+                
 
                 <!-- Price -->
                 <div>
@@ -1129,7 +1130,7 @@ const paginatedProducts = computed(() => {
                         v-model="productForm.price"
                         type="number"
                         placeholder="Contoh: 22000"
-                        class="w-full rounded-xl border-gray-200 px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                     />
                 </div>
 
@@ -1140,7 +1141,7 @@ const paginatedProducts = computed(() => {
                     >
                     <select
                         v-model="productForm.category_id"
-                        class="w-full rounded-xl border-gray-200 bg-white px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                     >
                         <option
                             v-for="category in localCategories"
