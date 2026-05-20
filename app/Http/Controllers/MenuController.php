@@ -15,7 +15,25 @@ class MenuController extends Controller
     public function index()
     {
         $categories = Category::orderBy('name', 'asc')->get();
-        $products = Product::with(['category'])->orderBy('created_at', 'desc')->get();
+        $products = Product::with(['category', 'assignedAddons'])->orderBy('created_at', 'desc')->get()->map(function($p) {
+            return [
+                'id' => $p->id,
+                'category_id' => $p->category_id,
+                'name' => $p->name,
+                'price' => (int) $p->price,
+                'description' => $p->description,
+                'image' => $p->image,
+                'is_available' => (bool) $p->is_available,
+                'category' => $p->category,
+                'assigned_addons' => $p->assignedAddons->map(function($a) {
+                    return [
+                        'id' => $a->id,
+                        'name' => $a->addon_name,
+                        'price' => (int) $a->extra_price,
+                    ];
+                })
+            ];
+        });
         $addons = ProductAddon::orderBy('addon_name', 'asc')->get()->map(function($a) {
             return [
                 'id' => $a->id,
@@ -29,6 +47,32 @@ class MenuController extends Controller
             'categories' => $categories,
             'products' => $products,
             'globalAddons' => $addons,
+        ]);
+    }
+
+    /**
+     * Menghubungkan addon-addon global ke produk spesifik.
+     */
+    public function syncProductAddons(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'addon_ids' => 'required|array',
+            'addon_ids.*' => 'exists:product_addons,id'
+        ]);
+
+        $product = Product::findOrFail($id);
+        $product->assignedAddons()->sync($validated['addon_ids']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Add-ons berhasil dipasangkan ke menu!',
+            'assigned_addons' => $product->assignedAddons->map(function($a) {
+                return [
+                    'id' => $a->id,
+                    'name' => $a->addon_name,
+                    'price' => (int) $a->extra_price,
+                ];
+            })
         ]);
     }
 

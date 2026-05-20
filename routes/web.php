@@ -118,6 +118,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/products/{id}', [MenuController::class, 'updateProduct']);
     Route::delete('/api/products/{id}', [MenuController::class, 'deleteProduct']);
     Route::patch('/api/products/{id}/toggle-availability', [MenuController::class, 'toggleProductAvailability']);
+    Route::post('/api/products/{id}/sync-addons', [MenuController::class, 'syncProductAddons']);
 
     // API Kelola Addon Global
     Route::post('/api/addons', [MenuController::class, 'storeAddon']);

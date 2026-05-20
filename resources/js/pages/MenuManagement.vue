@@ -33,6 +33,7 @@ const selectedCategoryFilter = ref('all');
 // Modals State
 const showProductModal = ref(false);
 const showCategoryModal = ref(false);
+const showEditAddonModal = ref(false);
 const isEditingProduct = ref(false);
 const isEditingCategory = ref(false);
 
@@ -85,6 +86,30 @@ const productForm = ref({
 const categoryForm = ref({
     id: null,
     name: '',
+});
+
+// Assigned Addons State
+const assignedAddonIds = ref([]);
+const isSyncingAddons = ref(false);
+
+// Pagination for Assign Addons Modal
+const addonAssignmentPage = ref(1);
+const addonsPerAssignmentPage = 5;
+
+const totalAddonAssignmentPages = computed(() => {
+    return Math.ceil(localGlobalAddons.value.length / addonsPerAssignmentPage);
+});
+
+const paginatedAssignmentAddons = computed(() => {
+    const start = (addonAssignmentPage.value - 1) * addonsPerAssignmentPage;
+    const end = start + addonsPerAssignmentPage;
+    return localGlobalAddons.value.slice(start, end);
+});
+
+watch(showProductModal, (newVal) => {
+    if (newVal) {
+        addonAssignmentPage.value = 1;
+    }
 });
 
 // Sync data lokal jika props diperbarui dari server
@@ -186,6 +211,7 @@ const openAddProduct = () => {
     productImageFile.value = null;
     productImagePreview.value = null;
     isEditingProduct.value = false;
+    assignedAddonIds.value = [];
     showProductModal.value = true;
 };
 
@@ -206,6 +232,10 @@ const openEditProduct = (product) => {
 
     productImageFile.value = null;
     isEditingProduct.value = true;
+    
+    // Populate assigned addons
+    assignedAddonIds.value = product.assigned_addons ? product.assigned_addons.map(a => a.id) : [];
+    
     showProductModal.value = true;
 };
 
@@ -252,6 +282,9 @@ const saveProduct = async () => {
             );
 
             if (response.data.success) {
+                // Sync addons as well
+                await syncProductAddons();
+                
                 triggerToast('Produk berhasil diperbarui!', 'success');
                 showProductModal.value = false;
                 syncData();
@@ -273,6 +306,21 @@ const saveProduct = async () => {
             'Gagal menyimpan produk. Periksa kembali inputan Anda.',
             'error',
         );
+    }
+};
+
+const syncProductAddons = async () => {
+    if (!productForm.value.id) return;
+    
+    isSyncingAddons.value = true;
+    try {
+        await axios.post(`/api/products/${productForm.value.id}/sync-addons`, {
+            addon_ids: assignedAddonIds.value
+        });
+    } catch (error) {
+        console.error('Gagal sinkronisasi add-ons', error);
+    } finally {
+        isSyncingAddons.value = false;
     }
 };
 
@@ -338,6 +386,7 @@ const handleEditAddon = (addon) => {
         category: addon.category || 'topping',
     };
     isEditingAddon.value = true;
+    showEditAddonModal.value = true;
 };
 
 const saveAddon = async () => {
@@ -359,6 +408,7 @@ const saveAddon = async () => {
 
             if (response.data.success) {
                 triggerToast('Add-on berhasil diperbarui!', 'success');
+                showEditAddonModal.value = false;
                 resetAddonForm();
                 syncData();
             }
@@ -727,7 +777,7 @@ const paginatedProducts = computed(() => {
                                 v-model="searchProductQuery"
                                 type="text"
                                 placeholder="Cari nama menu..."
-                                class="w-full rounded-xl border-gray-200 py-2.5 pr-4 pl-9 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                class="w-full rounded-xl border border-gray-300 py-2.5 pr-4 pl-9 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                             />
                         </div>
 
@@ -1068,7 +1118,7 @@ const paginatedProducts = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
     >
         <div
-            class="w-full max-w-md scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
+            class="w-full max-w-4xl scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
         >
             <div
                 class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"
@@ -1106,242 +1156,246 @@ const paginatedProducts = computed(() => {
                 </p>
             </div>
 
-            <div class="max-h-[75vh] space-y-4 overflow-y-auto p-6">
-                <!-- Name -->
-                <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600"
-                        >Nama Menu *</label
-                    >
-                    <input
-                        v-model="productForm.name"
-                        type="text"
-                        placeholder="Contoh: Es Latte Gula Aren"
-                        class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
-                    />
-                </div>
-                
-
-                <!-- Price -->
-                <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600"
-                        >Harga Jual (Rupiah) *</label
-                    >
-                    <input
-                        v-model="productForm.price"
-                        type="number"
-                        placeholder="Contoh: 22000"
-                        class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
-                    />
-                </div>
-
-                <!-- Category -->
-                <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600"
-                        >Kategori Menu *</label
-                    >
-                    <select
-                        v-model="productForm.category_id"
-                        class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
-                    >
-                        <option
-                            v-for="category in localCategories"
-                            :key="category.id"
-                            :value="category.id"
-                        >
-                            {{ category.name }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- Image Source Selection -->
-                <div>
-                    <label class="mb-2 block text-xs font-bold text-gray-600"
-                        >Gambar Menu *</label
-                    >
-
-                    <!-- Tab Selector -->
-                    <div
-                        class="mb-3 flex w-full rounded-xl border bg-gray-50 p-1 text-xs font-bold"
-                    >
-                        <button
-                            type="button"
-                            @click="imageInputType = 'file'"
-                            class="flex-1 rounded-lg py-1.5 text-center transition"
-                            :class="
-                                imageInputType === 'file'
-                                    ? 'bg-[#3B2314] text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-[#3B2314]'
-                            "
-                        >
-                            Upload Berkas
-                        </button>
-                        <button
-                            type="button"
-                            @click="imageInputType = 'url'"
-                            class="flex-1 rounded-lg py-1.5 text-center transition"
-                            :class="
-                                imageInputType === 'url'
-                                    ? 'bg-[#3B2314] text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-[#3B2314]'
-                            "
-                        >
-                            Alamat Link URL
-                        </button>
-                    </div>
-
-                    <!-- File Upload Input -->
-                    <div v-if="imageInputType === 'file'" class="space-y-3">
-                        <div class="flex w-full items-center justify-center">
-                            <label
-                                class="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-200 hover:bg-gray-100"
-                            >
-                                <div
-                                    class="flex flex-col items-center justify-center pt-5 pb-6"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="mb-2 h-8 w-8 text-gray-400"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                        />
-                                    </svg>
-                                    <p class="text-xs font-bold text-gray-500">
-                                        Klik untuk unggah foto menu
-                                    </p>
-                                    <p class="mt-1 text-[10px] text-gray-400">
-                                        PNG, JPG, JPEG, WEBP (Maks. 2MB)
-                                    </p>
-                                </div>
-                                <input
-                                    type="file"
-                                    @change="onProductFileSelected"
-                                    accept="image/*"
-                                    class="hidden"
-                                />
-                            </label>
-                        </div>
-
-                        <!-- File Preview -->
-                        <div
-                            v-if="productImagePreview"
-                            class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3"
-                        >
-                            <img
-                                :src="productImagePreview"
-                                class="h-12 w-12 rounded-lg border object-cover"
+            <div class="grid grid-cols-1 md:grid-cols-2 divide-x divide-gray-100">
+                <!-- SISI KIRI: INFORMASI DASAR -->
+                <div class="max-h-[70vh] space-y-4 overflow-y-auto p-6 text-gray-800">
+                    <h4 class="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-2">Informasi Produk</h4>
+                    
+                    <!-- Preview Gambar Menu (Besar - 1:1 Aspect Ratio) -->
+                    <div class="relative group">
+                        <div class="aspect-square w-full overflow-hidden rounded-[24px] border border-gray-200 bg-gray-50 shadow-inner">
+                            <img 
+                                v-if="productImagePreview || (imageInputType === 'url' && productForm.image)" 
+                                :src="imageInputType === 'file' ? productImagePreview : productForm.image" 
+                                class="h-full w-full object-cover transition duration-500 group-hover:scale-105" 
                             />
-                            <div class="min-w-0 flex-1">
-                                <p
-                                    class="truncate text-xs font-bold text-gray-700"
-                                >
-                                    {{
-                                        productImageFile
-                                            ? productImageFile.name
-                                            : 'Gambar saat ini'
-                                    }}
-                                </p>
-                                <p class="text-[10px] text-gray-400">
-                                    {{
-                                        productImageFile
-                                            ? (
-                                                  productImageFile.size / 1024
-                                              ).toFixed(1) + ' KB'
-                                            : 'Disimpan di server'
-                                    }}
-                                </p>
+                            <div v-else class="flex h-full w-full flex-col items-center justify-center space-y-2 opacity-40">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="h-12 w-12"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6.75a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6.75v12.75a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-center px-4">Pratinjau Gambar (1:1)</p>
                             </div>
-                            <button
-                                type="button"
-                                @click="
-                                    productImageFile = null;
-                                    productImagePreview = null;
-                                    productForm.image = '';
-                                "
-                                class="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="2.5"
-                                    stroke="currentColor"
-                                    class="h-4 w-4"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                                    />
-                                </svg>
-                            </button>
                         </div>
+                        <span v-if="productForm.is_available" class="absolute top-3 left-3 rounded-full bg-green-500 px-2.5 py-0.5 text-[9px] font-black text-white shadow-sm">TERSEDIA</span>
+                        <span v-else class="absolute top-3 left-3 rounded-full bg-red-500 px-2.5 py-0.5 text-[9px] font-black text-white shadow-sm">HABIS</span>
                     </div>
 
-                    <!-- URL Link Input -->
-                    <div v-else>
+                    <!-- Name -->
+                    <div class="pt-2">
+                        <label class="mb-1 block text-xs font-bold text-gray-600 uppercase tracking-tighter">Nama Menu *</label>
                         <input
-                            v-model="productForm.image"
+                            v-model="productForm.name"
                             type="text"
-                            placeholder="Contoh: https://images.unsplash.com/..."
-                            class="w-full rounded-xl border-gray-200 px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            placeholder="Contoh: Es Latte Gula Aren"
+                            class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                         />
                     </div>
+                    
+
+                    <!-- Price & Category -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1 block text-xs font-bold text-gray-600 uppercase tracking-tighter">Harga Jual *</label>
+                            <input
+                                v-model="productForm.price"
+                                type="number"
+                                placeholder="22000"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-bold text-gray-600 uppercase tracking-tighter">Kategori *</label>
+                            <select
+                                v-model="productForm.category_id"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
+                            >
+                                <option
+                                    v-for="category in localCategories"
+                                    :key="category.id"
+                                    :value="category.id"
+                                >
+                                    {{ category.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Image Source Selection -->
+                    <div>
+                        <label class="mb-2 block text-xs font-bold text-gray-600 uppercase tracking-tighter">Pilih Gambar *</label>
+
+                        <!-- Tab Selector -->
+                        <div class="mb-3 flex w-full rounded-xl border bg-gray-50 p-1 text-[9px] font-black">
+                            <button
+                                type="button"
+                                @click="imageInputType = 'file'"
+                                class="flex-1 rounded-lg py-1.5 text-center transition uppercase tracking-tighter"
+                                :class="imageInputType === 'file' ? 'bg-[#3B2314] text-white shadow-sm' : 'text-gray-400 hover:text-[#3B2314]'"
+                            >
+                                Upload Berkas
+                            </button>
+                            <button
+                                type="button"
+                                @click="imageInputType = 'url'"
+                                class="flex-1 rounded-lg py-1.5 text-center transition uppercase tracking-tighter"
+                                :class="imageInputType === 'url' ? 'bg-[#3B2314] text-white shadow-sm' : 'text-gray-400 hover:text-[#3B2314]'"
+                            >
+                                Alamat Link URL
+                            </button>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div v-if="imageInputType === 'file'" class="space-y-3">
+                            <div class="flex w-full items-center justify-center">
+                                <label class="flex h-16 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors duration-200 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center p-2 text-center">
+                                        <p class="text-[10px] font-bold text-gray-500">Klik untuk ganti foto</p>
+                                    </div>
+                                    <input type="file" @change="onProductFileSelected" accept="image/*" class="hidden" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- URL Input -->
+                        <div v-else>
+                            <input
+                                v-model="productForm.image"
+                                type="text"
+                                placeholder="https://images.unsplash.com/..."
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-[10px] font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="mb-1 block text-xs font-bold text-gray-600 uppercase tracking-tighter">Deskripsi Singkat</label>
+                        <textarea
+                            v-model="productForm.description"
+                            rows="2"
+                            placeholder="Perpaduan espresso murni, susu segar, dan sirup kelapa..."
+                            class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
+                        ></textarea>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="flex items-center gap-2 pt-2">
+                        <input v-model="productForm.is_available" type="checkbox" id="is_available" class="rounded border-gray-300 text-[#3B2314] focus:ring-[#3B2314]" />
+                        <label for="is_available" class="cursor-pointer text-xs font-bold text-gray-600">Menu langsung siap dipesan oleh pelanggan</label>
+                    </div>
                 </div>
 
-                <!-- Description -->
-                <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600"
-                        >Deskripsi Singkat</label
-                    >
-                    <textarea
-                        v-model="productForm.description"
-                        rows="3"
-                        placeholder="Contoh: Perpaduan espresso murni, susu segar, dan sirup kelapa pilihan."
-                        class="w-full rounded-xl border-gray-200 px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
-                    ></textarea>
-                </div>
+                <!-- SISI KANAN: ASSIGN ADDONS -->
+                <div class="max-h-[70vh] flex flex-col p-6 bg-gray-50/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-[10px] font-black tracking-widest text-gray-400 uppercase">Pasangkan Add-ons</h4>
+                        <span class="rounded-full bg-[#3B2314] px-2 py-0.5 text-[9px] font-black text-white">{{ assignedAddonIds.length }} Terpilih</span>
+                    </div>
 
-                <!-- Availability -->
-                <div class="flex items-center gap-2 pt-2">
-                    <input
-                        v-model="productForm.is_available"
-                        type="checkbox"
-                        id="is_available"
-                        class="rounded border-gray-300 text-[#3B2314] focus:ring-[#D4A373]"
-                    />
-                    <label
-                        for="is_available"
-                        class="cursor-pointer text-xs font-bold text-gray-600"
-                        >Menu langsung siap dipesan oleh pelanggan</label
-                    >
+                    <div class="flex-1 overflow-y-auto pr-1 space-y-2">
+                        <div v-if="localGlobalAddons.length === 0" class="py-10 text-center">
+                            <p class="text-[10px] font-bold text-gray-400">Belum ada addon global.<br>Tambahkan di tab Add-ons.</p>
+                        </div>
+                        
+                        <label 
+                            v-for="addon in paginatedAssignmentAddons" 
+                            :key="addon.id"
+                            class="group relative flex cursor-pointer items-center justify-between rounded-xl border bg-white p-3 transition hover:border-[#D4A373]/50 hover:shadow-sm"
+                            :class="assignedAddonIds.includes(addon.id) ? 'border-[#3B2314] bg-[#3B2314]/5' : 'border-gray-200'"
+                        >
+                            <div class="flex items-center gap-3">
+                                <input 
+                                    type="checkbox" 
+                                    :value="addon.id" 
+                                    v-model="assignedAddonIds" 
+                                    class="h-4 w-4 rounded border-gray-300 text-[#3B2314] focus:ring-[#3B2314]"
+                                />
+                                <div>
+                                    <p class="text-xs font-black text-[#3B2314]">{{ addon.name }}</p>
+                                    <p class="text-[10px] font-bold text-green-600">+ Rp {{ addon.price.toLocaleString('id-ID') }}</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Pagination for Addon Assignment (Revised) -->
+                    <div v-if="totalAddonAssignmentPages > 1" class="mt-4 flex items-center justify-center gap-4 border-t border-gray-200 pt-4">
+                        <button 
+                            type="button"
+                            @click="addonAssignmentPage > 1 ? addonAssignmentPage-- : null"
+                            :disabled="addonAssignmentPage === 1"
+                            class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-[#3B2314] transition hover:bg-[#3B2314] hover:text-white disabled:opacity-30 shadow-sm active:scale-90"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-3 w-3"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        </button>
+                        <div class="flex items-center gap-1.5">
+                             <span class="text-[10px] font-black text-[#3B2314] tracking-widest">{{ addonAssignmentPage }}</span>
+                             <span class="text-[10px] font-bold text-gray-400">/</span>
+                             <span class="text-[10px] font-bold text-gray-400">{{ totalAddonAssignmentPages }}</span>
+                        </div>
+                        <button 
+                            type="button"
+                            @click="addonAssignmentPage < totalAddonAssignmentPages ? addonAssignmentPage++ : null"
+                            :disabled="addonAssignmentPage === totalAddonAssignmentPages"
+                            class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-[#3B2314] transition hover:bg-[#3B2314] hover:text-white disabled:opacity-30 shadow-sm active:scale-90"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-3 w-3"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                        </button>
+                    </div>
+                    
+                    <p class="mt-4 text-[9px] font-bold leading-relaxed text-gray-400 italic">
+                        * Add-ons yang dicentang akan muncul sebagai pilihan ekstra saat pelanggan memesan menu ini.
+                    </p>
                 </div>
             </div>
 
             <div class="flex justify-end gap-3 border-t bg-gray-50 p-6">
                 <button
                     @click="showProductModal = false"
-                    class="rounded-xl border px-4 py-2 text-xs font-bold text-gray-500 transition hover:bg-gray-100"
+                    class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-xs font-black text-gray-500 transition hover:bg-gray-100"
                 >
                     Batal
                 </button>
                 <button
                     @click="saveProduct"
-                    class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg"
+                    class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
                 >
-                    Simpan Menu
+                    <svg v-if="isSyncingAddons" class="h-3 w-3 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Simpan Menu & Add-ons
                 </button>
             </div>
         </div>
     </div>
 
-
+    <!-- MODAL EDIT ADDON (DEDICATED) -->
+    <div
+        v-if="showEditAddonModal"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
+    >
+        <div class="w-full max-w-sm scale-100 transform overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300">
+            <div class="relative border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]">
+                <button @click="showEditAddonModal = false" class="absolute top-4 right-4 text-gray-300 transition hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+                <h3 class="text-md font-extrabold">Edit Add-on</h3>
+                <p class="text-[9px] font-bold tracking-widest text-[#D4A373] uppercase">Zunoi Caffe Addon Setup</p>
+            </div>
+            
+            <div class="space-y-4 p-6 text-gray-800">
+                <div>
+                    <label class="mb-1 block text-xs font-bold text-gray-600">Nama Add-on *</label>
+                    <input v-model="addonForm.addon_name" type="text" class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-bold text-gray-600">Harga Tambahan (Rp) *</label>
+                    <input v-model="addonForm.extra_price" type="number" class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]" />
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 border-t bg-gray-50 p-6">
+                <button @click="showEditAddonModal = false" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-xs font-black text-gray-500 transition hover:bg-gray-100">Batal</button>
+                <button @click="saveAddon" class="rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-black text-white shadow-md transition hover:bg-[#25150c] active:scale-95">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL CATEGORY (ADD / EDIT) -->
     <div
@@ -1398,7 +1452,7 @@ const paginatedProducts = computed(() => {
                         @keyup.enter="saveCategory"
                         type="text"
                         placeholder="Contoh: Coffee, Non-Coffee, Pastry, Snack"
-                        class="w-full rounded-xl border-gray-200 px-3 py-2.5 text-xs focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                        class="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs font-bold text-gray-900 focus:border-[#3B2314] focus:ring-1 focus:ring-[#3B2314]"
                     />
                 </div>
             </div>
