@@ -9,10 +9,5 @@ class ProductAddon extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'addon_name', 'extra_price', 'category'];
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    protected $fillable = ['addon_name', 'extra_price', 'category'];
 }

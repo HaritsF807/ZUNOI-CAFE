@@ -15,27 +15,8 @@ class Product extends Model
         'is_available' => 'boolean',
     ];
 
-    protected $appends = ['additions'];
-
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function addons()
-    {
-        return $this->hasMany(ProductAddon::class);
-    }
-
-    public function getAdditionsAttribute()
-    {
-        return $this->addons->map(function ($addon) {
-            return [
-                'id' => $addon->id,
-                'name' => $addon->addon_name,
-                'price' => (int) $addon->extra_price,
-                'category' => $addon->category,
-            ];
-        });
     }
 }

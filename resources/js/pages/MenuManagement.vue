@@ -15,11 +15,16 @@ const triggerToast = (message, type = 'success') => {
 const props = defineProps({
     categories: Array,
     products: Array,
+    globalAddons: Array,
 });
 
 // State Data Lokal untuk Kecepatan & Reaktivitas Instan
 const localProducts = ref([...props.products]);
 const localCategories = ref([...props.categories]);
+const localGlobalAddons = ref([...(props.globalAddons || [])]);
+
+// Mode Active Tab
+const activeTab = ref('beverages');
 
 // Search & Filter State
 const searchProductQuery = ref('');
@@ -85,10 +90,11 @@ const categoryForm = ref({
 // Sync data lokal jika props diperbarui dari server
 const syncData = () => {
     router.reload({
-        only: ['products', 'categories'],
+        only: ['products', 'categories', 'globalAddons'],
         onSuccess: (page) => {
             localProducts.value = [...page.props.products];
             localCategories.value = [...page.props.categories];
+            localGlobalAddons.value = [...(page.props.globalAddons || [])];
         },
     });
 };
@@ -305,12 +311,7 @@ const toggleAvailability = async (product) => {
     }
 };
 
-// --- MANAJEMEN ADDON ---
-const showAddonsModal = ref(false);
-const selectedProductForAddons = ref(null);
-const addonsList = ref([]);
-
-// Form Addon Baru / Edit Addon
+// --- MANAJEMEN ADDON GLOBAL ---
 const addonForm = ref({
     id: null,
     addon_name: '',
@@ -318,14 +319,6 @@ const addonForm = ref({
     category: 'topping',
 });
 const isEditingAddon = ref(false);
-
-const openManageAddons = (product) => {
-    selectedProductForAddons.value = product;
-    // Map addons dari additions (yang di-format oleh accessor Model)
-    addonsList.value = product.additions ? [...product.additions] : [];
-    resetAddonForm();
-    showAddonsModal.value = true;
-};
 
 const resetAddonForm = () => {
     addonForm.value = {
@@ -350,15 +343,13 @@ const handleEditAddon = (addon) => {
 const saveAddon = async () => {
     if (!addonForm.value.addon_name || addonForm.value.extra_price === '') {
         triggerToast('Mohon isi Nama Add-on dan Harga!', 'error');
-
         return;
     }
 
     try {
         if (isEditingAddon.value) {
-            // Update
             const response = await axios.put(
-                `/api/product-addons/${addonForm.value.id}`,
+                `/api/addons/${addonForm.value.id}`,
                 {
                     addon_name: addonForm.value.addon_name,
                     extra_price: addonForm.value.extra_price,
@@ -367,23 +358,13 @@ const saveAddon = async () => {
             );
 
             if (response.data.success) {
-                // Update daftar lokal modal
-                const index = addonsList.value.findIndex(
-                    (a) => a.id === addonForm.value.id,
-                );
-
-                if (index !== -1) {
-                    addonsList.value[index] = response.data.addon;
-                }
-
                 triggerToast('Add-on berhasil diperbarui!', 'success');
                 resetAddonForm();
-                updateProductAddonsInLocalList();
+                syncData();
             }
         } else {
-            // Tambah Baru
             const response = await axios.post(
-                `/api/products/${selectedProductForAddons.value.id}/addons`,
+                `/api/addons`,
                 {
                     addon_name: addonForm.value.addon_name,
                     extra_price: addonForm.value.extra_price,
@@ -392,10 +373,9 @@ const saveAddon = async () => {
             );
 
             if (response.data.success) {
-                addonsList.value.push(response.data.addon);
                 triggerToast('Add-on berhasil ditambahkan!', 'success');
                 resetAddonForm();
-                updateProductAddonsInLocalList();
+                syncData();
             }
         }
     } catch (error) {
@@ -405,32 +385,23 @@ const saveAddon = async () => {
 };
 
 const deleteAddon = async (addonId) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus add-on ini?')) {
-return;
-}
+    triggerConfirm(
+        'Hapus Add-on',
+        'Apakah Anda yakin ingin menghapus add-on ini secara permanen?',
+        async () => {
+            try {
+                const response = await axios.delete(`/api/addons/${addonId}`);
 
-    try {
-        const response = await axios.delete(`/api/product-addons/${addonId}`);
-
-        if (response.data.success) {
-            addonsList.value = addonsList.value.filter((a) => a.id !== addonId);
-            triggerToast('Add-on berhasil dihapus!', 'success');
-            updateProductAddonsInLocalList();
+                if (response.data.success) {
+                    triggerToast('Add-on berhasil dihapus!', 'success');
+                    syncData();
+                }
+            } catch (error) {
+                console.error('Gagal menghapus addon', error);
+                triggerToast('Gagal menghapus add-on.', 'error');
+            }
         }
-    } catch (error) {
-        console.error('Gagal menghapus addon', error);
-        triggerToast('Gagal menghapus add-on.', 'error');
-    }
-};
-
-const updateProductAddonsInLocalList = () => {
-    const pIndex = localProducts.value.findIndex(
-        (p) => p.id === selectedProductForAddons.value.id,
     );
-
-    if (pIndex !== -1) {
-        localProducts.value[pIndex].additions = [...addonsList.value];
-    }
 };
 
 // --- REACTIVE FILTERING ---
@@ -546,11 +517,22 @@ const paginatedProducts = computed(() => {
                 </div>
             </div>
 
-            <!-- LAYOUT SPLIT: KATEGORI (Kiri) & PRODUK (Kanan) -->
-            <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-4">
-                <!-- KOLOM KATEGORI (KIRI) -->
-                <div
-                    class="space-y-4 rounded-3xl border border-[#D4A373]/20 bg-white p-5 shadow-sm"
+            <!-- TAB SELECTOR -->
+            <div class="flex items-center justify-center mb-6">
+                <div class="flex rounded-xl bg-white border border-[#D4A373]/20 p-1 shadow-sm">
+                    <button @click="activeTab = 'beverages'" :class="activeTab === 'beverages' ? 'bg-[#3B2314] text-white shadow-md' : 'text-gray-500 hover:text-[#3B2314]'" class="px-6 py-2.5 rounded-lg text-xs font-bold transition btn-bouncy">Beverages</button>
+                    <button @click="activeTab = 'addons'" :class="activeTab === 'addons' ? 'bg-[#3B2314] text-white shadow-md' : 'text-gray-500 hover:text-[#3B2314]'" class="px-6 py-2.5 rounded-lg text-xs font-bold transition btn-bouncy">Add-ons</button>
+                </div>
+            </div>
+
+            <!-- LAYOUT SPLIT DENGAN TRANSITION -->
+            <div class="relative overflow-hidden min-h-[500px]">
+                <Transition name="slide-fade" mode="out-in">
+                    <!-- BEVERAGES VIEW -->
+                    <div v-if="activeTab === 'beverages'" key="beverages" class="grid grid-cols-1 items-start gap-8 lg:grid-cols-4 w-full">
+                        <!-- KOLOM KATEGORI (KIRI) -->
+                        <div
+                    class="space-y-4 rounded-3xl bg-white p-5 shadow-sm h-full card-abstract-border"
                 >
                     <div
                         class="flex items-center justify-between gap-2 border-b pb-3"
@@ -716,7 +698,7 @@ const paginatedProducts = computed(() => {
 
                 <!-- KOLOM PRODUK (KANAN) -->
                 <div
-                    class="space-y-6 rounded-3xl border border-[#D4A373]/20 bg-white p-6 shadow-sm lg:col-span-3"
+                    class="space-y-6 rounded-3xl bg-white p-6 shadow-sm lg:col-span-3 h-full card-abstract-border"
                 >
                     <!-- Pencarian & Kontrol -->
                     <div
@@ -909,31 +891,7 @@ const paginatedProducts = computed(() => {
                                                     </svg>
                                                 </button>
 
-                                                <!-- Kelola Addons -->
-                                                <button
-                                                    @click="
-                                                        openManageAddons(
-                                                            product,
-                                                        )
-                                                    "
-                                                    class="rounded-lg border border-transparent p-1.5 text-amber-600 hover:border-amber-100 hover:bg-amber-50"
-                                                    title="Kelola Add-on"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke-width="2.5"
-                                                        stroke="currentColor"
-                                                        class="h-3.5 w-3.5"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
-                                                        />
-                                                    </svg>
-                                                </button>
+
 
                                                 <!-- Hapus -->
                                                 <button
@@ -1047,7 +1005,59 @@ const paginatedProducts = computed(() => {
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
+                
+                <!-- ADD-ONS VIEW -->
+                <div v-else key="addons" class="grid grid-cols-1 items-start gap-8 lg:grid-cols-4 w-full">
+                    <!-- ADD/EDIT FORM (KIRI) -->
+                    <div class="space-y-4 rounded-3xl bg-white p-5 shadow-sm lg:col-span-1 h-full card-abstract-border">
+                        <h4 class="text-xs font-black tracking-wider text-[#3B2314] uppercase">{{ isEditingAddon ? 'Edit Add-on' : 'Tambah Add-on Baru' }}</h4>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-extrabold text-[#3B2314]/80">Nama Add-on *</label>
+                                <input v-model="addonForm.addon_name" type="text" placeholder="Contoh: Caramel Sauce" class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]" />
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-extrabold text-[#3B2314]/80">Harga Tambahan (Rp) *</label>
+                                <input v-model="addonForm.extra_price" type="number" placeholder="Contoh: 4000" class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]" />
+                            </div>
+                            <div class="flex justify-end gap-2 border-t border-[#D4A373]/10 pt-4">
+                                <button v-if="isEditingAddon" @click="resetAddonForm" type="button" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 active:scale-95">Batal</button>
+                                <button @click="saveAddon" type="button" class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-95">{{ isEditingAddon ? 'Simpan' : 'Tambah' }}</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ADDONS LIST (KANAN) -->
+                    <div class="space-y-6 rounded-3xl bg-white p-6 shadow-sm lg:col-span-3 h-full card-abstract-border">
+                        <h4 class="border-b border-[#D4A373]/10 pb-4 text-sm font-black tracking-wider text-[#3B2314] uppercase">Daftar Add-on Aktif ({{ localGlobalAddons.length }})</h4>
+                        
+                        <div v-if="localGlobalAddons.length === 0" class="py-8 text-center text-xs text-gray-400">
+                            Belum ada add-on yang ditambahkan.
+                        </div>
+                        
+                        <div v-else class="divide-y divide-gray-100">
+                            <div v-for="addon in localGlobalAddons" :key="addon.id" class="flex items-center justify-between py-4 hover:bg-gray-50/50 px-4 rounded-xl transition">
+                                <div>
+                                    <span class="text-sm font-bold text-[#3B2314]">{{ addon.name }}</span>
+                                    <div class="mt-1 flex items-center gap-1.5">
+                                        <span class="font-mono text-xs font-extrabold text-green-600">+ Rp {{ parseInt(addon.price).toLocaleString('id-ID') }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="handleEditAddon(addon)" class="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 border border-transparent hover:border-blue-100" title="Edit Addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                    </button>
+                                    <button @click="deleteAddon(addon.id)" class="rounded-lg p-2 text-red-500 transition hover:bg-red-50 border border-transparent hover:border-red-100" title="Hapus Addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
             </div>
         </div>
     </ZunoiAdminLayout>
@@ -1330,217 +1340,7 @@ const paginatedProducts = computed(() => {
         </div>
     </div>
 
-    <!-- MODAL MANAGE ADDONS -->
-    <div
-        v-if="showAddonsModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-[#3B2314]/70 p-4 backdrop-blur-sm"
-    >
-        <div
-            class="flex max-h-[85vh] w-full max-w-lg scale-100 transform flex-col overflow-hidden rounded-[32px] border border-[#D4A373]/30 bg-white shadow-2xl transition-all duration-300"
-        >
-            <!-- Modal Header -->
-            <div
-                class="relative shrink-0 border-b border-[#D4A373]/20 bg-[#3B2314] p-5 text-center text-[#FAEDCD]"
-            >
-                <button
-                    @click="showAddonsModal = false"
-                    class="absolute top-4 right-4 text-gray-300 transition hover:text-white"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="2.5"
-                        stroke="currentColor"
-                        class="h-5 w-5"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M6 18 18 6M6 6l12 12"
-                        />
-                    </svg>
-                </button>
-                <h3 class="text-md truncate px-8 font-extrabold text-[#FAEDCD]">
-                    Kelola Add-on: {{ selectedProductForAddons?.name }}
-                </h3>
-                <p
-                    class="text-[9px] font-bold tracking-widest text-[#D4A373] uppercase"
-                >
-                    Zunoi Caffe Addon Customization
-                </p>
-            </div>
 
-            <!-- Modal Content (Scrollable) -->
-            <div class="flex-1 space-y-6 overflow-y-auto p-6">
-                <!-- Add / Edit Addon Form -->
-                <div
-                    class="space-y-4 rounded-2xl border border-gray-200 bg-[#FAEDCD]/15 p-5 shadow-sm"
-                >
-                    <h4
-                        class="text-xs font-black tracking-wider text-[#3B2314] uppercase"
-                    >
-                        {{
-                            isEditingAddon
-                                ? 'Edit Add-on'
-                                : 'Tambah Add-on Baru'
-                        }}
-                    </h4>
-
-                    <div class="grid grid-cols-1 gap-4">
-                        <!-- Name -->
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-extrabold text-[#3B2314]/80"
-                                >Nama Add-on *</label
-                            >
-                            <input
-                                v-model="addonForm.addon_name"
-                                type="text"
-                                placeholder="Contoh: Caramel Sauce, Oat Milk"
-                                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
-                            />
-                        </div>
-
-                        <!-- Price -->
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-extrabold text-[#3B2314]/80"
-                                >Harga Tambahan (Rp) *</label
-                            >
-                            <input
-                                v-model="addonForm.extra_price"
-                                type="number"
-                                placeholder="Contoh: 4000"
-                                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#3B2314] placeholder-gray-400 shadow-inner focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
-                            />
-                        </div>
-                    </div>
-
-                    <div
-                        class="flex justify-end gap-2 border-t border-[#D4A373]/10 pt-2"
-                    >
-                        <button
-                            v-if="isEditingAddon"
-                            type="button"
-                            @click="resetAddonForm"
-                            class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 active:scale-95"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="button"
-                            @click="saveAddon"
-                            class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-95"
-                        >
-                            {{ isEditingAddon ? 'Simpan' : 'Tambah' }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Existing Addons List -->
-                <div class="space-y-3">
-                    <h4
-                        class="border-b pb-2 text-xs font-black tracking-wider text-[#3B2314] uppercase"
-                    >
-                        Daftar Add-on Aktif ({{ addonsList.length }})
-                    </h4>
-
-                    <div
-                        v-if="addonsList.length === 0"
-                        class="py-8 text-center text-xs text-gray-400"
-                    >
-                        Belum ada add-on untuk menu ini.
-                    </div>
-
-                    <div v-else class="divide-y divide-gray-100">
-                        <div
-                            v-for="addon in addonsList"
-                            :key="addon.id"
-                            class="flex items-center justify-between py-3"
-                        >
-                            <div>
-                                <span
-                                    class="text-sm font-bold text-[#3B2314]"
-                                    >{{ addon.name }}</span
-                                >
-                                <div class="mt-0.5 flex items-center gap-1.5">
-                                    <span
-                                        class="font-mono text-xs font-extrabold text-gray-500"
-                                    >
-                                        + Rp
-                                        {{
-                                            parseInt(
-                                                addon.price,
-                                            ).toLocaleString('id-ID')
-                                        }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <!-- Edit Addon -->
-                                <button
-                                    @click="handleEditAddon(addon)"
-                                    class="rounded-lg p-1.5 text-blue-500 transition hover:bg-blue-50"
-                                    title="Edit Addon"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="2.5"
-                                        stroke="currentColor"
-                                        class="h-3.5 w-3.5"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.82a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                                        />
-                                    </svg>
-                                </button>
-
-                                <!-- Delete Addon -->
-                                <button
-                                    @click="deleteAddon(addon.id)"
-                                    class="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50"
-                                    title="Hapus Addon"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="2.5"
-                                        stroke="currentColor"
-                                        class="h-3.5 w-3.5"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div
-                class="flex shrink-0 justify-end border-t border-[#D4A373]/10 bg-gray-50 p-4"
-            >
-                <button
-                    @click="showAddonsModal = false"
-                    class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
-                >
-                    Tutup
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- MODAL CATEGORY (ADD / EDIT) -->
     <div
@@ -1698,3 +1498,42 @@ const paginatedProducts = computed(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.btn-bouncy:active {
+  animation: bounceBtn 0.3s ease-in-out;
+}
+
+@keyframes bounceBtn {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+}
+
+.card-abstract-border {
+  border: 4px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #3B2314, #D4A373, #8B5E34, #3B2314) border-box;
+  background-size: 100% 100%, 300% 300%;
+  animation: abstractGradientBg 4s ease infinite;
+}
+
+@keyframes abstractGradientBg {
+  0% { background-position: 0% 0%, 0% 50%; }
+  50% { background-position: 0% 0%, 100% 50%; }
+  100% { background-position: 0% 0%, 0% 50%; }
+}
+</style>

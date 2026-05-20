@@ -71,7 +71,7 @@ provide('triggerToast', triggerToast);
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-[#FAEDCD] font-sans text-gray-800">
+    <div class="flex min-h-screen bg-white font-sans text-gray-800">
         <aside
             class="sticky top-0 z-30 flex h-screen flex-col justify-between bg-[#3B2314] text-[#FAEDCD] transition-all duration-300"
             :class="{
@@ -151,15 +151,21 @@ provide('triggerToast', triggerToast);
                                 <span v-if="isSidebarOpen">Dashboard</span>
                             </Link>
 
-                            <a
-                                href="#"
-                                class="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-300 transition duration-200 hover:bg-[#FAEDCD]/10 hover:text-white"
+                            <Link
+                                v-if="user.role === 'owner'"
+                                :href="'/dashboard/statistics'"
+                                class="flex items-center gap-3 rounded-xl px-4 py-3 transition duration-200"
+                                :class="
+                                    usePage().url === '/dashboard/statistics'
+                                        ? 'bg-[#D4A373] font-bold text-[#3B2314] shadow-md'
+                                        : 'text-gray-300 hover:bg-[#FAEDCD]/10 hover:text-white'
+                                "
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
                                 </svg>
                                 <span v-if="isSidebarOpen">Statistik</span>
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
