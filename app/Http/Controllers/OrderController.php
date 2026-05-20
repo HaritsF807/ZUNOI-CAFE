@@ -2,11 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\Promotion;
+use App\Models\Table;
+use App\Models\User;
+use App\Models\Voucher;
 use App\Services\FonnteService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class OrderController extends Controller
 {
@@ -43,8 +51,8 @@ class OrderController extends Controller
         // Hitung potongan voucher di server untuk keamanan
         $discountAmount = 0;
         $voucherCode = $request->input('voucher_code');
-        if (!empty($voucherCode)) {
-            $voucher = \App\Models\Voucher::where('code', $voucherCode)->where('is_active', true)->first();
+        if (! empty($voucherCode)) {
+            $voucher = Voucher::where('code', $voucherCode)->where('is_active', true)->first();
             if ($voucher && $totalPrice >= $voucher->min_purchase) {
                 if ($voucher->discount_type === 'percentage') {
                     $discountAmount = ($voucher->discount_value / 100) * $totalPrice;
@@ -145,7 +153,7 @@ class OrderController extends Controller
             });
 
         // Ambil info kasir/barista/owner yang sedang shift/aktif hari ini (dalam 24 jam terakhir)
-        $activeUserIds = \Illuminate\Support\Facades\DB::table('sessions')
+        $activeUserIds = DB::table('sessions')
             ->whereNotNull('user_id')
             ->where('last_activity', '>=', time() - 24 * 3600)
             ->pluck('user_id')
@@ -156,7 +164,7 @@ class OrderController extends Controller
             $activeUserIds = [auth()->id()];
         }
 
-        $activeStaff = \App\Models\User::whereIn('id', $activeUserIds)
+        $activeStaff = User::whereIn('id', $activeUserIds)
             ->whereIn('role', ['barista', 'owner'])
             ->get(['id', 'name', 'email', 'role'])
             ->map(function ($u) {
@@ -218,18 +226,18 @@ class OrderController extends Controller
                 $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
 
                 $pricingBreakdown = '';
-                $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                $hasDiscount = ((float) $order->discount_amount > 0 || (float) $order->promo_discount_amount > 0);
                 if ($hasDiscount) {
-                    $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
-                    $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-                    if ((float)$order->discount_amount > 0) {
-                        $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    $subtotal = (float) $order->total_price + (float) $order->discount_amount + (float) $order->promo_discount_amount;
+                    $pricingBreakdown .= '💵 *Subtotal:* Rp '.number_format($subtotal, 0, ',', '.')."\n";
+                    if ((float) $order->discount_amount > 0) {
+                        $pricingBreakdown .= '🎟️ *Voucher ('.($order->voucher_code ?: 'Promo').'):* -Rp '.number_format($order->discount_amount, 0, ',', '.')."\n";
                     }
-                    if ((float)$order->promo_discount_amount > 0) {
-                        $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                    if ((float) $order->promo_discount_amount > 0) {
+                        $pricingBreakdown .= '🏷️ *Potongan Promo Otomatis:* -Rp '.number_format($order->promo_discount_amount, 0, ',', '.')."\n";
                     }
                 }
-                $pricingBreakdown .= '💰 *Total Tagihan:* Rp ' . number_format($order->total_price, 0, ',', '.');
+                $pricingBreakdown .= '💰 *Total Tagihan:* Rp '.number_format($order->total_price, 0, ',', '.');
 
                 if ($order->payment_method === 'qris_manual') {
                     $message = "☕ *ZUNOI CAFFE - PEMBAYARAN TERVERIFIKASI* ☕\n\n".
@@ -291,18 +299,18 @@ class OrderController extends Controller
                     : '*Silakan ambil pesanan Anda di meja Barista/Kasir Zunoi Caffe.*';
 
                 $pricingBreakdown = '';
-                $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                $hasDiscount = ((float) $order->discount_amount > 0 || (float) $order->promo_discount_amount > 0);
                 if ($hasDiscount) {
-                    $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
-                    $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-                    if ((float)$order->discount_amount > 0) {
-                        $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    $subtotal = (float) $order->total_price + (float) $order->discount_amount + (float) $order->promo_discount_amount;
+                    $pricingBreakdown .= '💵 *Subtotal:* Rp '.number_format($subtotal, 0, ',', '.')."\n";
+                    if ((float) $order->discount_amount > 0) {
+                        $pricingBreakdown .= '🎟️ *Voucher ('.($order->voucher_code ?: 'Promo').'):* -Rp '.number_format($order->discount_amount, 0, ',', '.')."\n";
                     }
-                    if ((float)$order->promo_discount_amount > 0) {
-                        $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                    if ((float) $order->promo_discount_amount > 0) {
+                        $pricingBreakdown .= '🏷️ *Potongan Promo Otomatis:* -Rp '.number_format($order->promo_discount_amount, 0, ',', '.')."\n";
                     }
                 }
-                $pricingBreakdown .= '💰 *Total Belanja:* Rp ' . number_format($order->total_price, 0, ',', '.');
+                $pricingBreakdown .= '💰 *Total Belanja:* Rp '.number_format($order->total_price, 0, ',', '.');
 
                 $message = "☕ *ZUNOI CAFFE - PESANAN SELESAI* ☕\n\n".
                            "Halo *{$order->customer_name}*, kabar gembira! Pesanan Anda telah selesai disiapkan dan siap dinikmati!\n\n".
@@ -344,7 +352,7 @@ class OrderController extends Controller
     // Halaman Kasir POS
     public function cashierIndex()
     {
-        $products = \App\Models\Product::with(['category', 'assignedAddons'])->where('is_available', true)->get()->map(function ($product) {
+        $products = Product::with(['category', 'assignedAddons'])->where('is_available', true)->get()->map(function ($product) {
             return [
                 'id' => $product->id,
                 'category_id' => $product->category_id,
@@ -359,12 +367,12 @@ class OrderController extends Controller
                         'name' => $addon->addon_name,
                         'price' => (int) $addon->extra_price,
                     ];
-                })
+                }),
             ];
         });
-        $categories = \App\Models\Category::orderBy('name', 'asc')->get();
-        $tables = \App\Models\Table::orderBy('table_name', 'asc')->get();
-        $promotions = \App\Models\Promotion::where('is_active', true)
+        $categories = Category::orderBy('name', 'asc')->get();
+        $tables = Table::orderBy('table_name', 'asc')->get();
+        $promotions = Promotion::where('is_active', true)
             ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
             ->get();
 
@@ -399,8 +407,8 @@ class OrderController extends Controller
         // Hitung potongan voucher di server untuk keamanan
         $discountAmount = 0;
         $voucherCode = $validated['voucher_code'] ?? null;
-        if (!empty($voucherCode)) {
-            $voucher = \App\Models\Voucher::where('code', $voucherCode)->where('is_active', true)->first();
+        if (! empty($voucherCode)) {
+            $voucher = Voucher::where('code', $voucherCode)->where('is_active', true)->first();
             if ($voucher && $totalPrice >= $voucher->min_purchase) {
                 if ($voucher->discount_type === 'percentage') {
                     $discountAmount = ($voucher->discount_value / 100) * $totalPrice;
@@ -473,11 +481,11 @@ class OrderController extends Controller
     {
         $promoDiscount = 0;
 
-        if (!\Illuminate\Support\Facades\Schema::hasTable('promotions')) {
+        if (! Schema::hasTable('promotions')) {
             return 0;
         }
 
-        $activePromos = \App\Models\Promotion::where('is_active', true)->get();
+        $activePromos = Promotion::where('is_active', true)->get();
         if ($activePromos->isEmpty()) {
             return 0;
         }
@@ -485,42 +493,42 @@ class OrderController extends Controller
         // Map cart items by product id for easy lookup
         $cartMap = [];
         foreach ($cartItems as $item) {
-            $prodId = (int)$item['id'];
-            if (!isset($cartMap[$prodId])) {
+            $prodId = (int) $item['id'];
+            if (! isset($cartMap[$prodId])) {
                 $cartMap[$prodId] = [
                     'quantity' => 0,
-                    'price' => (float)$item['price'],
-                    'base_price' => (float)($item['basePrice'] ?? $item['price'])
+                    'price' => (float) $item['price'],
+                    'base_price' => (float) ($item['basePrice'] ?? $item['price']),
                 ];
             }
-            $cartMap[$prodId]['quantity'] += (int)$item['quantity'];
+            $cartMap[$prodId]['quantity'] += (int) $item['quantity'];
         }
 
         // Load all required products from database to ensure base prices are correct and secure
         $productIds = array_keys($cartMap);
-        $products = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
         foreach ($cartMap as $id => &$val) {
             if ($products->has($id)) {
-                $val['base_price'] = (float)$products->get($id)->price;
+                $val['base_price'] = (float) $products->get($id)->price;
             }
         }
         unset($val);
 
         foreach ($activePromos as $promo) {
-            $buyProductId = (int)$promo->buy_product_id;
-            $buyQtyRequired = (int)$promo->buy_quantity;
-            $bundlingProductId = $promo->bundling_product_id ? (int)$promo->bundling_product_id : null;
-            $getProductId = $promo->get_product_id ? (int)$promo->get_product_id : null;
-            $getQtyRequired = $promo->get_quantity ? (int)$promo->get_quantity : 1;
+            $buyProductId = (int) $promo->buy_product_id;
+            $buyQtyRequired = (int) $promo->buy_quantity;
+            $bundlingProductId = $promo->bundling_product_id ? (int) $promo->bundling_product_id : null;
+            $getProductId = $promo->get_product_id ? (int) $promo->get_product_id : null;
+            $getQtyRequired = $promo->get_quantity ? (int) $promo->get_quantity : 1;
 
-            if (!isset($cartMap[$buyProductId])) {
+            if (! isset($cartMap[$buyProductId])) {
                 continue;
             }
 
             $buyCartQty = $cartMap[$buyProductId]['quantity'];
 
             if ($promo->type === 'bundling' && $bundlingProductId) {
-                if (!isset($cartMap[$bundlingProductId])) {
+                if (! isset($cartMap[$bundlingProductId])) {
                     continue;
                 }
 
@@ -529,16 +537,16 @@ class OrderController extends Controller
 
                 if ($numBundles > 0) {
                     if ($promo->discount_type === 'nominal') {
-                        $promoDiscount += (float)$promo->discount_value * $numBundles;
+                        $promoDiscount += (float) $promo->discount_value * $numBundles;
                     } elseif ($promo->discount_type === 'percentage') {
                         $buyUnitPrice = $cartMap[$buyProductId]['base_price'];
                         $bundUnitPrice = $cartMap[$bundlingProductId]['base_price'];
                         $singleBundlePrice = ($buyUnitPrice * $buyQtyRequired) + $bundUnitPrice;
-                        $promoDiscount += ((float)$promo->discount_value / 100) * $singleBundlePrice * $numBundles;
+                        $promoDiscount += ((float) $promo->discount_value / 100) * $singleBundlePrice * $numBundles;
                     }
                 }
             } elseif ($promo->type === 'buy_get' && $getProductId) {
-                if (!isset($cartMap[$getProductId])) {
+                if (! isset($cartMap[$getProductId])) {
                     continue;
                 }
 
@@ -556,9 +564,9 @@ class OrderController extends Controller
                         if ($promo->discount_type === 'free') {
                             $promoDiscount += $itemUnitPrice * $discountedQty;
                         } elseif ($promo->discount_type === 'percentage') {
-                            $promoDiscount += ((float)$promo->discount_value / 100) * $itemUnitPrice * $discountedQty;
+                            $promoDiscount += ((float) $promo->discount_value / 100) * $itemUnitPrice * $discountedQty;
                         } elseif ($promo->discount_type === 'nominal') {
-                            $promoDiscount += (float)$promo->discount_value * $discountedQty;
+                            $promoDiscount += (float) $promo->discount_value * $discountedQty;
                         }
                     }
                 } else {
@@ -575,9 +583,9 @@ class OrderController extends Controller
                             if ($promo->discount_type === 'free') {
                                 $promoDiscount += $itemUnitPrice * $actualDiscountedQty;
                             } elseif ($promo->discount_type === 'percentage') {
-                                $promoDiscount += ((float)$promo->discount_value / 100) * $itemUnitPrice * $actualDiscountedQty;
+                                $promoDiscount += ((float) $promo->discount_value / 100) * $itemUnitPrice * $actualDiscountedQty;
                             } elseif ($promo->discount_type === 'nominal') {
-                                $promoDiscount += (float)$promo->discount_value * $actualDiscountedQty;
+                                $promoDiscount += (float) $promo->discount_value * $actualDiscountedQty;
                             }
                         }
                     }

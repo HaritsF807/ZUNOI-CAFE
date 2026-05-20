@@ -3,12 +3,16 @@
 use App\Http\Controllers\BaristaController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PromoController;
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\TokopayWebhookController;
-use App\Http\Controllers\ReservationController;
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\Setting;
 use App\Models\Table;
 use Illuminate\Http\Request;
@@ -47,22 +51,22 @@ Route::middleware(['verify_table_session'])->group(function () {
                         'name' => $a->addon_name,
                         'price' => (int) $a->extra_price,
                     ];
-                })
+                }),
             ];
         });
         $categories = Category::orderBy('name', 'asc')->get();
-        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
-        
+        $banners = Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+
         return inertia('Customer/MenuList', [
             'products' => $products,
             'categories' => $categories,
-            'banners' => $banners
+            'banners' => $banners,
         ]);
     })->name('order.index');
 
     Route::get('/checkout', function () {
         $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
-        $promotions = \App\Models\Promotion::where('is_active', true)
+        $promotions = Promotion::where('is_active', true)
             ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
             ->get();
 
@@ -78,7 +82,7 @@ Route::middleware(['verify_table_session'])->group(function () {
 Route::get('/order/success/{secure_key}', [OrderController::class, 'success'])->name('order.success');
 
 // Validasi Voucher (Public untuk Guest & Cashier)
-Route::post('/api/vouchers/validate', [\App\Http\Controllers\PromoController::class, 'validateVoucher']);
+Route::post('/api/vouchers/validate', [PromoController::class, 'validateVoucher']);
 
 // Endpoint untuk Dashboard
 Route::middleware(['auth'])->group(function () {
@@ -92,8 +96,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/api/staff/{user}', [BaristaController::class, 'destroy'])->name('staff.destroy');
 
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
-    Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');
-    Route::get('/dashboard/statistics', [\App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('/dashboard/promos', [PromoController::class, 'index'])->name('promo.management');
+    Route::get('/dashboard/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
 
     Route::get('/dashboard/tables', function () {
         return inertia('TableManagement');
@@ -115,22 +119,22 @@ Route::middleware(['auth'])->group(function () {
                         'name' => $a->addon_name,
                         'price' => (int) $a->extra_price,
                     ];
-                })
+                }),
             ];
         });
         $categories = Category::orderBy('name', 'asc')->get();
-        $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $banners = Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
         return inertia('MenuPreview', [
             'products' => $products,
             'categories' => $categories,
-            'banners' => $banners
+            'banners' => $banners,
         ]);
     })->name('menu.preview');
 
     Route::get('/dashboard/menu-preview/checkout', function () {
         $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
-        $promotions = \App\Models\Promotion::where('is_active', true)
+        $promotions = Promotion::where('is_active', true)
             ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
             ->get();
 
@@ -174,19 +178,19 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/api/categories/{id}', [MenuController::class, 'deleteCategory']);
 
     // API Kelola Promo
-    Route::post('/api/promos', [\App\Http\Controllers\PromoController::class, 'storePromo']);
-    Route::post('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromo']);
-    Route::delete('/api/promos/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromo']);
+    Route::post('/api/promos', [PromoController::class, 'storePromo']);
+    Route::post('/api/promos/{id}', [PromoController::class, 'updatePromo']);
+    Route::delete('/api/promos/{id}', [PromoController::class, 'deletePromo']);
 
     // API Kelola Voucher
-    Route::post('/api/vouchers', [\App\Http\Controllers\PromoController::class, 'storeVoucher']);
-    Route::post('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'updateVoucher']);
-    Route::delete('/api/vouchers/{id}', [\App\Http\Controllers\PromoController::class, 'deleteVoucher']);
+    Route::post('/api/vouchers', [PromoController::class, 'storeVoucher']);
+    Route::post('/api/vouchers/{id}', [PromoController::class, 'updateVoucher']);
+    Route::delete('/api/vouchers/{id}', [PromoController::class, 'deleteVoucher']);
 
     // API Kelola Potongan & Buy 1 Get 1
-    Route::post('/api/promotions', [\App\Http\Controllers\PromoController::class, 'storePromotion']);
-    Route::post('/api/promotions/{id}', [\App\Http\Controllers\PromoController::class, 'updatePromotion']);
-    Route::delete('/api/promotions/{id}', [\App\Http\Controllers\PromoController::class, 'deletePromotion']);
+    Route::post('/api/promotions', [PromoController::class, 'storePromotion']);
+    Route::post('/api/promotions/{id}', [PromoController::class, 'updatePromotion']);
+    Route::delete('/api/promotions/{id}', [PromoController::class, 'deletePromotion']);
 
     Route::get('/api/orders/live', [OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [OrderController::class, 'updateStatus']);

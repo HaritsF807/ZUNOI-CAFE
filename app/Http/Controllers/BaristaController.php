@@ -99,7 +99,7 @@ class BaristaController extends Controller
         ];
 
         // Jika password diisi, ganti kata sandi lama
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 

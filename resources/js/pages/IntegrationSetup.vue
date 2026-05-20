@@ -25,7 +25,9 @@ const form = useForm({
     receipt_address: props.settings?.receipt_address || '',
     receipt_phone: props.settings?.receipt_phone || '',
     receipt_logo_url: props.settings?.receipt_logo_url || '',
-    receipt_footer: props.settings?.receipt_footer || 'Harga sudah termasuk pajak PPN 10%\nTerima kasih atas kunjungannya',
+    receipt_footer:
+        props.settings?.receipt_footer ||
+        'Harga sudah termasuk pajak PPN 10%\nTerima kasih atas kunjungannya',
 });
 
 const saveIntegration = () => {
@@ -282,24 +284,29 @@ const saveIntegration = () => {
                             stroke="currentColor"
                             class="h-5 w-5 text-[#D4A373]"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"
+                            />
                         </svg>
                         Kustomisasi Struk
                     </h3>
                     <p class="mt-1 text-xs text-gray-400">
-                        Atur informasi toko yang tampil di struk pembayaran. Watermark "powered by Zunoi.id" akan selalu ditampilkan.
+                        Atur informasi toko yang tampil di struk pembayaran.
+                        Watermark "powered by Zunoi.id" akan selalu ditampilkan.
                     </p>
                 </div>
 
                 <div class="p-6">
-                    <form
-                        @submit.prevent="saveIntegration"
-                        class="space-y-6"
-                    >
+                    <form @submit.prevent="saveIntegration" class="space-y-6">
                         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                             <!-- Store Name -->
                             <div>
-                                <label class="mb-1 block text-xs font-bold text-gray-600">Nama Toko</label>
+                                <label
+                                    class="mb-1 block text-xs font-bold text-gray-600"
+                                    >Nama Toko</label
+                                >
                                 <input
                                     v-model="form.receipt_store_name"
                                     type="text"
@@ -310,7 +317,10 @@ const saveIntegration = () => {
 
                             <!-- Phone -->
                             <div>
-                                <label class="mb-1 block text-xs font-bold text-gray-600">Nomor Telepon Toko</label>
+                                <label
+                                    class="mb-1 block text-xs font-bold text-gray-600"
+                                    >Nomor Telepon Toko</label
+                                >
                                 <input
                                     v-model="form.receipt_phone"
                                     type="text"
@@ -321,7 +331,10 @@ const saveIntegration = () => {
 
                             <!-- Address -->
                             <div class="md:col-span-2">
-                                <label class="mb-1 block text-xs font-bold text-gray-600">Alamat Toko</label>
+                                <label
+                                    class="mb-1 block text-xs font-bold text-gray-600"
+                                    >Alamat Toko</label
+                                >
                                 <input
                                     v-model="form.receipt_address"
                                     type="text"
@@ -332,42 +345,86 @@ const saveIntegration = () => {
 
                             <!-- Logo URL -->
                             <div class="md:col-span-2">
-                                <label class="mb-1 block text-xs font-bold text-gray-600">URL Logo Toko (Opsional)</label>
+                                <label
+                                    class="mb-1 block text-xs font-bold text-gray-600"
+                                    >URL Logo Toko (Opsional)</label
+                                >
                                 <input
                                     v-model="form.receipt_logo_url"
                                     type="text"
                                     placeholder="https://example.com/logo.png atau /images/logo.png"
                                     class="w-full rounded-xl border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                                 />
-                                <p class="mt-1 text-[11px] text-gray-400">Upload logo ke hosting atau gunakan path lokal. Ukuran rekomendasi: max 120×60 piksel.</p>
+                                <p class="mt-1 text-[11px] text-gray-400">
+                                    Upload logo ke hosting atau gunakan path
+                                    lokal. Ukuran rekomendasi: max 120×60
+                                    piksel.
+                                </p>
                                 <!-- Logo Preview -->
-                                <div v-if="form.receipt_logo_url" class="mt-2 flex items-center gap-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3">
-                                    <img :src="form.receipt_logo_url" alt="Logo Preview" class="max-h-12 max-w-[120px] object-contain" @error="$event.target.style.display='none'" />
-                                    <span class="text-[10px] text-gray-400">Preview Logo</span>
+                                <div
+                                    v-if="form.receipt_logo_url"
+                                    class="mt-2 flex items-center gap-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3"
+                                >
+                                    <img
+                                        :src="form.receipt_logo_url"
+                                        alt="Logo Preview"
+                                        class="max-h-12 max-w-[120px] object-contain"
+                                        @error="
+                                            $event.target.style.display = 'none'
+                                        "
+                                    />
+                                    <span class="text-[10px] text-gray-400"
+                                        >Preview Logo</span
+                                    >
                                 </div>
                             </div>
 
                             <!-- Footer Text -->
                             <div class="md:col-span-2">
-                                <label class="mb-1 block text-xs font-bold text-gray-600">Teks Footer Struk</label>
+                                <label
+                                    class="mb-1 block text-xs font-bold text-gray-600"
+                                    >Teks Footer Struk</label
+                                >
                                 <textarea
                                     v-model="form.receipt_footer"
                                     rows="3"
                                     placeholder="Harga sudah termasuk pajak PPN 10%&#10;Terima kasih atas kunjungannya"
-                                    class="w-full rounded-xl border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] resize-none"
+                                    class="w-full resize-none rounded-xl border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                                 ></textarea>
-                                <p class="mt-1 text-[11px] text-gray-400">Gunakan baris baru (Enter) untuk memisahkan baris. Contoh: info WiFi, slogan toko, dll.</p>
+                                <p class="mt-1 text-[11px] text-gray-400">
+                                    Gunakan baris baru (Enter) untuk memisahkan
+                                    baris. Contoh: info WiFi, slogan toko, dll.
+                                </p>
                             </div>
                         </div>
 
                         <!-- Watermark Notice -->
-                        <div class="rounded-xl bg-[#FAEDCD]/30 border border-[#D4A373]/20 p-4 flex items-start gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5 text-[#D4A373] shrink-0 mt-0.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                        <div
+                            class="flex items-start gap-3 rounded-xl border border-[#D4A373]/20 bg-[#FAEDCD]/30 p-4"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="mt-0.5 h-5 w-5 shrink-0 text-[#D4A373]"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+                                />
                             </svg>
                             <div>
-                                <p class="text-xs font-bold text-[#3B2314]">Watermark Permanen</p>
-                                <p class="text-[11px] text-gray-500 mt-0.5">Teks "powered by Zunoi.id" akan selalu ditampilkan di bagian bawah struk dan tidak dapat dihapus.</p>
+                                <p class="text-xs font-bold text-[#3B2314]">
+                                    Watermark Permanen
+                                </p>
+                                <p class="mt-0.5 text-[11px] text-gray-500">
+                                    Teks "powered by Zunoi.id" akan selalu
+                                    ditampilkan di bagian bawah struk dan tidak
+                                    dapat dihapus.
+                                </p>
                             </div>
                         </div>
 
@@ -376,8 +433,19 @@ const saveIntegration = () => {
                                 type="submit"
                                 class="flex transform items-center gap-1 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2.5"
+                                    stroke="currentColor"
+                                    class="h-4 w-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
+                                    />
                                 </svg>
                                 Simpan Pengaturan Struk
                             </button>

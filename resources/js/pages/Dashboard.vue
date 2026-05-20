@@ -116,7 +116,10 @@ const acceptOrder = async (id) => {
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} berhasil diterima!`, 'success');
-            if (showDetailModal.value) closeDetailModal();
+
+            if (showDetailModal.value) {
+closeDetailModal();
+}
         }
     } catch (error) {
         console.error('Gagal menerima pesanan', error);
@@ -133,7 +136,10 @@ const completeOrder = async (id) => {
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} ditandai sebagai selesai!`, 'success');
-            if (showDetailModal.value) closeDetailModal();
+
+            if (showDetailModal.value) {
+closeDetailModal();
+}
         }
     } catch (error) {
         console.error('Gagal menyelesaikan pesanan', error);
@@ -170,9 +176,15 @@ const sendReport = async () => {
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         payload = { start_date: yesterdayStr, end_date: yesterdayStr };
     } else if (recapType.value === 'single') {
-        payload = { start_date: recapStartDate.value, end_date: recapStartDate.value };
+        payload = {
+            start_date: recapStartDate.value,
+            end_date: recapStartDate.value,
+        };
     } else if (recapType.value === 'range') {
-        payload = { start_date: recapStartDate.value, end_date: recapEndDate.value };
+        payload = {
+            start_date: recapStartDate.value,
+            end_date: recapEndDate.value,
+        };
     }
 
     try {
@@ -236,6 +248,7 @@ const totalPages = computed(() => {
 const paginatedOrders = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     const end = start + itemsPerPage;
+
     return filteredOrders.value.slice(start, end);
 });
 
@@ -263,7 +276,8 @@ const stats = computed(() => {
     return {
         totalRevenue: totalRev,
         pendingCount: orders.value.filter((o) => o.status === 'pending').length,
-        processingCount: orders.value.filter((o) => o.status === 'processing').length,
+        processingCount: orders.value.filter((o) => o.status === 'processing')
+            .length,
         activeTables: tables.value.length,
         dineInPercent: activeOrders.length
             ? Math.round((dineInCount / activeOrders.length) * 100)
@@ -336,18 +350,25 @@ const fmtPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
-        maximumFractionDigits: 0
+        maximumFractionDigits: 0,
     }).format(price);
 };
 
 const printReceipt = (order) => {
-    if (!order) return;
+    if (!order) {
+return;
+}
 
-    const subtotal = order.discount_amount > 0 ? order.total + order.discount_amount : order.total;
+    const subtotal =
+        order.discount_amount > 0
+            ? order.total + order.discount_amount
+            : order.total;
     const discountAmt = Number(order.discount_amount) || 0;
-    const totalItems = order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
+    const totalItems =
+        order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
 
     let itemsHtml = '';
+
     if (order.items) {
         order.items.forEach((item) => {
             const name = item.name || 'Menu';
@@ -367,7 +388,10 @@ const printReceipt = (order) => {
     }
 
     const orderDate = order.time ? `Hari ini, ${order.time}` : 'N/A';
-    const paymentLabel = order.payment_method === 'cashier' ? 'TUNAI' : (order.payment_method || '').toUpperCase();
+    const paymentLabel =
+        order.payment_method === 'cashier'
+            ? 'TUNAI'
+            : (order.payment_method || '').toUpperCase();
     const typeLabel = order.type === 'Dine In' ? 'DINE-IN' : 'TAKEAWAY';
 
     const receiptHtml = `
@@ -461,6 +485,7 @@ const printReceipt = (order) => {
     </html>`;
 
     const printWindow = window.open('', '_blank', 'width=350,height=600');
+
     if (printWindow) {
         printWindow.document.write(receiptHtml);
         printWindow.document.close();
@@ -706,35 +731,76 @@ onUnmounted(() => {
             </div>
 
             <!-- ACTIVE STAFF ON SHIFT (Owner Only) -->
-            <div v-if="user.role === 'owner'" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+            <div
+                v-if="user.role === 'owner'"
+                class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+                <div
+                    class="mb-4 flex items-center justify-between border-b border-gray-100 pb-3"
+                >
                     <div class="flex items-center gap-2.5">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3B2314] text-[#FAEDCD]">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 21c-2.243 0-4.352-.648-6.124-1.772a4.125 4.125 0 0 1 7.533-2.493M15 9.75a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 8.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3B2314] text-[#FAEDCD]"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="h-5 w-5"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 21c-2.243 0-4.352-.648-6.124-1.772a4.125 4.125 0 0 1 7.533-2.493M15 9.75a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 8.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+                                />
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-sm font-black text-[#3B2314]">Staf & Shift Aktif Hari Ini</h3>
-                            <p class="text-[10px] text-gray-400">Daftar barista dan kasir yang login ke sistem dalam 24 jam terakhir.</p>
+                            <h3 class="text-sm font-black text-[#3B2314]">
+                                Staf & Shift Aktif Hari Ini
+                            </h3>
+                            <p class="text-[10px] text-gray-400">
+                                Daftar barista dan kasir yang login ke sistem
+                                dalam 24 jam terakhir.
+                            </p>
                         </div>
                     </div>
-                    <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold text-green-800 border border-green-200 flex items-center gap-1">
-                        <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <span
+                        class="flex items-center gap-1 rounded-full border border-green-200 bg-green-100 px-2.5 py-0.5 text-[10px] font-bold text-green-800"
+                    >
+                        <span
+                            class="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500"
+                        ></span>
                         {{ activeStaff.length }} Online
                     </span>
                 </div>
-                
+
                 <div class="flex flex-wrap gap-4">
-                    <div v-for="staff in activeStaff" :key="staff.id" class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-2.5 shadow-sm min-w-[200px] flex-1 md:flex-none">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAEDCD] font-bold text-[#3B2314] uppercase text-xs">
+                    <div
+                        v-for="staff in activeStaff"
+                        :key="staff.id"
+                        class="flex min-w-[200px] flex-1 items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-2.5 shadow-sm md:flex-none"
+                    >
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAEDCD] text-xs font-bold text-[#3B2314] uppercase"
+                        >
                             {{ staff.name.charAt(0) }}
                         </div>
                         <div>
-                            <p class="text-xs font-black text-gray-800">{{ staff.name }}</p>
-                            <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                <p class="text-[9px] font-black tracking-wider uppercase text-gray-400">{{ staff.role }}</p>
+                            <p class="text-xs font-black text-gray-800">
+                                {{ staff.name }}
+                            </p>
+                            <div class="mt-0.5 flex items-center gap-1.5">
+                                <span
+                                    class="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500"
+                                ></span>
+                                <p
+                                    class="text-[9px] font-black tracking-wider text-gray-400 uppercase"
+                                >
+                                    {{ staff.role }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -872,34 +938,84 @@ onUnmounted(() => {
                                 <div class="mb-3">
                                     <!-- Baris Atas: ID Pesanan, No Meja -->
                                     <div class="mb-2 flex items-center gap-2">
-                                        <span class="text-lg font-black text-[#3B2314]">#{{ order.id }}</span>
-                                        <span class="rounded-md bg-[#3B2314] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm border-none">
+                                        <span
+                                            class="text-lg font-black text-[#3B2314]"
+                                            >#{{ order.id }}</span
+                                        >
+                                        <span
+                                            class="rounded-md border-none bg-[#3B2314] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm"
+                                        >
                                             {{ order.table }}
                                         </span>
                                     </div>
-                                    
+
                                     <!-- Baris Bawah: Takeaway/DineIn, Payment Method, Status Bayar -->
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
-                                            :class="order.type === 'Dine In' ? 'border border-[#D4A373]/20 bg-[#FAEDCD] text-[#3B2314]' : 'border bg-gray-100 text-gray-600'">
+                                    <div
+                                        class="flex flex-wrap items-center gap-2"
+                                    >
+                                        <span
+                                            class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
+                                            :class="
+                                                order.type === 'Dine In'
+                                                    ? 'border border-[#D4A373]/20 bg-[#FAEDCD] text-[#3B2314]'
+                                                    : 'border bg-gray-100 text-gray-600'
+                                            "
+                                        >
                                             {{ order.type }}
                                         </span>
 
-                                        <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold"
+                                        <span
+                                            class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold"
                                             :class="{
-                                                'border border-blue-200 bg-blue-50 text-blue-700': order.payment_method === 'qris_tokopay',
-                                                'border border-amber-200 bg-amber-50 text-amber-700': order.payment_method === 'qris_manual',
-                                                'border border-teal-200 bg-teal-50 text-teal-700': order.payment_method === 'cashier',
-                                            }">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-3.5 w-3.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-19.5 5.25h19.5m-19.5 0h19.5M2.25 18h19.5A2.25 2.25 0 0 0 24 15.75V8.25A2.25 2.25 0 0 0 21.75 6H2.25A2.25 2.25 0 0 0 0 8.25v7.5A2.25 2.25 0 0 0 2.25 18Z" />
+                                                'border border-blue-200 bg-blue-50 text-blue-700':
+                                                    order.payment_method ===
+                                                    'qris_tokopay',
+                                                'border border-amber-200 bg-amber-50 text-amber-700':
+                                                    order.payment_method ===
+                                                    'qris_manual',
+                                                'border border-teal-200 bg-teal-50 text-teal-700':
+                                                    order.payment_method ===
+                                                    'cashier',
+                                            }"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                class="h-3.5 w-3.5"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M2.25 8.25h19.5M2.25 9h19.5m-19.5 5.25h19.5m-19.5 0h19.5M2.25 18h19.5A2.25 2.25 0 0 0 24 15.75V8.25A2.25 2.25 0 0 0 21.75 6H2.25A2.25 2.25 0 0 0 0 8.25v7.5A2.25 2.25 0 0 0 2.25 18Z"
+                                                />
                                             </svg>
-                                            {{ order.payment_method === 'qris_tokopay' ? 'Tokopay QRIS' : order.payment_method === 'qris_manual' ? 'QRIS Manual' : 'Bayar Kasir' }}
+                                            {{
+                                                order.payment_method ===
+                                                'qris_tokopay'
+                                                    ? 'Tokopay QRIS'
+                                                    : order.payment_method ===
+                                                        'qris_manual'
+                                                      ? 'QRIS Manual'
+                                                      : 'Bayar Kasir'
+                                            }}
                                         </span>
 
-                                        <span class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
-                                            :class="order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'">
-                                            {{ order.payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR' }}
+                                        <span
+                                            class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
+                                            :class="
+                                                order.payment_status === 'paid'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-gray-100 text-gray-500'
+                                            "
+                                        >
+                                            {{
+                                                order.payment_status === 'paid'
+                                                    ? 'LUNAS'
+                                                    : 'BELUM BAYAR'
+                                            }}
                                         </span>
                                     </div>
                                 </div>
@@ -971,27 +1087,49 @@ onUnmounted(() => {
                                             <span
                                                 v-if="item.notes"
                                                 class="text-[9px] text-[#3B2314]/80 italic"
-                                                >| ({{ item.notes }})</span>
+                                                >| ({{ item.notes }})</span
+                                            >
                                         </div>
                                     </div>
 
                                     <!-- Voucher / Discount Details (Admin Only View) -->
                                     <div
                                         v-if="order.discount_amount > 0"
-                                        class="flex flex-wrap gap-2 mt-2 items-center"
+                                        class="mt-2 flex flex-wrap items-center gap-2"
                                     >
                                         <span
-                                            class="inline-flex items-center gap-1 rounded-xl bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-bold text-emerald-700"
+                                            class="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3.5">
-                                                <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V14.34a2.247 2.247 0 0 1-1.125.41 2.25 2.25 0 0 1-3.75-2.25 2.25 2.25 0 0 1 4.875-1.077V3.5A1.5 1.5 0 0 0 15.5 2h-11Zm10 6A1.5 1.5 0 1 0 16 5a1.5 1.5 0 0 0-1.5 3Zm-7-2a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Zm0 4a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Z" clip-rule="evenodd" />
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 20 20"
+                                                fill="currentColor"
+                                                class="size-3.5"
+                                            >
+                                                <path
+                                                    fill-rule="evenodd"
+                                                    d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V14.34a2.247 2.247 0 0 1-1.125.41 2.25 2.25 0 0 1-3.75-2.25 2.25 2.25 0 0 1 4.875-1.077V3.5A1.5 1.5 0 0 0 15.5 2h-11Zm10 6A1.5 1.5 0 1 0 16 5a1.5 1.5 0 0 0-1.5 3Zm-7-2a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Zm0 4a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3Z"
+                                                    clip-rule="evenodd"
+                                                />
                                             </svg>
-                                            Voucher: {{ order.voucher_code }} (-Rp {{ order.discount_amount.toLocaleString('id-ID') }})
+                                            Voucher:
+                                            {{ order.voucher_code }} (-Rp
+                                            {{
+                                                order.discount_amount.toLocaleString(
+                                                    'id-ID',
+                                                )
+                                            }})
                                         </span>
                                         <span
                                             class="text-[10px] font-bold text-gray-400"
                                         >
-                                            Subtotal: Rp {{ (order.total + order.discount_amount).toLocaleString('id-ID') }}
+                                            Subtotal: Rp
+                                            {{
+                                                (
+                                                    order.total +
+                                                    order.discount_amount
+                                                ).toLocaleString('id-ID')
+                                            }}
                                         </span>
                                     </div>
 
@@ -1026,14 +1164,31 @@ onUnmounted(() => {
                             </div>
 
                             <!-- Actions Buttons -->
-                            <div class="mt-4 flex w-full shrink-0 justify-end gap-2 lg:mt-0 lg:w-auto">
+                            <div
+                                class="mt-4 flex w-full shrink-0 justify-end gap-2 lg:mt-0 lg:w-auto"
+                            >
                                 <button
                                     @click="openDetailModal(order)"
                                     class="flex w-full transform items-center justify-center gap-1.5 rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95 lg:w-auto"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="2.5"
+                                        stroke="currentColor"
+                                        class="h-4 w-4"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                                        />
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                        />
                                     </svg>
                                     Lihat Detail
                                 </button>
@@ -1041,27 +1196,50 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Pagination Controls -->
-                        <div v-if="totalPages > 1" class="flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-4 mt-4">
+                        <div
+                            v-if="totalPages > 1"
+                            class="mt-4 flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-4"
+                        >
                             <span class="text-xs text-gray-500">
-                                Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }} sampai {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} dari {{ filteredOrders.length }} pesanan
+                                Menampilkan
+                                {{
+                                    (currentPage - 1) * itemsPerPage + 1
+                                }}
+                                sampai
+                                {{
+                                    Math.min(
+                                        currentPage * itemsPerPage,
+                                        filteredOrders.length,
+                                    )
+                                }}
+                                dari {{ filteredOrders.length }} pesanan
                             </span>
                             <div class="flex items-center gap-2">
-                                <button 
-                                    @click="prevPage" 
+                                <button
+                                    @click="prevPage"
                                     :disabled="currentPage === 1"
                                     class="rounded-lg border px-3 py-1.5 text-xs font-bold transition-all"
-                                    :class="currentPage === 1 ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-[#D4A373] text-[#3B2314] border-[#D4A373] hover:bg-[#FAEDCD] shadow-sm'"
+                                    :class="
+                                        currentPage === 1
+                                            ? 'cursor-not-allowed border-gray-100 text-gray-300'
+                                            : 'border-[#D4A373] bg-[#D4A373] text-[#3B2314] shadow-sm hover:bg-[#FAEDCD]'
+                                    "
                                 >
                                     Sebelumnya
                                 </button>
                                 <span class="text-xs font-bold text-[#3B2314]">
-                                    Halaman {{ currentPage }} dari {{ totalPages }}
+                                    Halaman {{ currentPage }} dari
+                                    {{ totalPages }}
                                 </span>
-                                <button 
-                                    @click="nextPage" 
+                                <button
+                                    @click="nextPage"
                                     :disabled="currentPage === totalPages"
                                     class="rounded-lg border px-3 py-1.5 text-xs font-bold transition-all"
-                                    :class="currentPage === totalPages ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-[#D4A373] text-[#3B2314] border-[#D4A373] hover:bg-[#FAEDCD] shadow-sm'"
+                                    :class="
+                                        currentPage === totalPages
+                                            ? 'cursor-not-allowed border-gray-100 text-gray-300'
+                                            : 'border-[#D4A373] bg-[#D4A373] text-[#3B2314] shadow-sm hover:bg-[#FAEDCD]'
+                                    "
                                 >
                                     Selanjutnya
                                 </button>
@@ -1175,56 +1353,99 @@ onUnmounted(() => {
                 >
                     <!-- Header -->
                     <div class="flex items-center justify-between border-b p-5">
-                        <h3 class="flex items-center gap-2 text-lg font-black text-[#3B2314]">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5 text-[#D4A373]">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        <h3
+                            class="flex items-center gap-2 text-lg font-black text-[#3B2314]"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-5 w-5 text-[#D4A373]"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+                                />
                             </svg>
                             Kirim Rekapan WA
                         </h3>
                         <button
                             @click="showRecapModal = false"
-                            class="text-gray-400 transition hover:text-gray-600 rounded-full hover:bg-gray-100 p-2"
+                            class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-4 w-4"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M6 18 18 6M6 6l12 12"
+                                />
                             </svg>
                         </button>
                     </div>
 
                     <!-- Body -->
-                    <div class="p-6 space-y-5">
+                    <div class="space-y-5 p-6">
                         <div class="space-y-3">
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Pilih Rentang Waktu</label>
+                            <label
+                                class="text-xs font-bold tracking-wider text-gray-500 uppercase"
+                                >Pilih Rentang Waktu</label
+                            >
                             <div class="grid grid-cols-2 gap-2">
                                 <button
                                     @click="recapType = 'today'"
                                     type="button"
-                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
-                                    :class="recapType === 'today' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                    class="flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-200 active:scale-95"
+                                    :class="
+                                        recapType === 'today'
+                                            ? 'border-[#3B2314] bg-[#FAEDCD]/20 font-bold text-[#3B2314] shadow-sm'
+                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                    "
                                 >
                                     <span class="text-xs">Hari Ini</span>
                                 </button>
                                 <button
                                     @click="recapType = 'yesterday'"
                                     type="button"
-                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
-                                    :class="recapType === 'yesterday' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                    class="flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-200 active:scale-95"
+                                    :class="
+                                        recapType === 'yesterday'
+                                            ? 'border-[#3B2314] bg-[#FAEDCD]/20 font-bold text-[#3B2314] shadow-sm'
+                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                    "
                                 >
                                     <span class="text-xs">Kemarin</span>
                                 </button>
                                 <button
                                     @click="recapType = 'single'"
                                     type="button"
-                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
-                                    :class="recapType === 'single' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                    class="flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-200 active:scale-95"
+                                    :class="
+                                        recapType === 'single'
+                                            ? 'border-[#3B2314] bg-[#FAEDCD]/20 font-bold text-[#3B2314] shadow-sm'
+                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                    "
                                 >
                                     <span class="text-xs">Pilih Tanggal</span>
                                 </button>
                                 <button
                                     @click="recapType = 'range'"
                                     type="button"
-                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
-                                    :class="recapType === 'range' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                    class="flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-200 active:scale-95"
+                                    :class="
+                                        recapType === 'range'
+                                            ? 'border-[#3B2314] bg-[#FAEDCD]/20 font-bold text-[#3B2314] shadow-sm'
+                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                    "
                                 >
                                     <span class="text-xs">Rentang Tanggal</span>
                                 </button>
@@ -1232,9 +1453,17 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Date Pickers -->
-                        <div class="relative overflow-hidden min-h-[80px] flex items-center">
-                            <div v-if="recapType === 'single'" class="space-y-2 w-full">
-                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Laporan</label>
+                        <div
+                            class="relative flex min-h-[80px] items-center overflow-hidden"
+                        >
+                            <div
+                                v-if="recapType === 'single'"
+                                class="w-full space-y-2"
+                            >
+                                <label
+                                    class="text-xs font-bold tracking-wider text-gray-500 uppercase"
+                                    >Tanggal Laporan</label
+                                >
                                 <input
                                     v-model="recapStartDate"
                                     type="date"
@@ -1242,9 +1471,15 @@ onUnmounted(() => {
                                 />
                             </div>
 
-                            <div v-else-if="recapType === 'range'" class="grid grid-cols-2 gap-4 w-full">
+                            <div
+                                v-else-if="recapType === 'range'"
+                                class="grid w-full grid-cols-2 gap-4"
+                            >
                                 <div class="space-y-2">
-                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Mulai</label>
+                                    <label
+                                        class="text-xs font-bold tracking-wider text-gray-500 uppercase"
+                                        >Tanggal Mulai</label
+                                    >
                                     <input
                                         v-model="recapStartDate"
                                         type="date"
@@ -1252,7 +1487,10 @@ onUnmounted(() => {
                                     />
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Selesai</label>
+                                    <label
+                                        class="text-xs font-bold tracking-wider text-gray-500 uppercase"
+                                        >Tanggal Selesai</label
+                                    >
                                     <input
                                         v-model="recapEndDate"
                                         type="date"
@@ -1261,17 +1499,25 @@ onUnmounted(() => {
                                 </div>
                             </div>
 
-                            <div v-else class="text-center w-full text-xs text-gray-400 italic">
-                                Rekapan akan mencakup transaksi untuk periode: <span class="font-bold text-[#3B2314]">{{ recapType === 'today' ? 'Hari Ini' : 'Kemarin' }}</span>
+                            <div
+                                v-else
+                                class="w-full text-center text-xs text-gray-400 italic"
+                            >
+                                Rekapan akan mencakup transaksi untuk periode:
+                                <span class="font-bold text-[#3B2314]">{{
+                                    recapType === 'today'
+                                        ? 'Hari Ini'
+                                        : 'Kemarin'
+                                }}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Footer -->
-                    <div class="border-t bg-gray-50 p-5 flex justify-end gap-3">
+                    <div class="flex justify-end gap-3 border-t bg-gray-50 p-5">
                         <button
                             @click="showRecapModal = false"
-                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-300 transition shadow-sm"
+                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-300"
                             type="button"
                         >
                             Batal
@@ -1279,14 +1525,35 @@ onUnmounted(() => {
                         <button
                             @click="sendReport"
                             :disabled="isSendingRecap"
-                            class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg disabled:opacity-50 active:scale-95"
+                            class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95 disabled:opacity-50"
                             type="button"
                         >
-                            <svg v-if="isSendingRecap" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg
+                                v-if="isSendingRecap"
+                                class="h-4 w-4 animate-spin text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
                             </svg>
-                            <span>{{ isSendingRecap ? 'Mengirim...' : 'Kirim Rekap WA' }}</span>
+                            <span>{{
+                                isSendingRecap
+                                    ? 'Mengirim...'
+                                    : 'Kirim Rekap WA'
+                            }}</span>
                         </button>
                     </div>
                 </div>
@@ -1306,71 +1573,204 @@ onUnmounted(() => {
                 class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                 @click.self="closeDetailModal"
             >
-                <div class="animate-scale-in relative w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+                <div
+                    class="animate-scale-in relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+                >
                     <!-- Header -->
                     <div class="flex items-center justify-between border-b p-5">
                         <div>
-                            <h3 class="flex items-center gap-1.5 text-lg font-black text-[#3B2314]">
+                            <h3
+                                class="flex items-center gap-1.5 text-lg font-black text-[#3B2314]"
+                            >
                                 Detail Pesanan #{{ selectedOrder?.id }}
                             </h3>
-                            <div class="text-xs font-medium text-gray-500 mt-1 flex flex-col gap-0.5">
-                                <p>Waktu Masuk: {{ selectedOrder?.time }} WIB</p>
-                                <p>Nomor Meja: <span class="font-bold text-gray-700">{{ selectedOrder?.table }}</span> <span v-if="selectedOrder?.type" class="text-gray-400">({{ selectedOrder?.type }})</span></p>
+                            <div
+                                class="mt-1 flex flex-col gap-0.5 text-xs font-medium text-gray-500"
+                            >
+                                <p>
+                                    Waktu Masuk: {{ selectedOrder?.time }} WIB
+                                </p>
+                                <p>
+                                    Nomor Meja:
+                                    <span class="font-bold text-gray-700">{{
+                                        selectedOrder?.table
+                                    }}</span>
+                                    <span
+                                        v-if="selectedOrder?.type"
+                                        class="text-gray-400"
+                                        >({{ selectedOrder?.type }})</span
+                                    >
+                                </p>
                             </div>
                         </div>
                         <button
                             @click="closeDetailModal"
-                            class="text-gray-400 transition hover:text-gray-600 rounded-full hover:bg-gray-100 p-2"
+                            class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-5 w-5"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M6 18 18 6M6 6l12 12"
+                                />
                             </svg>
                         </button>
                     </div>
 
                     <!-- Body -->
-                    <div class="overflow-y-auto p-6 space-y-6 flex-1">
-                        
+                    <div class="flex-1 space-y-6 overflow-y-auto p-6">
                         <!-- Info Pelanggan & Pembayaran -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase">Data Pelanggan</h4>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div
+                                class="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+                            >
+                                <h4
+                                    class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase"
+                                >
+                                    Data Pelanggan
+                                </h4>
                                 <div class="space-y-4">
                                     <div>
-                                        <p class="text-[10px] font-bold text-gray-500">NAMA</p>
-                                        <p class="text-sm font-bold text-gray-800">{{ selectedOrder?.name }}</p>
+                                        <p
+                                            class="text-[10px] font-bold text-gray-500"
+                                        >
+                                            NAMA
+                                        </p>
+                                        <p
+                                            class="text-sm font-bold text-gray-800"
+                                        >
+                                            {{ selectedOrder?.name }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-[10px] font-bold text-gray-500">NO WHATSAPP</p>
-                                        <p class="text-sm font-bold text-gray-800">{{ selectedOrder?.customer_phone || '-' }}</p>
+                                        <p
+                                            class="text-[10px] font-bold text-gray-500"
+                                        >
+                                            NO WHATSAPP
+                                        </p>
+                                        <p
+                                            class="text-sm font-bold text-gray-800"
+                                        >
+                                            {{
+                                                selectedOrder?.customer_phone ||
+                                                '-'
+                                            }}
+                                        </p>
                                     </div>
                                     <div v-if="selectedOrder?.notes">
-                                        <p class="text-[10px] font-bold text-gray-500">CATATAN BARISTA</p>
-                                        <p class="text-sm font-bold text-amber-600">"{{ selectedOrder.notes }}"</p>
+                                        <p
+                                            class="text-[10px] font-bold text-gray-500"
+                                        >
+                                            CATATAN BARISTA
+                                        </p>
+                                        <p
+                                            class="text-sm font-bold text-amber-600"
+                                        >
+                                            "{{ selectedOrder.notes }}"
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase">Info Pembayaran</h4>
+                            <div
+                                class="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+                            >
+                                <h4
+                                    class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase"
+                                >
+                                    Info Pembayaran
+                                </h4>
                                 <div class="space-y-2">
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-[10px] font-bold text-gray-500">METODE</p>
-                                        <span class="rounded-md bg-white px-2 py-1 text-[10px] font-bold border shadow-sm">
-                                            {{ selectedOrder?.payment_method === 'qris_tokopay' ? 'Tokopay QRIS' : selectedOrder?.payment_method === 'qris_manual' ? 'QRIS Manual' : 'Bayar Kasir' }}
+                                    <div
+                                        class="flex items-center justify-between"
+                                    >
+                                        <p
+                                            class="text-[10px] font-bold text-gray-500"
+                                        >
+                                            METODE
+                                        </p>
+                                        <span
+                                            class="rounded-md border bg-white px-2 py-1 text-[10px] font-bold shadow-sm"
+                                        >
+                                            {{
+                                                selectedOrder?.payment_method ===
+                                                'qris_tokopay'
+                                                    ? 'Tokopay QRIS'
+                                                    : selectedOrder?.payment_method ===
+                                                        'qris_manual'
+                                                      ? 'QRIS Manual'
+                                                      : 'Bayar Kasir'
+                                            }}
                                         </span>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-[10px] font-bold text-gray-500">STATUS</p>
-                                        <span class="rounded-md px-2 py-1 text-[10px] font-bold shadow-sm"
-                                            :class="selectedOrder?.payment_status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200'">
-                                            {{ selectedOrder?.payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR' }}
+                                    <div
+                                        class="flex items-center justify-between"
+                                    >
+                                        <p
+                                            class="text-[10px] font-bold text-gray-500"
+                                        >
+                                            STATUS
+                                        </p>
+                                        <span
+                                            class="rounded-md px-2 py-1 text-[10px] font-bold shadow-sm"
+                                            :class="
+                                                selectedOrder?.payment_status ===
+                                                'paid'
+                                                    ? 'border border-green-200 bg-green-100 text-green-800'
+                                                    : 'border border-gray-200 bg-gray-100 text-gray-600'
+                                            "
+                                        >
+                                            {{
+                                                selectedOrder?.payment_status ===
+                                                'paid'
+                                                    ? 'LUNAS'
+                                                    : 'BELUM BAYAR'
+                                            }}
                                         </span>
                                     </div>
-                                    <div v-if="selectedOrder?.payment_proof" class="pt-2 mt-2 border-t border-gray-200">
-                                        <p class="text-[10px] font-bold text-gray-500 mb-2">BUKTI TRANSFER</p>
-                                        <button @click="openProofModal(selectedOrder.payment_proof)" class="w-full rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition flex items-center justify-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                    <div
+                                        v-if="selectedOrder?.payment_proof"
+                                        class="mt-2 border-t border-gray-200 pt-2"
+                                    >
+                                        <p
+                                            class="mb-2 text-[10px] font-bold text-gray-500"
+                                        >
+                                            BUKTI TRANSFER
+                                        </p>
+                                        <button
+                                            @click="
+                                                openProofModal(
+                                                    selectedOrder.payment_proof,
+                                                )
+                                            "
+                                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                class="h-4 w-4"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                                                />
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                                />
+                                            </svg>
                                             Lihat Bukti Transfer
                                         </button>
                                     </div>
@@ -1380,69 +1780,155 @@ onUnmounted(() => {
 
                         <!-- Daftar Pesanan -->
                         <div>
-                            <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase border-b pb-2">Item Pesanan</h4>
+                            <h4
+                                class="mb-3 border-b pb-2 text-xs font-black tracking-widest text-gray-400 uppercase"
+                            >
+                                Item Pesanan
+                            </h4>
                             <div class="space-y-3">
-                                <div v-for="(item, idx) in selectedOrder?.items" :key="idx" class="flex justify-between items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                                <div
+                                    v-for="(item, idx) in selectedOrder?.items"
+                                    :key="idx"
+                                    class="flex items-start justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0"
+                                >
                                     <div class="flex gap-3">
-                                        <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3B2314] text-xs font-black text-white">
+                                        <div
+                                            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3B2314] text-xs font-black text-white"
+                                        >
                                             {{ item.quantity }}
                                         </div>
                                         <div>
-                                            <p class="text-sm font-bold text-gray-800">{{ item.name }}</p>
-                                            <p v-if="item.notes" class="text-[13px] font-semibold text-gray-800 italic mt-0.5">Catatan: {{ item.notes }}</p>
+                                            <p
+                                                class="text-sm font-bold text-gray-800"
+                                            >
+                                                {{ item.name }}
+                                            </p>
+                                            <p
+                                                v-if="item.notes"
+                                                class="mt-0.5 text-[13px] font-semibold text-gray-800 italic"
+                                            >
+                                                Catatan: {{ item.notes }}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="text-sm font-bold text-gray-700 whitespace-nowrap">
-                                        Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}
+                                    <div
+                                        class="text-sm font-bold whitespace-nowrap text-gray-700"
+                                    >
+                                        Rp
+                                        {{
+                                            (
+                                                item.price * item.quantity
+                                            ).toLocaleString('id-ID')
+                                        }}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        
-                        
                         <!-- Rincian Harga -->
-                        <div class="rounded-2xl border border-[#D4A373]/30 bg-[#FAEDCD]/30 p-4">
-                            <div v-if="selectedOrder?.discount_amount > 0" class="flex justify-between text-sm mb-2 text-gray-600">
+                        <div
+                            class="rounded-2xl border border-[#D4A373]/30 bg-[#FAEDCD]/30 p-4"
+                        >
+                            <div
+                                v-if="selectedOrder?.discount_amount > 0"
+                                class="mb-2 flex justify-between text-sm text-gray-600"
+                            >
                                 <span>Subtotal</span>
-                                <span>Rp {{ (selectedOrder.total + selectedOrder.discount_amount).toLocaleString('id-ID') }}</span>
+                                <span
+                                    >Rp
+                                    {{
+                                        (
+                                            selectedOrder.total +
+                                            selectedOrder.discount_amount
+                                        ).toLocaleString('id-ID')
+                                    }}</span
+                                >
                             </div>
-                            <div v-if="selectedOrder?.discount_amount > 0" class="flex justify-between text-sm mb-2 text-emerald-600">
-                                <span>Voucher ({{ selectedOrder.voucher_code }})</span>
-                                <span>- Rp {{ selectedOrder.discount_amount.toLocaleString('id-ID') }}</span>
+                            <div
+                                v-if="selectedOrder?.discount_amount > 0"
+                                class="mb-2 flex justify-between text-sm text-emerald-600"
+                            >
+                                <span
+                                    >Voucher ({{
+                                        selectedOrder.voucher_code
+                                    }})</span
+                                >
+                                <span
+                                    >- Rp
+                                    {{
+                                        selectedOrder.discount_amount.toLocaleString(
+                                            'id-ID',
+                                        )
+                                    }}</span
+                                >
                             </div>
-                            <div class="flex justify-between items-center pt-2 border-t border-[#D4A373]/20">
-                                <span class="text-sm font-black text-gray-800">Total Akhir</span>
-                                <span class="text-xl font-black text-[#3B2314]">Rp {{ selectedOrder?.total?.toLocaleString('id-ID') }}</span>
+                            <div
+                                class="flex items-center justify-between border-t border-[#D4A373]/20 pt-2"
+                            >
+                                <span class="text-sm font-black text-gray-800"
+                                    >Total Akhir</span
+                                >
+                                <span class="text-xl font-black text-[#3B2314]"
+                                    >Rp
+                                    {{
+                                        selectedOrder?.total?.toLocaleString(
+                                            'id-ID',
+                                        )
+                                    }}</span
+                                >
                             </div>
                         </div>
                     </div>
 
                     <!-- Footer / Actions -->
-                    <div class="border-t bg-gray-50 p-5 flex justify-end gap-3 rounded-b-3xl">
+                    <div
+                        class="flex justify-end gap-3 rounded-b-3xl border-t bg-gray-50 p-5"
+                    >
                         <button
                             @click="printReceipt(selectedOrder)"
                             class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-5 py-2.5 text-sm font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#D4A373] hover:text-[#3B2314] active:scale-95"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-4 w-4"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"
+                                />
                             </svg>
                             Print Struk
                         </button>
                         <button
                             @click="closeDetailModal"
-                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-300 transition shadow-sm"
+                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-300"
                         >
                             Tutup
                         </button>
-                        
+
                         <button
                             v-if="selectedOrder?.status === 'pending'"
                             @click="acceptOrder(selectedOrder.id)"
                             class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-4 w-4"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m4.5 12.75 6 6 9-13.5"
+                                />
                             </svg>
                             Terima Pesanan
                         </button>
@@ -1452,8 +1938,19 @@ onUnmounted(() => {
                             @click="completeOrder(selectedOrder.id)"
                             class="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-green-700 hover:shadow-lg active:scale-95"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2.5"
+                                stroke="currentColor"
+                                class="h-4 w-4"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
+                                />
                             </svg>
                             Tandai Selesai
                         </button>

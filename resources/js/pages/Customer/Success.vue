@@ -9,7 +9,8 @@ const props = defineProps({
 const subtotal = computed(() => {
     return props.order.items.reduce((sum, item) => {
         const price = parseFloat(item.price_at_sale || item.price || 0);
-        return sum + (item.quantity * price);
+
+        return sum + item.quantity * price;
     }, 0);
 });
 
@@ -187,7 +188,12 @@ onUnmounted(() => {
                                 >
                                     {{ item.quantity }}x &bull; Rp
                                     {{
-                                        Number(item.price_at_sale || item.price || item.basePrice || 0).toLocaleString('id-ID')
+                                        Number(
+                                            item.price_at_sale ||
+                                                item.price ||
+                                                item.basePrice ||
+                                                0,
+                                        ).toLocaleString('id-ID')
                                     }}
                                 </p>
                                 <span
@@ -231,7 +237,10 @@ onUnmounted(() => {
                             </span>
                         </div>
                         <div
-                            v-if="Number(order.discount_amount || 0) > 0 || Number(order.promo_discount_amount || 0) > 0"
+                            v-if="
+                                Number(order.discount_amount || 0) > 0 ||
+                                Number(order.promo_discount_amount || 0) > 0
+                            "
                             class="flex justify-between text-[10px] font-bold text-gray-500"
                         >
                             <span>Subtotal</span>
@@ -245,7 +254,12 @@ onUnmounted(() => {
                         >
                             <span>Voucher ({{ order.voucher_code }})</span>
                             <span>
-                                - Rp {{ parseInt(order.discount_amount).toLocaleString('id-ID') }}
+                                - Rp
+                                {{
+                                    parseInt(
+                                        order.discount_amount,
+                                    ).toLocaleString('id-ID')
+                                }}
                             </span>
                         </div>
                         <div
@@ -254,11 +268,16 @@ onUnmounted(() => {
                         >
                             <span>Potongan Promo Otomatis</span>
                             <span>
-                                - Rp {{ parseInt(order.promo_discount_amount).toLocaleString('id-ID') }}
+                                - Rp
+                                {{
+                                    parseInt(
+                                        order.promo_discount_amount,
+                                    ).toLocaleString('id-ID')
+                                }}
                             </span>
                         </div>
                         <div
-                            class="flex items-center justify-between pt-1.5 text-xs border-t border-gray-100"
+                            class="flex items-center justify-between border-t border-gray-100 pt-1.5 text-xs"
                         >
                             <span class="font-bold text-[#3B2314]"
                                 >Total Pembayaran</span

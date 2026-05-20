@@ -41,18 +41,18 @@ class TokopayWebhookController extends Controller
                     $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
 
                     $pricingBreakdown = '';
-                    $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                    $hasDiscount = ((float) $order->discount_amount > 0 || (float) $order->promo_discount_amount > 0);
                     if ($hasDiscount) {
-                        $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
-                        $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-                        if ((float)$order->discount_amount > 0) {
-                            $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                        $subtotal = (float) $order->total_price + (float) $order->discount_amount + (float) $order->promo_discount_amount;
+                        $pricingBreakdown .= '💵 *Subtotal:* Rp '.number_format($subtotal, 0, ',', '.')."\n";
+                        if ((float) $order->discount_amount > 0) {
+                            $pricingBreakdown .= '🎟️ *Voucher ('.($order->voucher_code ?: 'Promo').'):* -Rp '.number_format($order->discount_amount, 0, ',', '.')."\n";
                         }
-                        if ((float)$order->promo_discount_amount > 0) {
-                            $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                        if ((float) $order->promo_discount_amount > 0) {
+                            $pricingBreakdown .= '🏷️ *Potongan Promo Otomatis:* -Rp '.number_format($order->promo_discount_amount, 0, ',', '.')."\n";
                         }
                     }
-                    $pricingBreakdown .= '💰 *Total Tagihan:* Rp ' . number_format($order->total_price, 0, ',', '.');
+                    $pricingBreakdown .= '💰 *Total Tagihan:* Rp '.number_format($order->total_price, 0, ',', '.');
 
                     $message = "☕ *ZUNOI CAFFE - PEMBAYARAN SUKSES* ☕\n\n".
                                "Halo *{$order->customer_name}*, terima kasih! Pembayaran Anda telah kami terima secara otomatis.\n\n".
@@ -118,18 +118,18 @@ class TokopayWebhookController extends Controller
                 $timeFormatted = $order->created_at->timezone('Asia/Jakarta')->format('H:i');
 
                 $pricingBreakdown = '';
-                $hasDiscount = ((float)$order->discount_amount > 0 || (float)$order->promo_discount_amount > 0);
+                $hasDiscount = ((float) $order->discount_amount > 0 || (float) $order->promo_discount_amount > 0);
                 if ($hasDiscount) {
-                    $subtotal = (float)$order->total_price + (float)$order->discount_amount + (float)$order->promo_discount_amount;
-                    $pricingBreakdown .= "💵 *Subtotal:* Rp " . number_format($subtotal, 0, ',', '.') . "\n";
-                    if ((float)$order->discount_amount > 0) {
-                        $pricingBreakdown .= "🎟️ *Voucher (" . ($order->voucher_code ?: 'Promo') . "):* -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    $subtotal = (float) $order->total_price + (float) $order->discount_amount + (float) $order->promo_discount_amount;
+                    $pricingBreakdown .= '💵 *Subtotal:* Rp '.number_format($subtotal, 0, ',', '.')."\n";
+                    if ((float) $order->discount_amount > 0) {
+                        $pricingBreakdown .= '🎟️ *Voucher ('.($order->voucher_code ?: 'Promo').'):* -Rp '.number_format($order->discount_amount, 0, ',', '.')."\n";
                     }
-                    if ((float)$order->promo_discount_amount > 0) {
-                        $pricingBreakdown .= "🏷️ *Potongan Promo Otomatis:* -Rp " . number_format($order->promo_discount_amount, 0, ',', '.') . "\n";
+                    if ((float) $order->promo_discount_amount > 0) {
+                        $pricingBreakdown .= '🏷️ *Potongan Promo Otomatis:* -Rp '.number_format($order->promo_discount_amount, 0, ',', '.')."\n";
                     }
                 }
-                $pricingBreakdown .= '💰 *Total Tagihan:* Rp ' . number_format($order->total_price, 0, ',', '.');
+                $pricingBreakdown .= '💰 *Total Tagihan:* Rp '.number_format($order->total_price, 0, ',', '.');
 
                 $message = "☕ *ZUNOI CAFFE - PEMBAYARAN SUKSES [SIMULASI]* ☕\n\n".
                            "Halo *{$order->customer_name}*, terima kasih! [SIMULASI] Pembayaran Anda telah kami terima secara otomatis.\n\n".

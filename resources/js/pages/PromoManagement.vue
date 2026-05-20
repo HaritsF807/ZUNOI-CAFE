@@ -71,8 +71,8 @@ const zoom = ref(1.0);
 
 const layoutWidth = computed(() => {
     if (!imageLoaded.value) {
-return 0;
-}
+        return 0;
+    }
 
     const rNat = naturalWidth.value / naturalHeight.value;
     const rCont = 16 / 9;
@@ -86,8 +86,8 @@ return 0;
 
 const layoutHeight = computed(() => {
     if (!imageLoaded.value) {
-return 0;
-}
+        return 0;
+    }
 
     const rNat = naturalWidth.value / naturalHeight.value;
     const rCont = 16 / 9;
@@ -109,20 +109,20 @@ const applyConstraints = () => {
     const limitY = Math.max(0, (hs - hc) / 2);
 
     if (panX.value > limitX) {
-panX.value = limitX;
-}
+        panX.value = limitX;
+    }
 
     if (panX.value < -limitX) {
-panX.value = -limitX;
-}
+        panX.value = -limitX;
+    }
 
     if (panY.value > limitY) {
-panY.value = limitY;
-}
+        panY.value = limitY;
+    }
 
     if (panY.value < -limitY) {
-panY.value = -limitY;
-}
+        panY.value = -limitY;
+    }
 };
 
 watch(zoom, () => {
@@ -140,8 +140,8 @@ const startDrag = (e) => {
 
 const onDrag = (e) => {
     if (!isDragging.value) {
-return;
-}
+        return;
+    }
 
     const dx = e.clientX - startX.value;
     const dy = e.clientY - startY.value;
@@ -152,8 +152,8 @@ return;
 
 const startDragTouch = (e) => {
     if (e.touches.length !== 1) {
-return;
-}
+        return;
+    }
 
     isDragging.value = true;
     startX.value = e.touches[0].clientX;
@@ -164,8 +164,8 @@ return;
 
 const onDragTouch = (e) => {
     if (!isDragging.value || e.touches.length !== 1) {
-return;
-}
+        return;
+    }
 
     const dx = e.touches[0].clientX - startX.value;
     const dy = e.touches[0].clientY - startY.value;
@@ -183,8 +183,8 @@ const onFileSelected = (e) => {
     const file = e.target.files[0];
 
     if (!file) {
-return;
-}
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -218,8 +218,8 @@ const onImageLoaded = (e) => {
 // Canvas-based cropping to exactly 1280x720 (16:9)
 const executeCrop = () => {
     if (!imageLoaded.value) {
-return;
-}
+        return;
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280;
@@ -258,8 +258,8 @@ const openAddModal = () => {
     croppedImageSrc.value = '';
 
     if (fileInputRef.value) {
-fileInputRef.value.value = '';
-}
+        fileInputRef.value.value = '';
+    }
 
     showFormModal.value = true;
 };
@@ -275,8 +275,8 @@ const openEditModal = (banner) => {
     croppedImageSrc.value = banner.image_url;
 
     if (fileInputRef.value) {
-fileInputRef.value.value = '';
-}
+        fileInputRef.value.value = '';
+    }
 
     showFormModal.value = true;
 };
@@ -355,8 +355,8 @@ const confirmDelete = (banner) => {
 
 const executeDelete = async () => {
     if (!bannerToDelete.value) {
-return;
-}
+        return;
+    }
 
     try {
         const response = await axios.delete(
@@ -423,33 +423,46 @@ const openEditVoucherModal = (voucher) => {
 
 const submitVoucherForm = async () => {
     isSubmittingVoucher.value = true;
+
     try {
         const payload = {
             ...voucherForm.value,
-            is_active: voucherForm.value.is_active ? 1 : 0
+            is_active: voucherForm.value.is_active ? 1 : 0,
         };
-        
+
         let response;
+
         if (isEditingVoucher.value) {
-            response = await axios.post(`/api/vouchers/${editingVoucherId.value}`, payload);
+            response = await axios.post(
+                `/api/vouchers/${editingVoucherId.value}`,
+                payload,
+            );
+
             if (response.data.success) {
-                const idx = localVouchers.value.findIndex(v => v.id === editingVoucherId.value);
+                const idx = localVouchers.value.findIndex(
+                    (v) => v.id === editingVoucherId.value,
+                );
+
                 if (idx !== -1) {
                     localVouchers.value[idx] = response.data.voucher;
                 }
+
                 triggerToast('Voucher berhasil diperbarui!', 'success');
             }
         } else {
             response = await axios.post('/api/vouchers', payload);
+
             if (response.data.success) {
                 localVouchers.value.unshift(response.data.voucher);
                 triggerToast('Voucher baru berhasil ditambahkan!', 'success');
             }
         }
+
         showVoucherModal.value = false;
     } catch (error) {
         console.error(error);
-        const errMsg = error.response?.data?.message || 'Gagal menyimpan voucher.';
+        const errMsg =
+            error.response?.data?.message || 'Gagal menyimpan voucher.';
         triggerToast(errMsg, 'error');
     } finally {
         isSubmittingVoucher.value = false;
@@ -465,12 +478,19 @@ const confirmDeleteVoucher = (voucher) => {
 };
 
 const executeDeleteVoucher = async () => {
-    if (!voucherToDelete.value) return;
-    
+    if (!voucherToDelete.value) {
+return;
+}
+
     try {
-        const response = await axios.delete(`/api/vouchers/${voucherToDelete.value.id}`);
+        const response = await axios.delete(
+            `/api/vouchers/${voucherToDelete.value.id}`,
+        );
+
         if (response.data.success) {
-            localVouchers.value = localVouchers.value.filter(v => v.id !== voucherToDelete.value.id);
+            localVouchers.value = localVouchers.value.filter(
+                (v) => v.id !== voucherToDelete.value.id,
+            );
             triggerToast('Voucher berhasil dihapus!', 'success');
         }
     } catch (error) {
@@ -491,12 +511,15 @@ const toggleVoucherStatus = async (voucher) => {
             discount_type: voucher.discount_type,
             discount_value: voucher.discount_value,
             min_purchase: voucher.min_purchase,
-            is_active: newStatus ? 1 : 0
+            is_active: newStatus ? 1 : 0,
         });
-        
+
         if (response.data.success) {
             voucher.is_active = newStatus;
-            triggerToast(`Voucher berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`, 'success');
+            triggerToast(
+                `Voucher berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`,
+                'success',
+            );
         }
     } catch (error) {
         console.error(error);
@@ -565,33 +588,46 @@ const openEditPromoDealModal = (promo) => {
 
 const submitPromoDealForm = async () => {
     isSubmittingPromoDeal.value = true;
+
     try {
         const payload = {
             ...promoDealForm.value,
-            is_active: promoDealForm.value.is_active ? 1 : 0
+            is_active: promoDealForm.value.is_active ? 1 : 0,
         };
-        
+
         let response;
+
         if (isEditingPromoDeal.value) {
-            response = await axios.post(`/api/promotions/${editingPromoDealId.value}`, payload);
+            response = await axios.post(
+                `/api/promotions/${editingPromoDealId.value}`,
+                payload,
+            );
+
             if (response.data.success) {
-                const idx = localPromotions.value.findIndex(p => p.id === editingPromoDealId.value);
+                const idx = localPromotions.value.findIndex(
+                    (p) => p.id === editingPromoDealId.value,
+                );
+
                 if (idx !== -1) {
                     localPromotions.value[idx] = response.data.promotion;
                 }
+
                 triggerToast('Promo berhasil diperbarui!', 'success');
             }
         } else {
             response = await axios.post('/api/promotions', payload);
+
             if (response.data.success) {
                 localPromotions.value.unshift(response.data.promotion);
                 triggerToast('Promo baru berhasil ditambahkan!', 'success');
             }
         }
+
         showPromoDealModal.value = false;
     } catch (error) {
         console.error(error);
-        const errMsg = error.response?.data?.message || 'Gagal menyimpan promo.';
+        const errMsg =
+            error.response?.data?.message || 'Gagal menyimpan promo.';
         triggerToast(errMsg, 'error');
     } finally {
         isSubmittingPromoDeal.value = false;
@@ -607,12 +643,19 @@ const confirmDeletePromoDeal = (promo) => {
 };
 
 const executeDeletePromoDeal = async () => {
-    if (!promoDealToDelete.value) return;
-    
+    if (!promoDealToDelete.value) {
+return;
+}
+
     try {
-        const response = await axios.delete(`/api/promotions/${promoDealToDelete.value.id}`);
+        const response = await axios.delete(
+            `/api/promotions/${promoDealToDelete.value.id}`,
+        );
+
         if (response.data.success) {
-            localPromotions.value = localPromotions.value.filter(p => p.id !== promoDealToDelete.value.id);
+            localPromotions.value = localPromotions.value.filter(
+                (p) => p.id !== promoDealToDelete.value.id,
+            );
             triggerToast('Promo berhasil dihapus!', 'success');
         }
     } catch (error) {
@@ -637,12 +680,15 @@ const togglePromoDealStatus = async (promo) => {
             get_quantity: promo.get_quantity,
             discount_type: promo.discount_type,
             discount_value: promo.discount_value,
-            is_active: newStatus ? 1 : 0
+            is_active: newStatus ? 1 : 0,
         });
-        
+
         if (response.data.success) {
             promo.is_active = newStatus;
-            triggerToast(`Promo berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`, 'success');
+            triggerToast(
+                `Promo berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`,
+                'success',
+            );
         }
     } catch (error) {
         console.error(error);
@@ -792,15 +838,22 @@ const togglePromoDealStatus = async (promo) => {
             </div>
 
             <!-- Section Pembatas & Heading Kelola Voucher -->
-            <div class="relative overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm md:p-8">
-                <div class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"></div>
-                <div class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div
+                class="relative overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm md:p-8"
+            >
+                <div
+                    class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
+                ></div>
+                <div
+                    class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                >
                     <div>
                         <h2 class="text-2xl font-black text-[#3B2314]">
                             Kelola Voucher Promo
                         </h2>
                         <p class="text-xs text-gray-500">
-                            Buat, edit, dan atur kupon diskon nominal atau persentase untuk pemesanan pelanggan.
+                            Buat, edit, dan atur kupon diskon nominal atau
+                            persentase untuk pemesanan pelanggan.
                         </p>
                     </div>
                     <button
@@ -826,59 +879,101 @@ const togglePromoDealStatus = async (promo) => {
                 </div>
             </div>
 
-            <div v-if="localVouchers.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+                v-if="localVouchers.length > 0"
+                class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
                 <div
                     v-for="voucher in localVouchers"
                     :key="voucher.id"
-                    class="group overflow-hidden rounded-lg border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                    class="group flex flex-col justify-between overflow-hidden rounded-lg border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md"
                 >
                     <!-- Header Voucher Card -->
-                    <div class="relative bg-gradient-to-r from-[#3B2314] to-[#4e301d] p-5 text-white flex flex-col gap-2">
+                    <div
+                        class="relative flex flex-col gap-2 bg-gradient-to-r from-[#3B2314] to-[#4e301d] p-5 text-white"
+                    >
                         <!-- Switch Toggle Active Status -->
-                        <div class="absolute top-4 right-4 flex items-center gap-1.5 bg-black/25 backdrop-blur-sm rounded-full py-1 px-2.5">
-                            <span class="text-[9px] font-black uppercase text-[#FAEDCD]">
+                        <div
+                            class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 backdrop-blur-sm"
+                        >
+                            <span
+                                class="text-[9px] font-black text-[#FAEDCD] uppercase"
+                            >
                                 {{ voucher.is_active ? 'Aktif' : 'Nonaktif' }}
                             </span>
-                            <button 
+                            <button
                                 @click="toggleVoucherStatus(voucher)"
                                 class="relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                                :class="voucher.is_active ? 'bg-emerald-500' : 'bg-gray-400'"
+                                :class="
+                                    voucher.is_active
+                                        ? 'bg-emerald-500'
+                                        : 'bg-gray-400'
+                                "
                             >
-                                <span 
+                                <span
                                     class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                    :class="voucher.is_active ? 'translate-x-3' : 'translate-x-0'"
+                                    :class="
+                                        voucher.is_active
+                                            ? 'translate-x-3'
+                                            : 'translate-x-0'
+                                    "
                                 ></span>
                             </button>
                         </div>
-                        
-                        <span class="inline-block self-start rounded-lg bg-[#FAEDCD] px-3 py-1 text-xs font-black text-[#3B2314] tracking-wider uppercase shadow-sm">
+
+                        <span
+                            class="inline-block self-start rounded-lg bg-[#FAEDCD] px-3 py-1 text-xs font-black tracking-wider text-[#3B2314] uppercase shadow-sm"
+                        >
                             {{ voucher.code }}
                         </span>
-                        
-                        <h3 class="text-sm font-extrabold text-[#FAEDCD] line-clamp-1 mt-1">
+
+                        <h3
+                            class="mt-1 line-clamp-1 text-sm font-extrabold text-[#FAEDCD]"
+                        >
                             {{ voucher.name }}
                         </h3>
                     </div>
 
                     <!-- Detail & Action Voucher -->
-                    <div class="p-5 flex-1 flex flex-col justify-between gap-4">
+                    <div class="flex flex-1 flex-col justify-between gap-4 p-5">
                         <div class="space-y-2 text-xs">
-                            <div class="flex items-center justify-between text-gray-500">
+                            <div
+                                class="flex items-center justify-between text-gray-500"
+                            >
                                 <span>Tipe Potongan</span>
-                                <span class="font-bold text-[#3B2314] uppercase">
-                                    {{ voucher.discount_type === 'percentage' ? 'Persentase (%)' : 'Nominal (Rupiah)' }}
+                                <span
+                                    class="font-bold text-[#3B2314] uppercase"
+                                >
+                                    {{
+                                        voucher.discount_type === 'percentage'
+                                            ? 'Persentase (%)'
+                                            : 'Nominal (Rupiah)'
+                                    }}
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between text-gray-500">
+                            <div
+                                class="flex items-center justify-between text-gray-500"
+                            >
                                 <span>Nilai Potongan</span>
                                 <span class="font-extrabold text-emerald-600">
-                                    {{ voucher.discount_type === 'percentage' ? `${parseFloat(voucher.discount_value)}%` : `Rp ${parseFloat(voucher.discount_value).toLocaleString('id-ID')}` }}
+                                    {{
+                                        voucher.discount_type === 'percentage'
+                                            ? `${parseFloat(voucher.discount_value)}%`
+                                            : `Rp ${parseFloat(voucher.discount_value).toLocaleString('id-ID')}`
+                                    }}
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between text-gray-500">
+                            <div
+                                class="flex items-center justify-between text-gray-500"
+                            >
                                 <span>Minimal Belanja</span>
                                 <span class="font-bold text-[#3B2314]">
-                                    Rp {{ parseFloat(voucher.min_purchase).toLocaleString('id-ID') }}
+                                    Rp
+                                    {{
+                                        parseFloat(
+                                            voucher.min_purchase,
+                                        ).toLocaleString('id-ID')
+                                    }}
                                 </span>
                             </div>
                         </div>
@@ -932,15 +1027,23 @@ const togglePromoDealStatus = async (promo) => {
             <!-- SECTION KELOLA POTONGAN & BUY 1 GET 1 (Hanya Owner & Barista) -->
             <div v-if="isAllowedRole" class="space-y-8">
                 <!-- Section Pembatas & Heading -->
-                <div class="relative overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm md:p-8">
-                    <div class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"></div>
-                    <div class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                    class="relative overflow-hidden rounded-xl border border-[#D4A373]/20 bg-white p-6 shadow-sm md:p-8"
+                >
+                    <div
+                        class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#D4A373]/10 blur-2xl"
+                    ></div>
+                    <div
+                        class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
                         <div>
                             <h2 class="text-2xl font-black text-[#3B2314]">
                                 Kelola Potongan & Promo Deal
                             </h2>
                             <p class="text-xs text-gray-500">
-                                Buat dan kelola paket promo bundling item (contoh: Kopi + Makanan) atau Buy 1 Get 1 (Beli X Gratis Y).
+                                Buat dan kelola paket promo bundling item
+                                (contoh: Kopi + Makanan) atau Buy 1 Get 1 (Beli
+                                X Gratis Y).
                             </p>
                         </div>
                         <button
@@ -967,75 +1070,165 @@ const togglePromoDealStatus = async (promo) => {
                 </div>
 
                 <!-- Grid List Promo Deal -->
-                <div v-if="localPromotions.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div
+                    v-if="localPromotions.length > 0"
+                    class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                >
                     <div
                         v-for="promo in localPromotions"
                         :key="promo.id"
-                        class="group overflow-hidden rounded-lg border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                        class="group flex flex-col justify-between overflow-hidden rounded-lg border border-[#D4A373]/20 bg-white shadow-sm transition hover:shadow-md"
                     >
                         <!-- Header Card -->
-                        <div class="relative bg-gradient-to-r from-[#5C3E21] to-[#3B2314] p-5 text-white flex flex-col gap-2">
+                        <div
+                            class="relative flex flex-col gap-2 bg-gradient-to-r from-[#5C3E21] to-[#3B2314] p-5 text-white"
+                        >
                             <!-- Toggle switch status aktif -->
-                            <div class="absolute top-4 right-4 flex items-center gap-1.5 bg-black/25 backdrop-blur-sm rounded-full py-1 px-2.5">
-                                <span class="text-[9px] font-black uppercase text-[#FAEDCD]">
+                            <div
+                                class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 backdrop-blur-sm"
+                            >
+                                <span
+                                    class="text-[9px] font-black text-[#FAEDCD] uppercase"
+                                >
                                     {{ promo.is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
-                                <button 
+                                <button
                                     @click="togglePromoDealStatus(promo)"
                                     class="relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                                    :class="promo.is_active ? 'bg-emerald-500' : 'bg-gray-400'"
+                                    :class="
+                                        promo.is_active
+                                            ? 'bg-emerald-500'
+                                            : 'bg-gray-400'
+                                    "
                                 >
-                                    <span 
+                                    <span
                                         class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                        :class="promo.is_active ? 'translate-x-3' : 'translate-x-0'"
+                                        :class="
+                                            promo.is_active
+                                                ? 'translate-x-3'
+                                                : 'translate-x-0'
+                                        "
                                     ></span>
                                 </button>
                             </div>
-                            
-                            <span class="inline-block self-start rounded-lg bg-[#FAEDCD] px-3 py-1 text-[10px] font-black text-[#3B2314] tracking-wider uppercase shadow-sm">
-                                {{ promo.type === 'bundling' ? 'Paket Bundling' : 'Buy X Get Y' }}
+
+                            <span
+                                class="inline-block self-start rounded-lg bg-[#FAEDCD] px-3 py-1 text-[10px] font-black tracking-wider text-[#3B2314] uppercase shadow-sm"
+                            >
+                                {{
+                                    promo.type === 'bundling'
+                                        ? 'Paket Bundling'
+                                        : 'Buy X Get Y'
+                                }}
                             </span>
-                            
-                            <h3 class="text-sm font-extrabold text-[#FAEDCD] line-clamp-1 mt-1">
+
+                            <h3
+                                class="mt-1 line-clamp-1 text-sm font-extrabold text-[#FAEDCD]"
+                            >
                                 {{ promo.name }}
                             </h3>
                         </div>
 
                         <!-- Details & Actions -->
-                        <div class="p-5 flex-1 flex flex-col justify-between gap-4">
+                        <div
+                            class="flex flex-1 flex-col justify-between gap-4 p-5"
+                        >
                             <!-- Detail Kondisi Promo -->
                             <div class="space-y-3 text-xs">
                                 <!-- Bundling Info -->
-                                <div v-if="promo.type === 'bundling'" class="space-y-2">
-                                    <div class="flex flex-col gap-1 rounded bg-gray-50 p-2 border">
-                                        <span class="text-[10px] text-gray-400 font-bold uppercase">Item Wajib Beli:</span>
-                                        <div class="flex justify-between items-center text-[#3B2314]">
-                                            <span class="font-black">{{ promo.buy_quantity }}x {{ promo.buy_product?.name || 'Produk Utama' }}</span>
+                                <div
+                                    v-if="promo.type === 'bundling'"
+                                    class="space-y-2"
+                                >
+                                    <div
+                                        class="flex flex-col gap-1 rounded border bg-gray-50 p-2"
+                                    >
+                                        <span
+                                            class="text-[10px] font-bold text-gray-400 uppercase"
+                                            >Item Wajib Beli:</span
+                                        >
+                                        <div
+                                            class="flex items-center justify-between text-[#3B2314]"
+                                        >
+                                            <span class="font-black"
+                                                >{{ promo.buy_quantity }}x
+                                                {{
+                                                    promo.buy_product?.name ||
+                                                    'Produk Utama'
+                                                }}</span
+                                            >
                                         </div>
-                                        <div class="flex justify-between items-center text-[#3B2314] border-t pt-1 mt-1">
-                                            <span class="font-black">1x {{ promo.bundling_product?.name || 'Produk Bundling' }}</span>
+                                        <div
+                                            class="mt-1 flex items-center justify-between border-t pt-1 text-[#3B2314]"
+                                        >
+                                            <span class="font-black"
+                                                >1x
+                                                {{
+                                                    promo.bundling_product
+                                                        ?.name ||
+                                                    'Produk Bundling'
+                                                }}</span
+                                            >
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-between text-gray-500">
+                                    <div
+                                        class="flex items-center justify-between text-gray-500"
+                                    >
                                         <span>Reward Diskon</span>
-                                        <span class="font-extrabold text-emerald-600 text-sm">
-                                            {{ promo.discount_type === 'percentage' ? `Potongan ${parseFloat(promo.discount_value)}%` : `Potongan Rp ${parseFloat(promo.discount_value).toLocaleString('id-ID')}` }}
+                                        <span
+                                            class="text-sm font-extrabold text-emerald-600"
+                                        >
+                                            {{
+                                                promo.discount_type ===
+                                                'percentage'
+                                                    ? `Potongan ${parseFloat(promo.discount_value)}%`
+                                                    : `Potongan Rp ${parseFloat(promo.discount_value).toLocaleString('id-ID')}`
+                                            }}
                                         </span>
                                     </div>
                                 </div>
 
                                 <!-- Buy Get Info -->
                                 <div v-else class="space-y-2">
-                                    <div class="flex flex-col gap-1 rounded bg-gray-50 p-2 border">
-                                        <span class="text-[10px] text-gray-400 font-bold uppercase">Beli Produk:</span>
-                                        <span class="font-black text-[#3B2314]">{{ promo.buy_quantity }}x {{ promo.buy_product?.name || 'Produk Utama' }}</span>
-                                        <span class="text-[10px] text-gray-400 font-bold uppercase mt-1 border-t pt-1">Mendapatkan Bonus:</span>
-                                        <span class="font-black text-emerald-600">{{ promo.get_quantity }}x {{ promo.get_product?.name || 'Produk Bonus' }}</span>
+                                    <div
+                                        class="flex flex-col gap-1 rounded border bg-gray-50 p-2"
+                                    >
+                                        <span
+                                            class="text-[10px] font-bold text-gray-400 uppercase"
+                                            >Beli Produk:</span
+                                        >
+                                        <span class="font-black text-[#3B2314]"
+                                            >{{ promo.buy_quantity }}x
+                                            {{
+                                                promo.buy_product?.name ||
+                                                'Produk Utama'
+                                            }}</span
+                                        >
+                                        <span
+                                            class="mt-1 border-t pt-1 text-[10px] font-bold text-gray-400 uppercase"
+                                            >Mendapatkan Bonus:</span
+                                        >
+                                        <span
+                                            class="font-black text-emerald-600"
+                                            >{{ promo.get_quantity }}x
+                                            {{
+                                                promo.get_product?.name ||
+                                                'Produk Bonus'
+                                            }}</span
+                                        >
                                     </div>
-                                    <div class="flex items-center justify-between text-gray-500">
+                                    <div
+                                        class="flex items-center justify-between text-gray-500"
+                                    >
                                         <span>Reward Bonus</span>
-                                        <span class="font-extrabold text-emerald-600 text-sm">
-                                            {{ promo.discount_type === 'free' ? 'GRATIS' : `Potongan Rp ${parseFloat(promo.discount_value).toLocaleString('id-ID')}` }}
+                                        <span
+                                            class="text-sm font-extrabold text-emerald-600"
+                                        >
+                                            {{
+                                                promo.discount_type === 'free'
+                                                    ? 'GRATIS'
+                                                    : `Potongan Rp ${parseFloat(promo.discount_value).toLocaleString('id-ID')}`
+                                            }}
                                         </span>
                                     </div>
                                 </div>
@@ -1523,7 +1716,11 @@ const togglePromoDealStatus = async (promo) => {
                     class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white"
                 >
                     <h3 class="truncate text-sm font-extrabold text-[#FAEDCD]">
-                        {{ isEditingVoucher ? 'Edit Voucher Promo' : 'Tambah Voucher Baru' }}
+                        {{
+                            isEditingVoucher
+                                ? 'Edit Voucher Promo'
+                                : 'Tambah Voucher Baru'
+                        }}
                     </h3>
                     <button
                         @click="showVoucherModal = false"
@@ -1547,23 +1744,34 @@ const togglePromoDealStatus = async (promo) => {
                 </div>
 
                 <!-- Form Body -->
-                <form @submit.prevent="submitVoucherForm" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <form
+                    @submit.prevent="submitVoucherForm"
+                    class="flex-1 space-y-4 overflow-y-auto p-6"
+                >
                     <!-- Kode Voucher -->
                     <div>
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Kode Voucher</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Kode Voucher</label
+                        >
                         <input
                             v-model="voucherForm.code"
                             type="text"
                             placeholder="Contoh: COFFEEHEBAT"
                             required
-                            class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold uppercase text-[#3B2314] placeholder-[#3B2314]/30 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] uppercase placeholder-[#3B2314]/30 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         />
-                        <p class="mt-1 text-[10px] text-gray-400">Kode unik yang diinput oleh pelanggan saat checkout.</p>
+                        <p class="mt-1 text-[10px] text-gray-400">
+                            Kode unik yang diinput oleh pelanggan saat checkout.
+                        </p>
                     </div>
 
                     <!-- Nama Voucher -->
                     <div>
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Nama Voucher</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Nama Voucher</label
+                        >
                         <input
                             v-model="voucherForm.name"
                             type="text"
@@ -1576,62 +1784,98 @@ const togglePromoDealStatus = async (promo) => {
                     <!-- Grid: Tipe Potongan & Nilai Potongan -->
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Tipe Potongan</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Tipe Potongan</label
+                            >
                             <select
                                 v-model="voucherForm.discount_type"
                                 class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             >
-                                <option value="percentage">Persentase (%)</option>
-                                <option value="nominal">Nominal (Rupiah)</option>
+                                <option value="percentage">
+                                    Persentase (%)
+                                </option>
+                                <option value="nominal">
+                                    Nominal (Rupiah)
+                                </option>
                             </select>
                         </div>
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">
-                                {{ voucherForm.discount_type === 'percentage' ? 'Nilai Potongan (%)' : 'Nilai Potongan (Rp)' }}
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                            >
+                                {{
+                                    voucherForm.discount_type === 'percentage'
+                                        ? 'Nilai Potongan (%)'
+                                        : 'Nilai Potongan (Rp)'
+                                }}
                             </label>
                             <input
                                 v-model.number="voucherForm.discount_value"
                                 type="number"
                                 min="0"
                                 required
-                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 font-mono text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             />
                         </div>
                     </div>
 
                     <!-- Minimal Pembelian -->
                     <div>
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Minimal Pembelian (Rp)</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Minimal Pembelian (Rp)</label
+                        >
                         <input
                             v-model.number="voucherForm.min_purchase"
                             type="number"
                             min="0"
                             required
-                            class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                            class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 font-mono text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         />
                     </div>
 
                     <!-- Status Aktif Switch -->
-                    <div class="flex items-center justify-between rounded-lg bg-gray-50 p-3.5 border">
+                    <div
+                        class="flex items-center justify-between rounded-lg border bg-gray-50 p-3.5"
+                    >
                         <div>
-                            <span class="block text-xs font-extrabold text-[#3B2314]">Aktifkan Voucher</span>
-                            <span class="text-[10px] text-gray-500">Tentukan apakah voucher ini bisa langsung digunakan oleh pelanggan.</span>
+                            <span
+                                class="block text-xs font-extrabold text-[#3B2314]"
+                                >Aktifkan Voucher</span
+                            >
+                            <span class="text-[10px] text-gray-500"
+                                >Tentukan apakah voucher ini bisa langsung
+                                digunakan oleh pelanggan.</span
+                            >
                         </div>
                         <button
                             type="button"
-                            @click="voucherForm.is_active = !voucherForm.is_active"
+                            @click="
+                                voucherForm.is_active = !voucherForm.is_active
+                            "
                             class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                            :class="voucherForm.is_active ? 'bg-emerald-500' : 'bg-gray-300'"
+                            :class="
+                                voucherForm.is_active
+                                    ? 'bg-emerald-500'
+                                    : 'bg-gray-300'
+                            "
                         >
                             <span
                                 class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                :class="voucherForm.is_active ? 'translate-x-5' : 'translate-x-0'"
+                                :class="
+                                    voucherForm.is_active
+                                        ? 'translate-x-5'
+                                        : 'translate-x-0'
+                                "
                             ></span>
                         </button>
                     </div>
 
                     <!-- Footer Modal Buttons -->
-                    <div class="flex items-center justify-end gap-3 border-t pt-4 mt-6">
+                    <div
+                        class="mt-6 flex items-center justify-end gap-3 border-t pt-4"
+                    >
                         <button
                             type="button"
                             @click="showVoucherModal = false"
@@ -1644,7 +1888,11 @@ const togglePromoDealStatus = async (promo) => {
                             :disabled="isSubmittingVoucher"
                             class="rounded-lg bg-[#3B2314] px-5 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
                         >
-                            {{ isSubmittingVoucher ? 'Menyimpan...' : 'Simpan Voucher' }}
+                            {{
+                                isSubmittingVoucher
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Voucher'
+                            }}
                         </button>
                     </div>
                 </form>
@@ -1681,7 +1929,9 @@ const togglePromoDealStatus = async (promo) => {
                     Hapus Voucher Promo?
                 </h3>
                 <p class="mt-2 text-xs text-gray-500">
-                    Tindakan ini permanen. Voucher <b>{{ voucherToDelete?.code }}</b> akan dihapus dari sistem dan tidak dapat digunakan lagi.
+                    Tindakan ini permanen. Voucher
+                    <b>{{ voucherToDelete?.code }}</b> akan dihapus dari sistem
+                    dan tidak dapat digunakan lagi.
                 </p>
                 <div class="mt-6 flex items-center justify-center gap-3">
                     <button
@@ -1712,7 +1962,11 @@ const togglePromoDealStatus = async (promo) => {
                     class="flex items-center justify-between bg-[#3B2314] px-6 py-4 text-white"
                 >
                     <h3 class="truncate text-sm font-extrabold text-[#FAEDCD]">
-                        {{ isEditingPromoDeal ? 'Edit Promo Deal' : 'Tambah Promo Deal Baru' }}
+                        {{
+                            isEditingPromoDeal
+                                ? 'Edit Promo Deal'
+                                : 'Tambah Promo Deal Baru'
+                        }}
                     </h3>
                     <button
                         @click="showPromoDealModal = false"
@@ -1736,10 +1990,16 @@ const togglePromoDealStatus = async (promo) => {
                 </div>
 
                 <!-- Form Body -->
-                <form @submit.prevent="submitPromoDealForm" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <form
+                    @submit.prevent="submitPromoDealForm"
+                    class="flex-1 space-y-4 overflow-y-auto p-6"
+                >
                     <!-- Nama Promo -->
                     <div>
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Nama Promo Deal</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Nama Promo Deal</label
+                        >
                         <input
                             v-model="promoDealForm.name"
                             type="text"
@@ -1751,78 +2011,126 @@ const togglePromoDealStatus = async (promo) => {
 
                     <!-- Tipe Promo -->
                     <div>
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Tipe Promo</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Tipe Promo</label
+                        >
                         <select
                             v-model="promoDealForm.type"
                             class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         >
-                            <option value="bundling">Paket Bundling Potongan (Beli A + B dapet Potongan)</option>
-                            <option value="buy_get">Buy X Get Y (Beli X dapet Bonus Y)</option>
+                            <option value="bundling">
+                                Paket Bundling Potongan (Beli A + B dapet
+                                Potongan)
+                            </option>
+                            <option value="buy_get">
+                                Buy X Get Y (Beli X dapet Bonus Y)
+                            </option>
                         </select>
                     </div>
 
                     <!-- Blok Pilihan Produk Pembelian -->
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-2">
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Produk Utama</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Produk Utama</label
+                            >
                             <select
                                 v-model="promoDealForm.buy_product_id"
                                 required
                                 class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             >
-                                <option v-for="product in products" :key="product.id" :value="product.id">
-                                    {{ product.name }} (Rp {{ parseFloat(product.price).toLocaleString('id-ID') }})
+                                <option
+                                    v-for="product in products"
+                                    :key="product.id"
+                                    :value="product.id"
+                                >
+                                    {{ product.name }} (Rp
+                                    {{
+                                        parseFloat(
+                                            product.price,
+                                        ).toLocaleString('id-ID')
+                                    }})
                                 </option>
                             </select>
                         </div>
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Kuantitas</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Kuantitas</label
+                            >
                             <input
                                 v-model.number="promoDealForm.buy_quantity"
                                 type="number"
                                 min="1"
                                 required
-                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 font-mono text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             />
                         </div>
                     </div>
 
                     <!-- Jika Tipe = Bundling (Pilih Item Kedua) -->
                     <div v-if="promoDealForm.type === 'bundling'">
-                        <label class="mb-1 block text-xs font-bold text-gray-700">Kombinasi Produk Bundling</label>
+                        <label
+                            class="mb-1 block text-xs font-bold text-gray-700"
+                            >Kombinasi Produk Bundling</label
+                        >
                         <select
                             v-model="promoDealForm.bundling_product_id"
                             required
                             class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                         >
-                            <option v-for="product in products" :key="product.id" :value="product.id">
-                                {{ product.name }} (Rp {{ parseFloat(product.price).toLocaleString('id-ID') }})
+                            <option
+                                v-for="product in products"
+                                :key="product.id"
+                                :value="product.id"
+                            >
+                                {{ product.name }} (Rp
+                                {{
+                                    parseFloat(product.price).toLocaleString(
+                                        'id-ID',
+                                    )
+                                }})
                             </option>
                         </select>
                     </div>
 
                     <!-- Jika Tipe = Buy Get (Pilih Bonus Item & Kuantitas) -->
-                    <div v-if="promoDealForm.type === 'buy_get'" class="grid grid-cols-3 gap-2">
+                    <div
+                        v-if="promoDealForm.type === 'buy_get'"
+                        class="grid grid-cols-3 gap-2"
+                    >
                         <div class="col-span-2">
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Bonus Produk (Free/Discounted)</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Bonus Produk (Free/Discounted)</label
+                            >
                             <select
                                 v-model="promoDealForm.get_product_id"
                                 required
                                 class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             >
-                                <option v-for="product in products" :key="product.id" :value="product.id">
+                                <option
+                                    v-for="product in products"
+                                    :key="product.id"
+                                    :value="product.id"
+                                >
                                     {{ product.name }}
                                 </option>
                             </select>
                         </div>
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Kuantitas</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Kuantitas</label
+                            >
                             <input
                                 v-model.number="promoDealForm.get_quantity"
                                 type="number"
                                 min="1"
                                 required
-                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
+                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 font-mono text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             />
                         </div>
                     </div>
@@ -1830,50 +2138,88 @@ const togglePromoDealStatus = async (promo) => {
                     <!-- Grid: Tipe Potongan & Nilai Potongan -->
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Tipe Potongan Reward</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Tipe Potongan Reward</label
+                            >
                             <select
                                 v-model="promoDealForm.discount_type"
                                 class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373]"
                             >
-                                <option value="nominal">Nominal (Rupiah)</option>
-                                <option value="percentage">Persentase (%)</option>
-                                <option value="free" v-if="promoDealForm.type === 'buy_get'">Gratis Item Bonus</option>
+                                <option value="nominal">
+                                    Nominal (Rupiah)
+                                </option>
+                                <option value="percentage">
+                                    Persentase (%)
+                                </option>
+                                <option
+                                    value="free"
+                                    v-if="promoDealForm.type === 'buy_get'"
+                                >
+                                    Gratis Item Bonus
+                                </option>
                             </select>
                         </div>
                         <div>
-                            <label class="mb-1 block text-xs font-bold text-gray-700">Nilai Potongan / Reward</label>
+                            <label
+                                class="mb-1 block text-xs font-bold text-gray-700"
+                                >Nilai Potongan / Reward</label
+                            >
                             <input
                                 v-model.number="promoDealForm.discount_value"
                                 type="number"
                                 min="0"
-                                :disabled="promoDealForm.discount_type === 'free'"
+                                :disabled="
+                                    promoDealForm.discount_type === 'free'
+                                "
                                 required
-                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs font-mono font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] disabled:bg-gray-100"
+                                class="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 font-mono text-xs font-bold text-[#3B2314] shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] disabled:bg-gray-100"
                             />
                         </div>
                     </div>
 
                     <!-- Status Aktif Switch -->
-                    <div class="flex items-center justify-between rounded-lg bg-gray-50 p-3.5 border">
+                    <div
+                        class="flex items-center justify-between rounded-lg border bg-gray-50 p-3.5"
+                    >
                         <div>
-                            <span class="block text-xs font-extrabold text-[#3B2314]">Aktifkan Promo Deal</span>
-                            <span class="text-[10px] text-gray-500">Tentukan apakah promo bundling ini langsung aktif dan bisa digunakan.</span>
+                            <span
+                                class="block text-xs font-extrabold text-[#3B2314]"
+                                >Aktifkan Promo Deal</span
+                            >
+                            <span class="text-[10px] text-gray-500"
+                                >Tentukan apakah promo bundling ini langsung
+                                aktif dan bisa digunakan.</span
+                            >
                         </div>
                         <button
                             type="button"
-                            @click="promoDealForm.is_active = !promoDealForm.is_active"
+                            @click="
+                                promoDealForm.is_active =
+                                    !promoDealForm.is_active
+                            "
                             class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                            :class="promoDealForm.is_active ? 'bg-emerald-500' : 'bg-gray-300'"
+                            :class="
+                                promoDealForm.is_active
+                                    ? 'bg-emerald-500'
+                                    : 'bg-gray-300'
+                            "
                         >
                             <span
                                 class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                :class="promoDealForm.is_active ? 'translate-x-5' : 'translate-x-0'"
+                                :class="
+                                    promoDealForm.is_active
+                                        ? 'translate-x-5'
+                                        : 'translate-x-0'
+                                "
                             ></span>
                         </button>
                     </div>
 
                     <!-- Footer Modal Buttons -->
-                    <div class="flex items-center justify-end gap-3 border-t pt-4 mt-6">
+                    <div
+                        class="mt-6 flex items-center justify-end gap-3 border-t pt-4"
+                    >
                         <button
                             type="button"
                             @click="showPromoDealModal = false"
@@ -1886,7 +2232,11 @@ const togglePromoDealStatus = async (promo) => {
                             :disabled="isSubmittingPromoDeal"
                             class="rounded-lg bg-[#3B2314] px-5 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
                         >
-                            {{ isSubmittingPromoDeal ? 'Menyimpan...' : 'Simpan Promo Deal' }}
+                            {{
+                                isSubmittingPromoDeal
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Promo Deal'
+                            }}
                         </button>
                     </div>
                 </form>
@@ -1923,7 +2273,9 @@ const togglePromoDealStatus = async (promo) => {
                     Hapus Promo Deal?
                 </h3>
                 <p class="mt-2 text-xs text-gray-500">
-                    Tindakan ini permanen. Paket promo <b>{{ promoDealToDelete?.name }}</b> akan dihapus dari sistem.
+                    Tindakan ini permanen. Paket promo
+                    <b>{{ promoDealToDelete?.name }}</b> akan dihapus dari
+                    sistem.
                 </p>
                 <div class="mt-6 flex items-center justify-center gap-3">
                     <button

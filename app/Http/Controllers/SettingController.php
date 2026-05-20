@@ -89,9 +89,9 @@ class SettingController extends Controller
             }
 
             $isSingleDay = ($startDateStr === $endDateStr);
-            $dateFormatted = $isSingleDay 
-                ? Carbon::parse($startDateStr)->translatedFormat('d F Y') 
-                : Carbon::parse($startDateStr)->translatedFormat('d F Y') . ' s/d ' . Carbon::parse($endDateStr)->translatedFormat('d F Y');
+            $dateFormatted = $isSingleDay
+                ? Carbon::parse($startDateStr)->translatedFormat('d F Y')
+                : Carbon::parse($startDateStr)->translatedFormat('d F Y').' s/d '.Carbon::parse($endDateStr)->translatedFormat('d F Y');
 
             $totalOrders = Order::whereDate('created_at', '>=', $startDateStr)
                 ->whereDate('created_at', '<=', $endDateStr)
@@ -107,13 +107,13 @@ class SettingController extends Controller
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
 
-            $titleRecap = $isSingleDay ? "REKAP PENJUALAN HARIAN" : "REKAP PENJUALAN PERIODE";
-            $messageIntro = "Berikut adalah rincian rekapan transaksi penjualan:";
+            $titleRecap = $isSingleDay ? 'REKAP PENJUALAN HARIAN' : 'REKAP PENJUALAN PERIODE';
+            $messageIntro = 'Berikut adalah rincian rekapan transaksi penjualan:';
 
             $message = "📊 *LAPORAN {$titleRecap}* 📊\n".
                        "☕ *ZUNOI CAFFE* ☕\n\n".
                        "{$messageIntro}\n\n".
-                       '📅 *' . ($isSingleDay ? 'Tanggal' : 'Periode') . ':* ' . $dateFormatted . "\n".
+                       '📅 *'.($isSingleDay ? 'Tanggal' : 'Periode').':* '.$dateFormatted."\n".
                        "━━━━━━━━━━━━━━━━━━\n".
                        "📈 *RINGKASAN PERFORMA:*\n".
                        "• Total Transaksi: {$totalOrders} pesanan\n".
@@ -158,7 +158,7 @@ class SettingController extends Controller
             }
 
             $message .= "━━━━━━━━━━━━━━━━━━\n".
-                        "🏆 *5 MENU TERLARIS" . ($isSingleDay ? " HARI INI" : " PERIODE INI") . ":*\n";
+                        '🏆 *5 MENU TERLARIS'.($isSingleDay ? ' HARI INI' : ' PERIODE INI').":*\n";
 
             $topItems = OrderItem::select('product_id', DB::raw('SUM(quantity) as total_qty'))
                 ->whereHas('order', function ($query) use ($startDateStr, $endDateStr) {

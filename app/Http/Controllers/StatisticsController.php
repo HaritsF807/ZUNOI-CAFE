@@ -7,8 +7,8 @@ use App\Models\OrderItem;
 use App\Models\OrderItemAddon;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class StatisticsController extends Controller
 {
@@ -30,7 +30,7 @@ class StatisticsController extends Controller
         $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
 
         // --- Performance Mode ---
-        
+
         // Revenues
         $monthlyRevenue = Order::whereBetween('created_at', [$startOfMonth, $now])
             ->where('payment_status', 'paid')
@@ -60,7 +60,7 @@ class StatisticsController extends Controller
         $totalOrders = Order::whereBetween('created_at', [$startOfMonth, $now])
             ->where('payment_status', 'paid')
             ->count();
-            
+
         $lastMonthOrders = Order::whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
             ->where('payment_status', 'paid')
             ->count();
@@ -85,10 +85,10 @@ class StatisticsController extends Controller
         $todaysOrders = Order::whereDate('created_at', $now->toDateString())
             ->where('payment_status', 'paid')
             ->get();
-            
+
         $harianLabels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
         $harianData = array_fill(0, count($harianLabels), 0);
-        
+
         foreach ($todaysOrders as $order) {
             $hour = $order->created_at->hour;
             if ($hour >= 8 && $hour <= 22) {
@@ -102,16 +102,16 @@ class StatisticsController extends Controller
         // Chart Data (Mingguan)
         $startOfWeek = $now->copy()->startOfWeek();
         $endOfWeek = $now->copy()->endOfWeek();
-        
+
         $thisWeekChartOrders = Order::whereBetween('created_at', [$startOfWeek, $endOfWeek])
             ->where('payment_status', 'paid')
             ->get();
-            
+
         $mingguanLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
         $mingguanData = array_fill(0, 7, 0);
-        
+
         foreach ($thisWeekChartOrders as $order) {
-            $dayOfWeek = $order->created_at->dayOfWeekIso - 1; 
+            $dayOfWeek = $order->created_at->dayOfWeekIso - 1;
             $mingguanData[$dayOfWeek] += $order->total_price;
         }
 
@@ -119,10 +119,10 @@ class StatisticsController extends Controller
         $thisMonthOrders = Order::whereBetween('created_at', [$startOfMonth, $now])
             ->where('payment_status', 'paid')
             ->get();
-            
+
         $bulananLabels = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4', 'Minggu 5'];
         $bulananData = array_fill(0, 5, 0);
-        
+
         foreach ($thisMonthOrders as $order) {
             $weekOfMonth = ceil($order->created_at->day / 7) - 1;
             if (isset($bulananData[$weekOfMonth])) {
@@ -131,7 +131,7 @@ class StatisticsController extends Controller
         }
 
         // --- Menu Analysis Mode ---
-        
+
         // Top Products
         $topProducts = OrderItem::join('products', 'order_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
@@ -168,6 +168,7 @@ class StatisticsController extends Controller
                 if ($item->category === 'Makanan') {
                     $suggestion = 'Pertimbangkan diskon / paket bundle';
                 }
+
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
@@ -187,21 +188,24 @@ class StatisticsController extends Controller
             ->orderByDesc('sales')
             ->limit(5)
             ->get();
-            
+
         $addonsLabels = $addonsRaw->pluck('addon_name')->toArray();
-        $addonsSeries = $addonsRaw->pluck('sales')->map(fn($s) => (int)$s)->toArray();
-        
+        $addonsSeries = $addonsRaw->pluck('sales')->map(fn ($s) => (int) $s)->toArray();
+
         $addonsData = [
             'labels' => empty($addonsLabels) ? ['Belum ada data'] : $addonsLabels,
             'series' => empty($addonsSeries) ? [0] : $addonsSeries,
         ];
 
         // --- Operations Mode ---
-        
-        $toPercentages = function($series) {
+
+        $toPercentages = function ($series) {
             $total = array_sum($series);
-            if ($total == 0) return $series;
-            return array_map(fn($v) => round(($v / $total) * 100, 1), $series);
+            if ($total == 0) {
+                return $series;
+            }
+
+            return array_map(fn ($v) => round(($v / $total) * 100, 1), $series);
         };
 
         // Category Sales
@@ -213,9 +217,9 @@ class StatisticsController extends Controller
             ->select('categories.name', DB::raw('SUM(order_items.quantity * order_items.price_at_sale) as total_revenue'))
             ->groupBy('categories.name')
             ->get();
-            
+
         $categoryLabels = $categorySales->pluck('name')->toArray();
-        $categorySeries = $toPercentages($categorySales->pluck('total_revenue')->map(fn($s) => (float)$s)->toArray());
+        $categorySeries = $toPercentages($categorySales->pluck('total_revenue')->map(fn ($s) => (float) $s)->toArray());
 
         // Payment Methods
         $paymentMethods = Order::whereBetween('created_at', [$startOfMonth, $now])
@@ -223,9 +227,9 @@ class StatisticsController extends Controller
             ->select('payment_method', DB::raw('COUNT(*) as count'))
             ->groupBy('payment_method')
             ->get();
-            
-        $paymentLabels = $paymentMethods->pluck('payment_method')->map(fn($m) => strtoupper($m))->toArray();
-        $paymentSeries = $toPercentages($paymentMethods->pluck('count')->map(fn($c) => (int)$c)->toArray());
+
+        $paymentLabels = $paymentMethods->pluck('payment_method')->map(fn ($m) => strtoupper($m))->toArray();
+        $paymentSeries = $toPercentages($paymentMethods->pluck('count')->map(fn ($c) => (int) $c)->toArray());
 
         // Order Types
         $orderTypes = Order::whereBetween('created_at', [$startOfMonth, $now])
@@ -233,9 +237,9 @@ class StatisticsController extends Controller
             ->select('order_type', DB::raw('COUNT(*) as count'))
             ->groupBy('order_type')
             ->get();
-            
-        $orderTypeLabels = $orderTypes->pluck('order_type')->map(fn($t) => ucfirst($t))->toArray();
-        $orderTypeSeries = $toPercentages($orderTypes->pluck('count')->map(fn($c) => (int)$c)->toArray());
+
+        $orderTypeLabels = $orderTypes->pluck('order_type')->map(fn ($t) => ucfirst($t))->toArray();
+        $orderTypeSeries = $toPercentages($orderTypes->pluck('count')->map(fn ($c) => (int) $c)->toArray());
 
         return Inertia::render('Statistics/Index', [
             'monthlyRevenue' => (float) $monthlyRevenue,
@@ -277,8 +281,8 @@ class StatisticsController extends Controller
                 'orderType' => [
                     'labels' => empty($orderTypeLabels) ? ['Belum ada data'] : $orderTypeLabels,
                     'series' => empty($orderTypeSeries) ? [0] : $orderTypeSeries,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 }

@@ -13,8 +13,8 @@ const timer = ref(null);
 
 const startTimer = () => {
     if (props.banners.length <= 1) {
-return;
-}
+        return;
+    }
 
     stopTimer();
     timer.value = setInterval(() => {
@@ -31,8 +31,8 @@ const stopTimer = () => {
 
 const prevSlide = () => {
     if (props.banners.length === 0) {
-return;
-}
+        return;
+    }
 
     activeIndex.value =
         (activeIndex.value - 1 + props.banners.length) % props.banners.length;
@@ -41,8 +41,8 @@ return;
 
 const nextSlide = () => {
     if (props.banners.length === 0) {
-return;
-}
+        return;
+    }
 
     activeIndex.value = (activeIndex.value + 1) % props.banners.length;
     startTimer();
@@ -62,8 +62,8 @@ const startPressTime = ref(0);
 
 const dragStart = (e) => {
     if (props.banners.length <= 1) {
-return;
-}
+        return;
+    }
 
     isDragging.value = true;
     startPressTime.value = Date.now();
@@ -75,8 +75,8 @@ return;
 
 const dragMove = (e) => {
     if (!isDragging.value) {
-return;
-}
+        return;
+    }
 
     // Prevent default scrolling on mobile while sliding
     if (e.cancelable) {
@@ -89,8 +89,8 @@ return;
 
 const dragEnd = (e) => {
     if (!isDragging.value) {
-return;
-}
+        return;
+    }
 
     isDragging.value = false;
 
@@ -119,8 +119,8 @@ return;
 
 const handleTap = (e) => {
     if (!sliderRef.value) {
-return;
-}
+        return;
+    }
 
     const rect = sliderRef.value.getBoundingClientRect();
 

@@ -15,7 +15,7 @@ class MenuController extends Controller
     public function index()
     {
         $categories = Category::orderBy('name', 'asc')->get();
-        $products = Product::with(['category', 'assignedAddons'])->orderBy('created_at', 'desc')->get()->map(function($p) {
+        $products = Product::with(['category', 'assignedAddons'])->orderBy('created_at', 'desc')->get()->map(function ($p) {
             return [
                 'id' => $p->id,
                 'category_id' => $p->category_id,
@@ -25,21 +25,21 @@ class MenuController extends Controller
                 'image' => $p->image,
                 'is_available' => (bool) $p->is_available,
                 'category' => $p->category,
-                'assigned_addons' => $p->assignedAddons->map(function($a) {
+                'assigned_addons' => $p->assignedAddons->map(function ($a) {
                     return [
                         'id' => $a->id,
                         'name' => $a->addon_name,
                         'price' => (int) $a->extra_price,
                     ];
-                })
+                }),
             ];
         });
-        $addons = ProductAddon::orderBy('addon_name', 'asc')->get()->map(function($a) {
+        $addons = ProductAddon::orderBy('addon_name', 'asc')->get()->map(function ($a) {
             return [
                 'id' => $a->id,
                 'name' => $a->addon_name,
                 'price' => (int) $a->extra_price,
-                'category' => $a->category
+                'category' => $a->category,
             ];
         });
 
@@ -57,7 +57,7 @@ class MenuController extends Controller
     {
         $validated = $request->validate([
             'addon_ids' => 'required|array',
-            'addon_ids.*' => 'exists:product_addons,id'
+            'addon_ids.*' => 'exists:product_addons,id',
         ]);
 
         $product = Product::findOrFail($id);
@@ -66,13 +66,13 @@ class MenuController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Add-ons berhasil dipasangkan ke menu!',
-            'assigned_addons' => $product->assignedAddons->map(function($a) {
+            'assigned_addons' => $product->assignedAddons->map(function ($a) {
                 return [
                     'id' => $a->id,
                     'name' => $a->addon_name,
                     'price' => (int) $a->extra_price,
                 ];
-            })
+            }),
         ]);
     }
 
@@ -247,13 +247,13 @@ class MenuController extends Controller
         $validated = $request->validate([
             'addon_name' => 'required|string|max:100',
             'extra_price' => 'required|numeric|min:0',
-            'category' => 'required|string|max:50'
+            'category' => 'required|string|max:50',
         ]);
 
         $addon = ProductAddon::create([
             'addon_name' => $validated['addon_name'],
             'extra_price' => $validated['extra_price'],
-            'category' => $validated['category']
+            'category' => $validated['category'],
         ]);
 
         return response()->json([
@@ -263,8 +263,8 @@ class MenuController extends Controller
                 'id' => $addon->id,
                 'name' => $addon->addon_name,
                 'price' => (int) $addon->extra_price,
-                'category' => $addon->category
-            ]
+                'category' => $addon->category,
+            ],
         ]);
     }
 
@@ -273,14 +273,14 @@ class MenuController extends Controller
         $validated = $request->validate([
             'addon_name' => 'required|string|max:100',
             'extra_price' => 'required|numeric|min:0',
-            'category' => 'required|string|max:50'
+            'category' => 'required|string|max:50',
         ]);
 
         $addon = ProductAddon::findOrFail($id);
         $addon->update([
             'addon_name' => $validated['addon_name'],
             'extra_price' => $validated['extra_price'],
-            'category' => $validated['category']
+            'category' => $validated['category'],
         ]);
 
         return response()->json([
@@ -290,8 +290,8 @@ class MenuController extends Controller
                 'id' => $addon->id,
                 'name' => $addon->addon_name,
                 'price' => (int) $addon->extra_price,
-                'category' => $addon->category
-            ]
+                'category' => $addon->category,
+            ],
         ]);
     }
 
@@ -302,7 +302,7 @@ class MenuController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Add-on berhasil dihapus!'
+            'message' => 'Add-on berhasil dihapus!',
         ]);
     }
 

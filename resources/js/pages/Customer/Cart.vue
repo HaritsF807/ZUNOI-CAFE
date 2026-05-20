@@ -1,7 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
 import axios from 'axios';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 const props = defineProps({
     qris_manual_url: String,
@@ -57,7 +57,9 @@ const voucherError = ref('');
 const isCheckingVoucher = ref(false);
 
 const applyVoucher = async () => {
-    if (!voucherCodeInput.value.trim()) return;
+    if (!voucherCodeInput.value.trim()) {
+return;
+}
 
     isCheckingVoucher.value = true;
     voucherError.value = '';
@@ -65,7 +67,7 @@ const applyVoucher = async () => {
     try {
         const response = await axios.post('/api/vouchers/validate', {
             code: voucherCodeInput.value.trim(),
-            subtotal: cartTotal.value
+            subtotal: cartTotal.value,
         });
 
         if (response.data.success) {
@@ -77,7 +79,8 @@ const applyVoucher = async () => {
         }
     } catch (error) {
         console.error(error);
-        voucherError.value = error.response?.data?.message || 'Kode voucher tidak valid!';
+        voucherError.value =
+            error.response?.data?.message || 'Kode voucher tidak valid!';
         appliedVoucher.value = null;
         discountAmount.value = 0;
         form.voucher_code = '';
@@ -104,6 +107,7 @@ const activePromotions = computed(() => props.promotions || []);
 
 const appliedPromotionsList = computed(() => {
     const list = [];
+
     if (!activePromotions.value || activePromotions.value.length === 0) {
         return list;
     }
@@ -112,13 +116,15 @@ const appliedPromotionsList = computed(() => {
     const cartMap = {};
     form.cart_items.forEach((item) => {
         const prodId = parseInt(item.id);
+
         if (!cartMap[prodId]) {
             cartMap[prodId] = {
                 quantity: 0,
                 price: parseFloat(item.price),
-                basePrice: parseFloat(item.basePrice || item.price)
+                basePrice: parseFloat(item.basePrice || item.price),
             };
         }
+
         cartMap[prodId].quantity += parseInt(item.quantity);
     });
 
@@ -127,9 +133,15 @@ const appliedPromotionsList = computed(() => {
     activePromotions.value.forEach((promo) => {
         const buyProductId = parseInt(promo.buy_product_id);
         const buyQtyRequired = parseInt(promo.buy_quantity);
-        const bundlingProductId = promo.bundling_product_id ? parseInt(promo.bundling_product_id) : null;
-        const getProductId = promo.get_product_id ? parseInt(promo.get_product_id) : null;
-        const getQtyRequired = promo.get_quantity ? parseInt(promo.get_quantity) : 1;
+        const bundlingProductId = promo.bundling_product_id
+            ? parseInt(promo.bundling_product_id)
+            : null;
+        const getProductId = promo.get_product_id
+            ? parseInt(promo.get_product_id)
+            : null;
+        const getQtyRequired = promo.get_quantity
+            ? parseInt(promo.get_quantity)
+            : 1;
 
         if (!cartMap[buyProductId]) {
             return;
@@ -143,17 +155,25 @@ const appliedPromotionsList = computed(() => {
             }
 
             const bundCartQty = cartMap[bundlingProductId].quantity;
-            const numBundles = Math.min(Math.floor(buyCartQty / buyQtyRequired), bundCartQty);
+            const numBundles = Math.min(
+                Math.floor(buyCartQty / buyQtyRequired),
+                bundCartQty,
+            );
 
             if (numBundles > 0) {
                 let discountVal = 0;
+
                 if (promo.discount_type === 'nominal') {
                     discountVal = parseFloat(promo.discount_value) * numBundles;
                 } else if (promo.discount_type === 'percentage') {
                     const buyUnitPrice = cartMap[buyProductId].basePrice;
                     const bundUnitPrice = cartMap[bundlingProductId].basePrice;
-                    const singleBundlePrice = (buyUnitPrice * buyQtyRequired) + bundUnitPrice;
-                    discountVal = (parseFloat(promo.discount_value) / 100) * singleBundlePrice * numBundles;
+                    const singleBundlePrice =
+                        buyUnitPrice * buyQtyRequired + bundUnitPrice;
+                    discountVal =
+                        (parseFloat(promo.discount_value) / 100) *
+                        singleBundlePrice *
+                        numBundles;
                 }
 
                 if (discountVal > 0) {
@@ -161,7 +181,7 @@ const appliedPromotionsList = computed(() => {
                     list.push({
                         id: promo.id,
                         name: promo.name,
-                        discount: discountVal
+                        discount: discountVal,
                     });
                 }
             }
@@ -185,9 +205,13 @@ const appliedPromotionsList = computed(() => {
                     if (promo.discount_type === 'free') {
                         discountVal = itemUnitPrice * discountedQty;
                     } else if (promo.discount_type === 'percentage') {
-                        discountVal = (parseFloat(promo.discount_value) / 100) * itemUnitPrice * discountedQty;
+                        discountVal =
+                            (parseFloat(promo.discount_value) / 100) *
+                            itemUnitPrice *
+                            discountedQty;
                     } else if (promo.discount_type === 'nominal') {
-                        discountVal = parseFloat(promo.discount_value) * discountedQty;
+                        discountVal =
+                            parseFloat(promo.discount_value) * discountedQty;
                     }
 
                     if (discountVal > 0) {
@@ -195,7 +219,7 @@ const appliedPromotionsList = computed(() => {
                         list.push({
                             id: promo.id,
                             name: promo.name,
-                            discount: discountVal
+                            discount: discountVal,
                         });
                     }
                 }
@@ -205,7 +229,10 @@ const appliedPromotionsList = computed(() => {
 
                 if (numCombos > 0) {
                     const maxDiscountedQty = numCombos * getQtyRequired;
-                    const actualDiscountedQty = Math.min(maxDiscountedQty, getCartQty);
+                    const actualDiscountedQty = Math.min(
+                        maxDiscountedQty,
+                        getCartQty,
+                    );
 
                     if (actualDiscountedQty > 0) {
                         const itemUnitPrice = cartMap[getProductId].basePrice;
@@ -214,9 +241,14 @@ const appliedPromotionsList = computed(() => {
                         if (promo.discount_type === 'free') {
                             discountVal = itemUnitPrice * actualDiscountedQty;
                         } else if (promo.discount_type === 'percentage') {
-                            discountVal = (parseFloat(promo.discount_value) / 100) * itemUnitPrice * actualDiscountedQty;
+                            discountVal =
+                                (parseFloat(promo.discount_value) / 100) *
+                                itemUnitPrice *
+                                actualDiscountedQty;
                         } else if (promo.discount_type === 'nominal') {
-                            discountVal = parseFloat(promo.discount_value) * actualDiscountedQty;
+                            discountVal =
+                                parseFloat(promo.discount_value) *
+                                actualDiscountedQty;
                         }
 
                         if (discountVal > 0) {
@@ -224,7 +256,7 @@ const appliedPromotionsList = computed(() => {
                             list.push({
                                 id: promo.id,
                                 name: promo.name,
-                                discount: discountVal
+                                discount: discountVal,
                             });
                         }
                     }
@@ -237,11 +269,17 @@ const appliedPromotionsList = computed(() => {
 });
 
 const promoDiscountTotal = computed(() => {
-    return appliedPromotionsList.value.reduce((sum, item) => sum + item.discount, 0);
+    return appliedPromotionsList.value.reduce(
+        (sum, item) => sum + item.discount,
+        0,
+    );
 });
 
 const finalTotal = computed(() => {
-    return Math.max(0, cartTotal.value - discountAmount.value - promoDiscountTotal.value);
+    return Math.max(
+        0,
+        cartTotal.value - discountAmount.value - promoDiscountTotal.value,
+    );
 });
 
 const handleFileChange = (e) => {
@@ -261,8 +299,9 @@ const recalculateVoucher = async () => {
         try {
             const response = await axios.post('/api/vouchers/validate', {
                 code: appliedVoucher.value.code,
-                subtotal: cartTotal.value
+                subtotal: cartTotal.value,
             });
+
             if (response.data.success) {
                 appliedVoucher.value = response.data.voucher;
                 discountAmount.value = response.data.discount_amount;
@@ -340,8 +379,8 @@ const additions = ref([]);
 
 const computedTotalPrice = computed(() => {
     if (!selectedProduct.value) {
-return 0;
-}
+        return 0;
+    }
 
     const base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
 
@@ -378,8 +417,8 @@ const closeSelectionModal = () => {
 
 const saveCartItem = () => {
     if (editingIndex.value === -1) {
-return;
-}
+        return;
+    }
 
     const selectedAddons = additions.value.filter((a) => a.selected);
 
@@ -637,33 +676,57 @@ return;
                                             {{ item.name }}
                                         </p>
                                         <div class="mt-0.5 flex flex-col">
-                                            <div class="mt-1.5 flex items-center gap-2">
-                                                <div class="flex items-center rounded-lg bg-[#FAEDCD]/50 border border-[#D4A373]/20 p-0.5 shadow-sm">
+                                            <div
+                                                class="mt-1.5 flex items-center gap-2"
+                                            >
+                                                <div
+                                                    class="flex items-center rounded-lg border border-[#D4A373]/20 bg-[#FAEDCD]/50 p-0.5 shadow-sm"
+                                                >
                                                     <button
-                                                        @click="decreaseQuantity(index)"
+                                                        @click="
+                                                            decreaseQuantity(
+                                                                index,
+                                                            )
+                                                        "
                                                         type="button"
-                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-75 shadow-sm"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-75"
                                                     >
-                                                        <span class="text-xs font-black leading-none">-</span>
+                                                        <span
+                                                            class="text-xs leading-none font-black"
+                                                            >-</span
+                                                        >
                                                     </button>
-                                                    <span class="px-2.5 text-xs font-black text-[#3B2314]">
+                                                    <span
+                                                        class="px-2.5 text-xs font-black text-[#3B2314]"
+                                                    >
                                                         {{ item.quantity }}
                                                     </span>
                                                     <button
-                                                        @click="increaseQuantity(index)"
+                                                        @click="
+                                                            increaseQuantity(
+                                                                index,
+                                                            )
+                                                        "
                                                         type="button"
-                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-75 shadow-sm"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-75"
                                                     >
-                                                        <span class="text-xs font-black leading-none">+</span>
+                                                        <span
+                                                            class="text-xs leading-none font-black"
+                                                            >+</span
+                                                        >
                                                     </button>
                                                 </div>
-                                                <span class="text-[10px] font-bold text-gray-400">
+                                                <span
+                                                    class="text-[10px] font-bold text-gray-400"
+                                                >
                                                     &bull; Rp
                                                     {{
                                                         (
                                                             item.basePrice ||
                                                             item.price
-                                                        ).toLocaleString('id-ID')
+                                                        ).toLocaleString(
+                                                            'id-ID',
+                                                        )
                                                     }}
                                                 </span>
                                             </div>
@@ -752,47 +815,86 @@ return;
                         </div>
 
                         <!-- Voucher Input Form -->
-                        <div v-if="form.cart_items.length > 0" class="border-t border-gray-100 pt-3 pb-2">
-                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Voucher / Kupon Promo</label>
+                        <div
+                            v-if="form.cart_items.length > 0"
+                            class="border-t border-gray-100 pt-3 pb-2"
+                        >
+                            <label
+                                class="mb-1.5 block text-[10px] font-black tracking-wider text-gray-500 uppercase"
+                                >Voucher / Kupon Promo</label
+                            >
                             <div class="flex gap-2">
                                 <input
                                     v-model="voucherCodeInput"
                                     type="text"
                                     placeholder="Masukkan kode voucher..."
                                     :disabled="appliedVoucher"
-                                    class="flex-1 rounded-xl border border-gray-300 px-3 py-2 text-xs text-[#3B2314] font-bold uppercase placeholder-[#3B2314]/40 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] disabled:bg-gray-100 disabled:text-gray-400"
+                                    class="flex-1 rounded-xl border border-gray-300 px-3 py-2 text-xs font-bold text-[#3B2314] uppercase placeholder-[#3B2314]/40 shadow-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] disabled:bg-gray-100 disabled:text-gray-400"
                                 />
                                 <button
                                     v-if="!appliedVoucher"
                                     @click="applyVoucher"
                                     type="button"
-                                    :disabled="isCheckingVoucher || !voucherCodeInput.trim()"
+                                    :disabled="
+                                        isCheckingVoucher ||
+                                        !voucherCodeInput.trim()
+                                    "
                                     class="rounded-xl bg-[#3B2314] px-4 py-2 text-xs font-black text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
                                 >
-                                    {{ isCheckingVoucher ? 'Mengecek...' : 'Terapkan' }}
+                                    {{
+                                        isCheckingVoucher
+                                            ? 'Mengecek...'
+                                            : 'Terapkan'
+                                    }}
                                 </button>
                                 <button
                                     v-else
                                     @click="removeVoucher"
                                     type="button"
-                                    class="rounded-xl bg-red-50 border border-red-200 px-4 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-95"
+                                    class="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-95"
                                 >
                                     Hapus
                                 </button>
                             </div>
-                            
+
                             <!-- Success Message -->
-                            <p v-if="appliedVoucher" class="mt-1.5 text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.52Z" clip-rule="evenodd" />
+                            <p
+                                v-if="appliedVoucher"
+                                class="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-emerald-600"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                    class="h-4 w-4"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.52Z"
+                                        clip-rule="evenodd"
+                                    />
                                 </svg>
-                                Voucher <b>{{ appliedVoucher.name }}</b> berhasil diterapkan!
+                                Voucher
+                                <b>{{ appliedVoucher.name }}</b> berhasil
+                                diterapkan!
                             </p>
-                            
+
                             <!-- Error Message -->
-                            <p v-if="voucherError" class="mt-1.5 text-[11px] font-bold text-red-600 flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                            <p
+                                v-if="voucherError"
+                                class="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-red-600"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                    class="h-4 w-4"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                                        clip-rule="evenodd"
+                                    />
                                 </svg>
                                 {{ voucherError }}
                             </p>
@@ -819,22 +921,45 @@ return;
                                 v-if="appliedVoucher"
                                 class="flex justify-between font-bold text-emerald-600"
                             >
-                                <span>Potongan Voucher ({{ appliedVoucher.code }})</span>
-                                <span>- Rp {{ discountAmount.toLocaleString('id-ID') }}</span>
+                                <span
+                                    >Potongan Voucher ({{
+                                        appliedVoucher.code
+                                    }})</span
+                                >
+                                <span
+                                    >- Rp
+                                    {{
+                                        discountAmount.toLocaleString('id-ID')
+                                    }}</span
+                                >
                             </div>
                             <!-- Auto Promotions Row -->
                             <div
                                 v-for="promo in appliedPromotionsList"
                                 :key="promo.id"
-                                class="flex justify-between font-bold text-emerald-600 animate-fade-in"
+                                class="animate-fade-in flex justify-between font-bold text-emerald-600"
                             >
                                 <span class="flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 shrink-0 text-emerald-600">
-                                        <path fill-rule="evenodd" d="M5.5 3a2.5 2.5 0 0 0-2.5 2.5v11a2.5 2.5 0 0 0 2.5 2.5h11a2.5 2.5 0 0 0 2.5-2.5v-11a2.5 2.5 0 0 0-2.5-2.5h-11Zm3 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm5-5a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" clip-rule="evenodd" />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        class="h-3.5 w-3.5 shrink-0 text-emerald-600"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M5.5 3a2.5 2.5 0 0 0-2.5 2.5v11a2.5 2.5 0 0 0 2.5 2.5h11a2.5 2.5 0 0 0 2.5-2.5v-11a2.5 2.5 0 0 0-2.5-2.5h-11Zm3 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm5-5a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm1 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"
+                                            clip-rule="evenodd"
+                                        />
                                     </svg>
                                     {{ promo.name }}
                                 </span>
-                                <span>- Rp {{ promo.discount.toLocaleString('id-ID') }}</span>
+                                <span
+                                    >- Rp
+                                    {{
+                                        promo.discount.toLocaleString('id-ID')
+                                    }}</span
+                                >
                             </div>
                             <div
                                 class="flex justify-between border-t border-dashed pt-1.5 text-sm font-black text-[#3B2314]"

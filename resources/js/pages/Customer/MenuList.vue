@@ -92,8 +92,8 @@ const additions = ref([]);
 
 const computedTotalPrice = computed(() => {
     if (!selectedProduct.value) {
-return 0;
-}
+        return 0;
+    }
 
     const base = parseInt(selectedProduct.value.price) * selectedQuantity.value;
 
@@ -134,8 +134,8 @@ const decreaseQuantity = () => {
 
 const addSelectionToCart = () => {
     if (!selectedProduct.value) {
-return;
-}
+        return;
+    }
 
     const product = selectedProduct.value;
 

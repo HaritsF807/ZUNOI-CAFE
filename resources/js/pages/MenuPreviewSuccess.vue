@@ -14,7 +14,10 @@ const props = defineProps({
 });
 
 const subtotal = computed(() => {
-    return parsedItems.value.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    return parsedItems.value.reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0,
+    );
 });
 
 let originalBgColor = '';
@@ -212,7 +215,9 @@ const mockOrderId = computed(() => {
                                 >
                                     {{ item.quantity }}x &bull; Rp
                                     {{
-                                        Number(item.price || item.basePrice || 0).toLocaleString('id-ID')
+                                        Number(
+                                            item.price || item.basePrice || 0,
+                                        ).toLocaleString('id-ID')
                                     }}
                                 </p>
                                 <span
@@ -255,7 +260,9 @@ const mockOrderId = computed(() => {
                             </span>
                         </div>
                         <div
-                            v-if="discount_amount > 0 || promo_discount_amount > 0"
+                            v-if="
+                                discount_amount > 0 || promo_discount_amount > 0
+                            "
                             class="flex justify-between text-[10px] font-bold text-gray-500"
                         >
                             <span>Subtotal</span>
@@ -269,7 +276,12 @@ const mockOrderId = computed(() => {
                         >
                             <span>Voucher ({{ voucher_code }})</span>
                             <span>
-                                - Rp {{ parseInt(discount_amount).toLocaleString('id-ID') }}
+                                - Rp
+                                {{
+                                    parseInt(discount_amount).toLocaleString(
+                                        'id-ID',
+                                    )
+                                }}
                             </span>
                         </div>
                         <div
@@ -278,11 +290,16 @@ const mockOrderId = computed(() => {
                         >
                             <span>Potongan Promo Otomatis</span>
                             <span>
-                                - Rp {{ parseInt(promo_discount_amount).toLocaleString('id-ID') }}
+                                - Rp
+                                {{
+                                    parseInt(
+                                        promo_discount_amount,
+                                    ).toLocaleString('id-ID')
+                                }}
                             </span>
                         </div>
                         <div
-                            class="flex items-center justify-between pt-1.5 text-xs border-t border-gray-100"
+                            class="flex items-center justify-between border-t border-gray-100 pt-1.5 text-xs"
                         >
                             <span class="font-bold text-[#3B2314]"
                                 >Total Pembayaran</span

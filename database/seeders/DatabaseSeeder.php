@@ -9,9 +9,9 @@ use App\Models\Setting;
 use App\Models\Table;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -139,7 +139,7 @@ class DatabaseSeeder extends Seeder
 
         foreach ($products as $productData) {
             $product = Product::create($productData);
-            
+
             // Assign some addons to each product using many-to-many
             if (Schema::hasTable('product_addon_assignments')) {
                 if (in_array($product->category_id, [$catCoffee->id, $catNonCoffee->id])) {
