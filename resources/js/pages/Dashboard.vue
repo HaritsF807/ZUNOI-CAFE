@@ -337,24 +337,6 @@ onUnmounted(() => {
                 </div>
 
                 <div class="z-10 mt-4 flex items-center gap-3 md:mt-0">
-                    <!-- Live Polling Indicator -->
-                    <div
-                        class="flex items-center gap-2 rounded-full border border-[#D4A373]/20 bg-[#FAEDCD]/10 px-3 py-1.5"
-                    >
-                        <span class="relative flex h-2.5 w-2.5">
-                            <span
-                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"
-                            ></span>
-                            <span
-                                class="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500"
-                            ></span>
-                        </span>
-                        <span
-                            class="text-[10px] font-bold tracking-widest text-green-400 uppercase"
-                            >Live Polling</span
-                        >
-                    </div>
-
                     <button
                         v-if="user.role === 'owner'"
                         @click="sendReport"
@@ -376,42 +358,6 @@ onUnmounted(() => {
                         </svg>
                         Kirim Rekapan WA
                     </button>
-                </div>
-            </div>
-
-            <!-- ACTIVE STAFF ON SHIFT (Owner Only) -->
-            <div v-if="user.role === 'owner'" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-                    <div class="flex items-center gap-2.5">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3B2314] text-[#FAEDCD]">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 21c-2.243 0-4.352-.648-6.124-1.772a4.125 4.125 0 0 1 7.533-2.493M15 9.75a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 8.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-black text-[#3B2314]">Staf & Shift Aktif Hari Ini</h3>
-                            <p class="text-[10px] text-gray-400">Daftar barista dan kasir yang login ke sistem dalam 24 jam terakhir.</p>
-                        </div>
-                    </div>
-                    <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold text-green-800 border border-green-200 flex items-center gap-1">
-                        <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        {{ activeStaff.length }} Online
-                    </span>
-                </div>
-                
-                <div class="flex flex-wrap gap-4">
-                    <div v-for="staff in activeStaff" :key="staff.id" class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-2.5 shadow-sm min-w-[200px] flex-1 md:flex-none">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAEDCD] font-bold text-[#3B2314] uppercase text-xs">
-                            {{ staff.name.charAt(0) }}
-                        </div>
-                        <div>
-                            <p class="text-xs font-black text-gray-800">{{ staff.name }}</p>
-                            <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                <p class="text-[9px] font-black tracking-wider uppercase text-gray-400">{{ staff.role }}</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -581,6 +527,42 @@ onUnmounted(() => {
                     <p class="mt-1 text-xs text-gray-500">
                         Persentase Dine-In vs Takeaway
                     </p>
+                </div>
+            </div>
+
+            <!-- ACTIVE STAFF ON SHIFT (Owner Only) -->
+            <div v-if="user.role === 'owner'" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3B2314] text-[#FAEDCD]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 21c-2.243 0-4.352-.648-6.124-1.772a4.125 4.125 0 0 1 7.533-2.493M15 9.75a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 8.25a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-black text-[#3B2314]">Staf & Shift Aktif Hari Ini</h3>
+                            <p class="text-[10px] text-gray-400">Daftar barista dan kasir yang login ke sistem dalam 24 jam terakhir.</p>
+                        </div>
+                    </div>
+                    <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold text-green-800 border border-green-200 flex items-center gap-1">
+                        <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        {{ activeStaff.length }} Online
+                    </span>
+                </div>
+                
+                <div class="flex flex-wrap gap-4">
+                    <div v-for="staff in activeStaff" :key="staff.id" class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-2.5 shadow-sm min-w-[200px] flex-1 md:flex-none">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAEDCD] font-bold text-[#3B2314] uppercase text-xs">
+                            {{ staff.name.charAt(0) }}
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-gray-800">{{ staff.name }}</p>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                <p class="text-[9px] font-black tracking-wider uppercase text-gray-400">{{ staff.role }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
