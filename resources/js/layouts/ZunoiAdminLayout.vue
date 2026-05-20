@@ -44,8 +44,9 @@ const handleToastEvent = (event: any) => {
 // Watch for Inertia Flash Messages
 const page = usePage();
 watch(
-    () => page.props.flash,
-    (flash: any) => {
+    page.props,
+    (props: any) => {
+        const flash = props.flash;
         if (flash && flash.success) {
             triggerToast(flash.success, 'success');
             flash.success = null;
@@ -59,7 +60,34 @@ watch(
     { deep: true, immediate: true },
 );
 
+// Watchers for persistent state
+watch(isSidebarOpen, (newVal) => {
+    localStorage.setItem('zunoi_sidebar_open', String(newVal));
+});
+
+watch(
+    openMenus,
+    (newVal) => {
+        localStorage.setItem('zunoi_open_menus', JSON.stringify(newVal));
+    },
+    { deep: true }
+);
+
 onMounted(() => {
+    const storedSidebar = localStorage.getItem('zunoi_sidebar_open');
+    if (storedSidebar !== null) {
+        isSidebarOpen.value = storedSidebar !== 'false';
+    }
+
+    const storedMenus = localStorage.getItem('zunoi_open_menus');
+    if (storedMenus !== null) {
+        try {
+            openMenus.value = JSON.parse(storedMenus);
+        } catch (e) {
+            // ignore
+        }
+    }
+
     window.addEventListener('zunoi-toast', handleToastEvent);
 });
 
