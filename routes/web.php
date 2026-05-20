@@ -31,7 +31,24 @@ Route::get('/scan-required', function () {
 
 Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
-        $products = Product::with(['category', 'addons'])->get();
+        $products = Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'category_id' => $p->category_id,
+                'name' => $p->name,
+                'price' => (int) $p->price,
+                'description' => $p->description,
+                'image' => $p->image,
+                'is_available' => (bool) $p->is_available,
+                'category' => $p->category,
+                'additions' => $p->assignedAddons->map(function ($a) {
+                    return [
+                        'name' => $a->addon_name,
+                        'price' => (int) $a->extra_price,
+                    ];
+                })
+            ];
+        });
         $categories = Category::orderBy('name', 'asc')->get();
         $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
         
@@ -82,7 +99,24 @@ Route::middleware(['auth'])->group(function () {
     })->name('table.management');
 
     Route::get('/dashboard/menu-preview', function () {
-        $products = Product::with(['category', 'addons'])->get();
+        $products = Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'category_id' => $p->category_id,
+                'name' => $p->name,
+                'price' => (int) $p->price,
+                'description' => $p->description,
+                'image' => $p->image,
+                'is_available' => (bool) $p->is_available,
+                'category' => $p->category,
+                'additions' => $p->assignedAddons->map(function ($a) {
+                    return [
+                        'name' => $a->addon_name,
+                        'price' => (int) $a->extra_price,
+                    ];
+                })
+            ];
+        });
         $categories = Category::orderBy('name', 'asc')->get();
         $banners = \App\Models\Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
