@@ -525,12 +525,13 @@ provide('triggerToast', triggerToast);
                             viewBox="0 0 24 24"
                             stroke-width="1.5"
                             stroke="currentColor"
-                            class="h-6 w-6 transition-transform duration-300"
-                            :class="{ 'rotate-180': !isSidebarOpen }"
+                            class="h-6 w-6"
                         >
-                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v18" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m16 15-3-3 3-3" />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                            />
                         </svg>
                     </button>
                     <span
