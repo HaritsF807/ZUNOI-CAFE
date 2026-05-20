@@ -141,17 +141,49 @@ const completeOrder = async (id) => {
     }
 };
 
+const showRecapModal = ref(false);
+const recapType = ref('today');
+const recapStartDate = ref(new Date().toISOString().split('T')[0]);
+const recapEndDate = ref(new Date().toISOString().split('T')[0]);
+const isSendingRecap = ref(false);
+
+const openRecapModal = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    recapStartDate.value = todayStr;
+    recapEndDate.value = todayStr;
+    recapType.value = 'today';
+    showRecapModal.value = true;
+};
+
 const sendReport = async () => {
-    triggerToast('Mengirim rekapan harian ke WhatsApp Owner...', 'info');
+    isSendingRecap.value = true;
+    triggerToast('Mengirim rekapan ke WhatsApp Owner...', 'info');
+
+    let payload = {};
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    if (recapType.value === 'today') {
+        payload = { start_date: todayStr, end_date: todayStr };
+    } else if (recapType.value === 'yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        payload = { start_date: yesterdayStr, end_date: yesterdayStr };
+    } else if (recapType.value === 'single') {
+        payload = { start_date: recapStartDate.value, end_date: recapStartDate.value };
+    } else if (recapType.value === 'range') {
+        payload = { start_date: recapStartDate.value, end_date: recapEndDate.value };
+    }
 
     try {
-        const response = await axios.post('/api/reports/send-recap');
+        const response = await axios.post('/api/reports/send-recap', payload);
 
         if (response.data.success) {
             triggerToast(
-                response.data.message || 'Rekapan harian berhasil dikirim!',
+                response.data.message || 'Rekapan berhasil dikirim!',
                 'success',
             );
+            showRecapModal.value = false;
         } else {
             triggerToast(
                 response.data.message || 'Gagal mengirim rekapan.',
@@ -164,6 +196,8 @@ const sendReport = async () => {
             error.response?.data?.message ||
             'Terjadi kesalahan sistem saat mengirim rekapan.';
         triggerToast(errorMsg, 'error');
+    } finally {
+        isSendingRecap.value = false;
     }
 };
 
@@ -339,7 +373,7 @@ onUnmounted(() => {
                 <div class="z-10 mt-4 flex items-center gap-3 md:mt-0">
                     <button
                         v-if="user.role === 'owner'"
-                        @click="sendReport"
+                        @click="openRecapModal"
                         class="flex transform items-center gap-2 rounded-xl bg-[#D4A373] px-5 py-2 text-sm font-bold text-[#3B2314] shadow-md transition-all duration-300 hover:bg-[#FAEDCD] hover:shadow-lg active:scale-95"
                     >
                         <svg
@@ -972,6 +1006,142 @@ onUnmounted(() => {
                             class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] active:scale-95"
                         >
                             Tutup Detail
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+        <!-- Modal Kirim Rekapan WA (Owner Only) -->
+        <Transition
+            enter-active-class="ease-out duration-300 transition"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="ease-in duration-200 transition"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div
+                v-if="showRecapModal"
+                class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                @click.self="showRecapModal = false"
+            >
+                <div
+                    class="relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl transition-all"
+                >
+                    <!-- Header -->
+                    <div class="flex items-center justify-between border-b p-5">
+                        <h3 class="flex items-center gap-2 text-lg font-black text-[#3B2314]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5 text-[#D4A373]">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                            </svg>
+                            Kirim Rekapan WA
+                        </h3>
+                        <button
+                            @click="showRecapModal = false"
+                            class="text-gray-400 transition hover:text-gray-600 rounded-full hover:bg-gray-100 p-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-6 space-y-5">
+                        <div class="space-y-3">
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Pilih Rentang Waktu</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    @click="recapType = 'today'"
+                                    type="button"
+                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
+                                    :class="recapType === 'today' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                >
+                                    <span class="text-xs">Hari Ini</span>
+                                </button>
+                                <button
+                                    @click="recapType = 'yesterday'"
+                                    type="button"
+                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
+                                    :class="recapType === 'yesterday' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                >
+                                    <span class="text-xs">Kemarin</span>
+                                </button>
+                                <button
+                                    @click="recapType = 'single'"
+                                    type="button"
+                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
+                                    :class="recapType === 'single' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                >
+                                    <span class="text-xs">Pilih Tanggal</span>
+                                </button>
+                                <button
+                                    @click="recapType = 'range'"
+                                    type="button"
+                                    class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-95"
+                                    :class="recapType === 'range' ? 'border-[#3B2314] bg-[#FAEDCD]/20 text-[#3B2314] font-bold shadow-sm' : 'border-gray-200 hover:border-gray-300 text-gray-600'"
+                                >
+                                    <span class="text-xs">Rentang Tanggal</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Date Pickers -->
+                        <div class="relative overflow-hidden min-h-[80px] flex items-center">
+                            <div v-if="recapType === 'single'" class="space-y-2 w-full">
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Laporan</label>
+                                <input
+                                    v-model="recapStartDate"
+                                    type="date"
+                                    class="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] focus:outline-none"
+                                />
+                            </div>
+
+                            <div v-else-if="recapType === 'range'" class="grid grid-cols-2 gap-4 w-full">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Mulai</label>
+                                    <input
+                                        v-model="recapStartDate"
+                                        type="date"
+                                        class="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] focus:outline-none"
+                                    />
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Selesai</label>
+                                    <input
+                                        v-model="recapEndDate"
+                                        type="date"
+                                        class="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm focus:border-[#D4A373] focus:ring-1 focus:ring-[#D4A373] focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div v-else class="text-center w-full text-xs text-gray-400 italic">
+                                Rekapan akan mencakup transaksi untuk periode: <span class="font-bold text-[#3B2314]">{{ recapType === 'today' ? 'Hari Ini' : 'Kemarin' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="border-t bg-gray-50 p-5 flex justify-end gap-3">
+                        <button
+                            @click="showRecapModal = false"
+                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-300 transition shadow-sm"
+                            type="button"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            @click="sendReport"
+                            :disabled="isSendingRecap"
+                            class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg disabled:opacity-50 active:scale-95"
+                            type="button"
+                        >
+                            <svg v-if="isSendingRecap" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>{{ isSendingRecap ? 'Mengirim...' : 'Kirim Rekap WA' }}</span>
                         </button>
                     </div>
                 </div>

@@ -77,22 +77,45 @@ class SettingController extends Controller
         }
 
         try {
-            $today = Carbon::now('Asia/Jakarta')->toDateString();
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
 
-            $totalOrders = Order::whereDate('created_at', $today)->count();
+            if ($startDate && $endDate) {
+                $startDateStr = Carbon::parse($startDate)->toDateString();
+                $endDateStr = Carbon::parse($endDate)->toDateString();
+            } else {
+                $startDateStr = Carbon::now('Asia/Jakarta')->toDateString();
+                $endDateStr = $startDateStr;
+            }
 
-            $paidOrders = Order::whereDate('created_at', $today)
+            $isSingleDay = ($startDateStr === $endDateStr);
+            $dateFormatted = $isSingleDay 
+                ? Carbon::parse($startDateStr)->translatedFormat('d F Y') 
+                : Carbon::parse($startDateStr)->translatedFormat('d F Y') . ' s/d ' . Carbon::parse($endDateStr)->translatedFormat('d F Y');
+
+            $totalOrders = Order::whereDate('created_at', '>=', $startDateStr)
+                ->whereDate('created_at', '<=', $endDateStr)
+                ->count();
+
+            $paidOrders = Order::whereDate('created_at', '>=', $startDateStr)
+                ->whereDate('created_at', '<=', $endDateStr)
                 ->where('payment_status', 'paid')
                 ->count();
 
-            $totalSales = Order::whereDate('created_at', $today)
+            $totalSales = Order::whereDate('created_at', '>=', $startDateStr)
+                ->whereDate('created_at', '<=', $endDateStr)
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
 
-            $message = "📊 *LAPORAN REKAP PENJUALAN HARIAN* 📊\n".
+            $titleRecap = $isSingleDay ? "REKAP PENJUALAN HARIAN" : "REKAP PENJUALAN PERIODE";
+            $messageIntro = $isSingleDay 
+                ? "Halo Owner, berikut adalah rekapan transaksi penjualan untuk hari ini:"
+                : "Halo Owner, berikut adalah rekapan transaksi penjualan untuk periode tersebut:";
+
+            $message = "📊 *LAPORAN {$titleRecap}* 📊\n".
                        "☕ *ZUNOI CAFFE* ☕\n\n".
-                       "Halo Owner, berikut adalah rekapan transaksi penjualan untuk hari ini:\n\n".
-                       '📅 *Tanggal:* '.Carbon::now('Asia/Jakarta')->format('d F Y')."\n".
+                       "{$messageIntro}\n\n".
+                       '📅 *' . ($isSingleDay ? 'Tanggal' : 'Periode') . ':* ' . $dateFormatted . "\n".
                        "━━━━━━━━━━━━━━━━━━\n".
                        "📈 *RINGKASAN PERFORMA:*\n".
                        "• Total Transaksi: {$totalOrders} pesanan\n".
@@ -101,14 +124,15 @@ class SettingController extends Controller
                        "━━━━━━━━━━━━━━━━━━\n".
                        "💳 *METODE PEMBAYARAN (Lunas):*\n";
 
-            $payments = Order::whereDate('created_at', $today)
+            $payments = Order::whereDate('created_at', '>=', $startDateStr)
+                ->whereDate('created_at', '<=', $endDateStr)
                 ->where('payment_status', 'paid')
                 ->select('payment_method', DB::raw('count(*) as count'), DB::raw('sum(total_price) as total'))
                 ->groupBy('payment_method')
                 ->get();
 
             if ($payments->isEmpty()) {
-                $message .= "Belum ada transaksi lunas hari ini.\n";
+                $message .= "Belum ada transaksi lunas pada periode ini.\n";
             } else {
                 foreach ($payments as $pay) {
                     $methodName = $pay->payment_method === 'cashier' ? 'Kasir/Tunai' : ($pay->payment_method === 'qris_manual' ? 'QRIS Manual' : 'QRIS Otomatis');
@@ -119,14 +143,15 @@ class SettingController extends Controller
             $message .= "━━━━━━━━━━━━━━━━━━\n".
                         "🛋️ *TIPE LAYANAN (Lunas):*\n";
 
-            $types = Order::whereDate('created_at', $today)
+            $types = Order::whereDate('created_at', '>=', $startDateStr)
+                ->whereDate('created_at', '<=', $endDateStr)
                 ->where('payment_status', 'paid')
                 ->select('order_type', DB::raw('count(*) as count'))
                 ->groupBy('order_type')
                 ->get();
 
             if ($types->isEmpty()) {
-                $message .= "Belum ada transaksi lunas hari ini.\n";
+                $message .= "Belum ada transaksi lunas pada periode ini.\n";
             } else {
                 foreach ($types as $t) {
                     $typeName = $t->order_type === 'dine_in' ? 'Dine In (Makan di tempat)' : 'Takeaway';
@@ -135,11 +160,12 @@ class SettingController extends Controller
             }
 
             $message .= "━━━━━━━━━━━━━━━━━━\n".
-                        "🏆 *5 MENU TERLARIS HARI INI:*\n";
+                        "🏆 *5 MENU TERLARIS" . ($isSingleDay ? " HARI INI" : " PERIODE INI") . ":*\n";
 
             $topItems = OrderItem::select('product_id', DB::raw('SUM(quantity) as total_qty'))
-                ->whereHas('order', function ($query) use ($today) {
-                    $query->whereDate('created_at', $today)
+                ->whereHas('order', function ($query) use ($startDateStr, $endDateStr) {
+                    $query->whereDate('created_at', '>=', $startDateStr)
+                        ->whereDate('created_at', '<=', $endDateStr)
                         ->where('payment_status', 'paid');
                 })
                 ->with('product')
@@ -149,7 +175,7 @@ class SettingController extends Controller
                 ->get();
 
             if ($topItems->isEmpty()) {
-                $message .= "Belum ada menu yang terjual hari ini.\n";
+                $message .= "Belum ada menu yang terjual pada periode ini.\n";
             } else {
                 $rank = 1;
                 foreach ($topItems as $item) {
@@ -167,7 +193,7 @@ class SettingController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Rekapan harian berhasil dikirim ke WhatsApp Owner!',
+                'message' => 'Rekapan berhasil dikirim ke WhatsApp Owner!',
             ]);
         } catch (\Exception $e) {
             return response()->json([

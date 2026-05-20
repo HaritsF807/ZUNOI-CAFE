@@ -107,6 +107,7 @@ class OrderController extends Controller
     {
         $orders = Order::with(['table', 'items.product'])
             ->whereIn('order_status', ['pending', 'processing', 'completed'])
+            ->whereDate('created_at', now('Asia/Jakarta')->toDateString())
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($order) {
