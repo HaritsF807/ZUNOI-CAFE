@@ -447,6 +447,143 @@ const formatPrice = (price: number) => {
         maximumFractionDigits: 0
     }).format(price);
 };
+
+// ========== PRINT RECEIPT ==========
+const printReceipt = (order: any) => {
+    if (!order) return;
+
+    const subtotal = order.items?.reduce((sum: number, item: any) => sum + (item.price_at_sale * item.quantity), 0) || order.total_price;
+    const discountAmt = Number(order.discount_amount) || 0;
+    const promoAmt = Number(order.promo_discount_amount) || 0;
+    const totalItems = order.items?.reduce((sum: number, item: any) => sum + Number(item.quantity), 0) || 0;
+
+    let itemsHtml = '';
+    if (order.items) {
+        order.items.forEach((item: any) => {
+            const name = item.product?.name || item.name || 'Menu';
+            const qty = item.quantity;
+            const unitPrice = Number(item.price_at_sale || item.price);
+            const lineTotal = unitPrice * qty;
+            itemsHtml += `
+                <div style="margin-bottom:4px;">
+                    <div style="font-weight:bold;">${name}</div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>&nbsp;&nbsp;${formatPrice(unitPrice)} x${qty}</span>
+                        <span>${formatPrice(lineTotal)}</span>
+                    </div>
+                    ${item.notes ? `<div style="font-size:10px;color:#999;padding-left:8px;font-style:italic;">Catatan: ${item.notes}</div>` : ''}
+                </div>`;
+        });
+    }
+
+    const orderDate = new Date(order.created_at).toLocaleString('id-ID');
+    const paymentLabel = order.payment_method === 'cashier' ? 'TUNAI' : order.payment_method?.toUpperCase();
+    const typeLabel = order.order_type === 'dine_in' ? 'DINE-IN' : 'TAKEAWAY';
+
+    const receiptHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Struk #${order.id}</title>
+        <style>
+            @page { margin: 0; size: 80mm auto; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                width: 80mm;
+                padding: 8mm 5mm;
+                color: #222;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .dashed { border-top: 1px dashed #999; margin: 6px 0; }
+            .flex-row { display: flex; justify-content: space-between; }
+            .logo-container { text-align: center; margin-bottom: 4px; }
+            .logo-container img { max-width: 120px; max-height: 60px; }
+            .shop-name { font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+            .watermark {
+                text-align: center;
+                font-size: 9px;
+                color: #bbb;
+                margin-top: 12px;
+                letter-spacing: 1px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="center">
+            <!-- CUSTOMIZABLE HEADER: Ganti logo dan info toko di sini -->
+            <div class="logo-container">
+                <!-- Untuk menambahkan logo, uncomment baris di bawah dan ganti URL: -->
+                <!-- <img src="/images/logo.png" alt="Logo" /> -->
+            </div>
+            <div class="shop-name">ZUNOI CAFFE</div>
+            <div style="font-size:10px;color:#666;margin-top:2px;">
+                <!-- CUSTOM: Ganti alamat dan info toko di bawah ini -->
+                Jl. Contoh Alamat No. 123<br/>
+                Telp: 0812-3456-7890
+            </div>
+        </div>
+
+        <div class="dashed"></div>
+
+        <div class="flex-row" style="font-size:11px;">
+            <span>Waktu Penjualan</span>
+            <span>Kasir</span>
+        </div>
+        <div class="flex-row" style="font-size:11px;">
+            <span>${orderDate}</span>
+            <span>${order.customer_name}</span>
+        </div>
+        <div class="flex-row" style="font-size:11px;">
+            <span>#${String(order.id).padStart(6, '0')}</span>
+            <span>${order.table?.table_name || typeLabel}</span>
+        </div>
+
+        <div class="dashed"></div>
+        <div class="center bold" style="margin-bottom:4px;">${typeLabel}</div>
+        <div class="dashed"></div>
+
+        ${itemsHtml}
+
+        <div class="dashed"></div>
+
+        <div class="flex-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+        ${discountAmt > 0 ? `<div class="flex-row" style="color:#16a34a;"><span>Voucher (${order.voucher_code || 'Promo'})</span><span>-${formatPrice(discountAmt)}</span></div>` : ''}
+        ${promoAmt > 0 ? `<div class="flex-row" style="color:#16a34a;"><span>Potongan Promo</span><span>-${formatPrice(promoAmt)}</span></div>` : ''}
+        <div class="flex-row bold" style="font-size:14px;margin-top:4px;"><span>Grand Total</span><span>${formatPrice(order.total_price)}</span></div>
+        <div class="flex-row"><span>${paymentLabel}</span><span>${formatPrice(order.total_price)}</span></div>
+
+        <div class="dashed"></div>
+
+        <div class="center" style="font-size:11px;">Jumlah Item: ${totalItems}</div>
+
+        <div class="dashed"></div>
+
+        <div class="center" style="font-size:10px;color:#666;line-height:1.6;">
+            <!-- CUSTOM: Ganti footer text di bawah ini -->
+            Harga sudah termasuk pajak PPN 10%<br/>
+            Terima kasih atas kunjungannya<br/>
+            <!-- CUSTOM: Tambahkan info WIFI dll di sini -->
+        </div>
+
+        <!-- WATERMARK - TIDAK BISA DIHAPUS -->
+        <div class="watermark">powered by Zunoi.id</div>
+    </body>
+    </html>`;
+
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    if (printWindow) {
+        printWindow.document.write(receiptHtml);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
+    }
+};
 </script>
 
 <template>
@@ -997,10 +1134,19 @@ const formatPrice = (price: number) => {
                     </div>
                 </div>
                 
-                <div class="p-6 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <div class="p-6 bg-gray-50 flex gap-3 border-t border-gray-100">
+                    <button
+                        @click="printReceipt(createdOrder)"
+                        class="flex-1 py-3.5 bg-[#3B2314] hover:bg-[#D4A373] text-[#FAEDCD] hover:text-[#3B2314] rounded-xl text-xs font-bold tracking-widest uppercase transition flex items-center justify-center gap-2 shadow-md"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                        </svg>
+                        Print Struk
+                    </button>
                     <button
                         @click="showSuccessModal = false"
-                        class="w-full py-3.5 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold tracking-widest uppercase transition flex items-center justify-center gap-2 shadow-md"
+                        class="flex-1 py-3.5 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold tracking-widest uppercase transition flex items-center justify-center gap-2 shadow-md"
                     >
                         Tutup Struk
                     </button>

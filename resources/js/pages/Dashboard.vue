@@ -331,6 +331,146 @@ const deleteTable = async (id, tableName) => {
     }
 };
 
+// ========== PRINT RECEIPT ==========
+const fmtPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+    }).format(price);
+};
+
+const printReceipt = (order) => {
+    if (!order) return;
+
+    const subtotal = order.discount_amount > 0 ? order.total + order.discount_amount : order.total;
+    const discountAmt = Number(order.discount_amount) || 0;
+    const totalItems = order.items?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
+
+    let itemsHtml = '';
+    if (order.items) {
+        order.items.forEach((item) => {
+            const name = item.name || 'Menu';
+            const qty = item.quantity;
+            const unitPrice = Number(item.price);
+            const lineTotal = unitPrice * qty;
+            itemsHtml += `
+                <div style="margin-bottom:4px;">
+                    <div style="font-weight:bold;">${name}</div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>&nbsp;&nbsp;${fmtPrice(unitPrice)} x${qty}</span>
+                        <span>${fmtPrice(lineTotal)}</span>
+                    </div>
+                    ${item.notes ? `<div style="font-size:10px;color:#999;padding-left:8px;font-style:italic;">Catatan: ${item.notes}</div>` : ''}
+                </div>`;
+        });
+    }
+
+    const orderDate = order.time ? `Hari ini, ${order.time}` : 'N/A';
+    const paymentLabel = order.payment_method === 'cashier' ? 'TUNAI' : (order.payment_method || '').toUpperCase();
+    const typeLabel = order.type === 'Dine In' ? 'DINE-IN' : 'TAKEAWAY';
+
+    const receiptHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Struk #${order.id}</title>
+        <style>
+            @page { margin: 0; size: 80mm auto; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                width: 80mm;
+                padding: 8mm 5mm;
+                color: #222;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .dashed { border-top: 1px dashed #999; margin: 6px 0; }
+            .flex-row { display: flex; justify-content: space-between; }
+            .logo-container { text-align: center; margin-bottom: 4px; }
+            .logo-container img { max-width: 120px; max-height: 60px; }
+            .shop-name { font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+            .watermark {
+                text-align: center;
+                font-size: 9px;
+                color: #bbb;
+                margin-top: 12px;
+                letter-spacing: 1px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="center">
+            <div class="logo-container">
+                <!-- Untuk menambahkan logo, uncomment baris di bawah dan ganti URL: -->
+                <!-- <img src="/images/logo.png" alt="Logo" /> -->
+            </div>
+            <div class="shop-name">ZUNOI CAFFE</div>
+            <div style="font-size:10px;color:#666;margin-top:2px;">
+                <!-- CUSTOM: Ganti alamat dan info toko di bawah ini -->
+                Jl. Contoh Alamat No. 123<br/>
+                Telp: 0812-3456-7890
+            </div>
+        </div>
+
+        <div class="dashed"></div>
+
+        <div class="flex-row" style="font-size:11px;">
+            <span>Waktu Penjualan</span>
+            <span>Kasir</span>
+        </div>
+        <div class="flex-row" style="font-size:11px;">
+            <span>${orderDate}</span>
+            <span>${order.name}</span>
+        </div>
+        <div class="flex-row" style="font-size:11px;">
+            <span>#${String(order.id).padStart(6, '0')}</span>
+            <span>${order.table || typeLabel}</span>
+        </div>
+
+        <div class="dashed"></div>
+        <div class="center bold" style="margin-bottom:4px;">${typeLabel}</div>
+        <div class="dashed"></div>
+
+        ${itemsHtml}
+
+        <div class="dashed"></div>
+
+        <div class="flex-row"><span>Subtotal</span><span>${fmtPrice(subtotal)}</span></div>
+        ${discountAmt > 0 ? `<div class="flex-row" style="color:#16a34a;"><span>Voucher (${order.voucher_code || 'Promo'})</span><span>-${fmtPrice(discountAmt)}</span></div>` : ''}
+        <div class="flex-row bold" style="font-size:14px;margin-top:4px;"><span>Grand Total</span><span>${fmtPrice(order.total)}</span></div>
+        <div class="flex-row"><span>${paymentLabel}</span><span>${fmtPrice(order.total)}</span></div>
+
+        <div class="dashed"></div>
+
+        <div class="center" style="font-size:11px;">Jumlah Item: ${totalItems}</div>
+
+        <div class="dashed"></div>
+
+        <div class="center" style="font-size:10px;color:#666;line-height:1.6;">
+            Harga sudah termasuk pajak PPN 10%<br/>
+            Terima kasih atas kunjungannya<br/>
+        </div>
+
+        <!-- WATERMARK - TIDAK BISA DIHAPUS -->
+        <div class="watermark">powered by Zunoi.id</div>
+    </body>
+    </html>`;
+
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    if (printWindow) {
+        printWindow.document.write(receiptHtml);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
+    }
+};
+
 onMounted(() => {
     fetchOrders(); // Initial fetch
     fetchTables(); // Ambil data meja
@@ -1280,6 +1420,15 @@ onUnmounted(() => {
 
                     <!-- Footer / Actions -->
                     <div class="border-t bg-gray-50 p-5 flex justify-end gap-3 rounded-b-3xl">
+                        <button
+                            @click="printReceipt(selectedOrder)"
+                            class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-5 py-2.5 text-sm font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#D4A373] hover:text-[#3B2314] active:scale-95"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                            </svg>
+                            Print Struk
+                        </button>
                         <button
                             @click="closeDetailModal"
                             class="rounded-xl bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-300 transition shadow-sm"

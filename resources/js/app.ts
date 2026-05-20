@@ -24,6 +24,8 @@ createInertiaApp({
             case lowerName === 'menupreview':
             case lowerName === 'menupreviewcheckout':
             case lowerName === 'menupreviewsuccess':
+            case lowerName === 'reservationmanagement':
+            case lowerName.startsWith('reservation/'):
             case lowerName.startsWith('statistics/'):
             case lowerName === 'auth/login':
             case lowerName.startsWith('customer/'):

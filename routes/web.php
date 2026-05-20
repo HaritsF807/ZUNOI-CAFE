@@ -6,6 +6,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\TokopayWebhookController;
+use App\Http\Controllers\ReservationController;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
@@ -211,6 +212,12 @@ Route::middleware(['auth'])->group(function () {
 
         return response()->json(['success' => true]);
     });
+
+    // Reservasi Admin
+    Route::get('/dashboard/reservasi', [ReservationController::class, 'index'])->name('reservation.index');
+    Route::post('/api/reservations', [ReservationController::class, 'store'])->name('reservation.store');
+    Route::patch('/api/reservations/{id}/status', [ReservationController::class, 'updateStatus']);
+    Route::delete('/api/reservations/{id}', [ReservationController::class, 'destroy']);
 });
 
 // Webhook Tokopay
