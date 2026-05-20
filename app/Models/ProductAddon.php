@@ -9,10 +9,18 @@ class ProductAddon extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'addon_name', 'extra_price', 'category'];
+    protected $fillable = ['addon_name', 'extra_price', 'category'];
 
-    public function product()
+    /**
+     * Produk-produk yang menggunakan add-on ini (many-to-many via pivot).
+     */
+    public function products()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsToMany(
+            Product::class,
+            'product_addon_assignments',
+            'product_addon_id',
+            'product_id'
+        )->withTimestamps();
     }
 }

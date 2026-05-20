@@ -75,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
     Route::get('/dashboard/promos', [\App\Http\Controllers\PromoController::class, 'index'])->name('promo.management');
+    Route::get('/dashboard/statistics', [\App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
 
     Route::get('/dashboard/tables', function () {
         return inertia('TableManagement');
@@ -126,12 +127,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/products/{id}', [MenuController::class, 'updateProduct']);
     Route::delete('/api/products/{id}', [MenuController::class, 'deleteProduct']);
     Route::patch('/api/products/{id}/toggle-availability', [MenuController::class, 'toggleProductAvailability']);
+    Route::post('/api/products/{id}/sync-addons', [MenuController::class, 'syncProductAddons']);
 
-    // API Kelola Addon Menu
-    Route::post('/api/products/{product_id}/addons', [MenuController::class, 'storeAddon']);
-    Route::post('/api/products/{product_id}/addons/default', [MenuController::class, 'useDefaultAddons']);
-    Route::put('/api/product-addons/{id}', [MenuController::class, 'updateAddon']);
-    Route::delete('/api/product-addons/{id}', [MenuController::class, 'deleteAddon']);
+    // API Kelola Addon Global
+    Route::post('/api/addons', [MenuController::class, 'storeAddon']);
+    Route::put('/api/addons/{id}', [MenuController::class, 'updateAddon']);
+    Route::delete('/api/addons/{id}', [MenuController::class, 'deleteAddon']);
 
     Route::post('/api/categories', [MenuController::class, 'storeCategory']);
     Route::put('/api/categories/{id}', [MenuController::class, 'updateCategory']);
