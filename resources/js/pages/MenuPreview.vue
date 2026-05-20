@@ -111,26 +111,11 @@ return 0;
     return base + addonsTotal;
 });
 
-const defaultAdditions = [
-    { name: 'Gula', price: 0 },
-    { name: 'Es Batu', price: 0 },
-    { name: 'Whipped Cream', price: 5000 },
-    { name: 'Espresso Shot', price: 7000 },
-];
-
 const openSelectionModal = (product) => {
     selectedProduct.value = product;
     selectedQuantity.value = 1;
 
-    const isDrinkCategory = ['coffee', 'non-coffee'].includes(
-        product.category?.slug?.toLowerCase() || '',
-    );
-    const sourceAdditions =
-        product.additions && product.additions.length > 0
-            ? product.additions
-            : isDrinkCategory
-              ? defaultAdditions
-              : [];
+    const sourceAdditions = product.additions || [];
 
     additions.value = sourceAdditions.map((a) => ({ ...a, selected: false }));
     isModalOpen.value = true;
