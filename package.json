@@ -36,6 +36,7 @@
     "dependencies": {
         "@inertiajs/vite": "^3.0.0",
         "@inertiajs/vue3": "^3.0.0",
+        "@vuepic/vue-datepicker": "^12.1.0",
         "@vueuse/core": "^12.8.2",
         "apexcharts": "^5.12.0",
         "axios": "^1.16.1",

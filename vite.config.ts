@@ -31,4 +31,7 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    ssr: {
+        noExternal: ['@vuepic/vue-datepicker'],
+    },
 });

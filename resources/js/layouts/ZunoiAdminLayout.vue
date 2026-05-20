@@ -340,6 +340,32 @@ provide('triggerToast', triggerToast);
                                 </svg>
                                 <span v-if="isSidebarOpen">Kelola Promo</span>
                             </Link>
+
+                            <Link
+                                :href="'/dashboard/history'"
+                                class="flex items-center gap-3 rounded-xl px-4 py-3 transition duration-200"
+                                :class="
+                                    usePage().url.startsWith('/dashboard/history')
+                                        ? 'bg-[#D4A373] font-bold text-[#3B2314] shadow-md'
+                                        : 'text-gray-300 hover:bg-[#FAEDCD]/10 hover:text-white'
+                                "
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="h-5 w-5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                <span v-if="isSidebarOpen">Riwayat</span>
+                            </Link>
                         </div>
                     </div>
 

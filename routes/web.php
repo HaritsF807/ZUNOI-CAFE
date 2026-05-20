@@ -98,6 +98,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/menu', [MenuController::class, 'index'])->name('menu.management');
     Route::get('/dashboard/promos', [PromoController::class, 'index'])->name('promo.management');
     Route::get('/dashboard/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('/dashboard/history', [\App\Http\Controllers\HistoryController::class, 'index'])->name('history.index');
 
     Route::get('/dashboard/tables', function () {
         return inertia('TableManagement');

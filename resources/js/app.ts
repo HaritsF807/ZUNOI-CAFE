@@ -27,6 +27,7 @@ createInertiaApp({
             case lowerName === 'reservationmanagement':
             case lowerName.startsWith('reservation/'):
             case lowerName.startsWith('statistics/'):
+            case lowerName.startsWith('history/'):
             case lowerName === 'auth/login':
             case lowerName.startsWith('customer/'):
                 return null;
