@@ -107,7 +107,7 @@ provide('triggerToast', triggerToast);
                 'w-20 overflow-hidden': !isSidebarOpen,
             }"
         >
-            <div class="flex flex-1 flex-col overflow-y-auto">
+            <div class="flex flex-1 flex-col overflow-y-auto custom-scrollbar">
                 <!-- Sidebar Header -->
                 <div
                     class="flex items-center justify-between border-b border-[#D4A373]/30 p-6"

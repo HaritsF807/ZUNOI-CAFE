@@ -172,3 +172,26 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Custom premium scrollbar for dark sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #3B2314; /* Match sidebar bg */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #D4A373; /* Gold/Tan color */
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #FAEDCD; /* Lighter color on hover */
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #D4A373 #3B2314;
+}
