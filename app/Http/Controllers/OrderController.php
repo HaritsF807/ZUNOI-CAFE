@@ -115,6 +115,7 @@ class OrderController extends Controller
                     'table' => $order->table->table_name ?? 'Takeaway',
                     'type' => $order->order_type === 'dine_in' ? 'Dine In' : 'Takeaway',
                     'name' => $order->customer_name,
+                    'customer_phone' => $order->customer_phone,
                     'total' => (float) $order->total_price,
                     'status' => $order->order_status,
                     'payment_method' => $order->payment_method,

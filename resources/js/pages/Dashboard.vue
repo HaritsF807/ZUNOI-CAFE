@@ -54,6 +54,20 @@ const openProofModal = (url) => {
     showProofModal.value = true;
 };
 
+// State Modal Detail Pesanan
+const showDetailModal = ref(false);
+const selectedOrder = ref(null);
+
+const openDetailModal = (order) => {
+    selectedOrder.value = order;
+    showDetailModal.value = true;
+};
+
+const closeDetailModal = () => {
+    showDetailModal.value = false;
+    selectedOrder.value = null;
+};
+
 // Sistem Polling API
 let pollInterval;
 const fetchOrders = async () => {
@@ -100,6 +114,7 @@ const acceptOrder = async (id) => {
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} berhasil diterima!`, 'success');
+            if (showDetailModal.value) closeDetailModal();
         }
     } catch (error) {
         console.error('Gagal menerima pesanan', error);
@@ -116,6 +131,7 @@ const completeOrder = async (id) => {
         if (response.data.success) {
             fetchOrders();
             triggerToast(`Pesanan #${id} ditandai sebagai selesai!`, 'success');
+            if (showDetailModal.value) closeDetailModal();
         }
     } catch (error) {
         console.error('Gagal menyelesaikan pesanan', error);
@@ -168,6 +184,36 @@ const filteredOrders = computed(() => {
 
     return orders.value.filter((o) => o.status === currentTab.value);
 });
+
+// Pagination State
+const currentPage = ref(1);
+const itemsPerPage = 5;
+
+watch(currentTab, () => {
+    currentPage.value = 1;
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredOrders.value.length / itemsPerPage);
+});
+
+const paginatedOrders = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredOrders.value.slice(start, end);
+});
+
+const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+    }
+};
+
+const prevPage = () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+    }
+};
 
 // Analytics Summary
 const stats = computed(() => {
@@ -611,7 +657,7 @@ onUnmounted(() => {
 
                     <div class="space-y-4" v-else>
                         <div
-                            v-for="order in filteredOrders"
+                            v-for="order in paginatedOrders"
                             :key="order.id"
                             class="flex flex-col items-start justify-between rounded-2xl border p-5 transition-all duration-300 hover:border-[#D4A373]/50 hover:shadow-sm lg:flex-row lg:items-center"
                             :class="{
@@ -624,104 +670,39 @@ onUnmounted(() => {
                             }"
                         >
                             <div class="w-full flex-1">
-                                <div
-                                    class="mb-2 flex flex-wrap items-center gap-2"
-                                >
-                                    <span
-                                        class="text-lg font-black text-[#3B2314]"
-                                        >#{{ order.id }}</span
-                                    >
+                                <div class="mb-3">
+                                    <!-- Baris Atas: ID Pesanan, No Meja -->
+                                    <div class="mb-2 flex items-center gap-2">
+                                        <span class="text-lg font-black text-[#3B2314]">#{{ order.id }}</span>
+                                        <span class="rounded-md bg-[#3B2314] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm border-none">
+                                            {{ order.table }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Baris Bawah: Takeaway/DineIn, Payment Method, Status Bayar -->
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
+                                            :class="order.type === 'Dine In' ? 'border border-[#D4A373]/20 bg-[#FAEDCD] text-[#3B2314]' : 'border bg-gray-100 text-gray-600'">
+                                            {{ order.type }}
+                                        </span>
 
-                                    <span
-                                        class="rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
-                                        :class="
-                                            order.type === 'Dine In'
-                                                ? 'border border-[#D4A373]/20 bg-[#FAEDCD] text-[#3B2314]'
-                                                : 'border bg-gray-100 text-gray-600'
-                                        "
-                                    >
-                                        {{ order.type }}
-                                    </span>
+                                        <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold"
+                                            :class="{
+                                                'border border-blue-200 bg-blue-50 text-blue-700': order.payment_method === 'qris_tokopay',
+                                                'border border-amber-200 bg-amber-50 text-amber-700': order.payment_method === 'qris_manual',
+                                                'border border-teal-200 bg-teal-50 text-teal-700': order.payment_method === 'cashier',
+                                            }">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-3.5 w-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-19.5 5.25h19.5m-19.5 0h19.5M2.25 18h19.5A2.25 2.25 0 0 0 24 15.75V8.25A2.25 2.25 0 0 0 21.75 6H2.25A2.25 2.25 0 0 0 0 8.25v7.5A2.25 2.25 0 0 0 2.25 18Z" />
+                                            </svg>
+                                            {{ order.payment_method === 'qris_tokopay' ? 'Tokopay QRIS' : order.payment_method === 'qris_manual' ? 'QRIS Manual' : 'Bayar Kasir' }}
+                                        </span>
 
-                                    <span
-                                        class="flex items-center gap-1 rounded-full border border-[#D4A373]/20 bg-white px-2 py-0.5 text-[10px] font-bold text-gray-700"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="2"
-                                            stroke="currentColor"
-                                            class="h-3.5 w-3.5 text-gray-400"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                                            />
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1 1 15 0Z"
-                                            />
-                                        </svg>
-                                        {{ order.table }}
-                                    </span>
-
-                                    <!-- Payment Method & Status Badges -->
-                                    <span
-                                        class="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                        :class="{
-                                            'border border-blue-200 bg-blue-50 text-blue-700':
-                                                order.payment_method ===
-                                                'qris_tokopay',
-                                            'border border-amber-200 bg-amber-50 text-amber-700':
-                                                order.payment_method ===
-                                                'qris_manual',
-                                            'border border-teal-200 bg-teal-50 text-teal-700':
-                                                order.payment_method ===
-                                                'cashier',
-                                        }"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="2"
-                                            stroke="currentColor"
-                                            class="h-3.5 w-3.5"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="M2.25 8.25h19.5M2.25 9h19.5m-19.5 5.25h19.5m-19.5 0h19.5M2.25 18h19.5A2.25 2.25 0 0 0 24 15.75V8.25A2.25 2.25 0 0 0 21.75 6H2.25A2.25 2.25 0 0 0 0 8.25v7.5A2.25 2.25 0 0 0 2.25 18Z"
-                                            />
-                                        </svg>
-                                        {{
-                                            order.payment_method ===
-                                            'qris_tokopay'
-                                                ? 'Tokopay QRIS'
-                                                : order.payment_method ===
-                                                    'qris_manual'
-                                                  ? 'QRIS Manual'
-                                                  : 'Bayar Kasir'
-                                        }}
-                                    </span>
-
-                                    <span
-                                        class="rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
-                                        :class="
-                                            order.payment_status === 'paid'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-500'
-                                        "
-                                    >
-                                        {{
-                                            order.payment_status === 'paid'
-                                                ? 'LUNAS'
-                                                : 'BELUM BAYAR'
-                                        }}
-                                    </span>
+                                        <span class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase"
+                                            :class="order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'">
+                                            {{ order.payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR' }}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div
@@ -770,46 +751,6 @@ onUnmounted(() => {
                                             {{ order.time }} WIB
                                         </p>
                                     </div>
-                                    <div
-                                        v-if="order.payment_proof"
-                                        class="h-6 w-px bg-gray-200"
-                                    ></div>
-                                    <div v-if="order.payment_proof">
-                                        <p
-                                            class="text-xs font-bold tracking-wider text-gray-400 uppercase"
-                                        >
-                                            Bukti Bayar
-                                        </p>
-                                        <button
-                                            @click="
-                                                openProofModal(
-                                                    order.payment_proof,
-                                                )
-                                            "
-                                            class="mt-0.5 flex cursor-pointer items-center gap-0.5 text-xs font-black text-blue-600 hover:text-blue-800 focus:outline-none"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="2.5"
-                                                stroke="currentColor"
-                                                class="h-3.5 w-3.5"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-                                                />
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                                                />
-                                            </svg>
-                                            Lihat Bukti
-                                        </button>
-                                    </div>
                                 </div>
 
                                 <!-- Detail Pesanan & Catatan -->
@@ -830,9 +771,8 @@ onUnmounted(() => {
                                             <span>{{ item.name }}</span>
                                             <span
                                                 v-if="item.notes"
-                                                class="text-[9px] text-[#D4A373] italic"
-                                                >({{ item.notes }})</span
-                                            >
+                                                class="text-[9px] text-[#3B2314]/80 italic"
+                                                >| ({{ item.notes }})</span>
                                         </div>
                                     </div>
 
@@ -887,73 +827,45 @@ onUnmounted(() => {
                             </div>
 
                             <!-- Actions Buttons -->
-                            <div
-                                class="mt-4 flex w-full shrink-0 justify-end gap-2 lg:mt-0 lg:w-auto"
-                            >
+                            <div class="mt-4 flex w-full shrink-0 justify-end gap-2 lg:mt-0 lg:w-auto">
                                 <button
-                                    v-if="order.status === 'pending'"
-                                    @click="acceptOrder(order.id)"
-                                    class="flex w-full transform items-center justify-center gap-1 rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95 lg:w-auto"
+                                    @click="openDetailModal(order)"
+                                    class="flex w-full transform items-center justify-center gap-1.5 rounded-xl bg-[#3B2314] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95 lg:w-auto"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="2.5"
-                                        stroke="currentColor"
-                                        class="h-4 w-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="m4.5 12.75 6 6 9-13.5"
-                                        />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                     </svg>
-                                    Terima Pesanan
+                                    Lihat Detail
                                 </button>
+                            </div>
+                        </div>
 
-                                <button
-                                    v-if="order.status === 'processing'"
-                                    @click="completeOrder(order.id)"
-                                    class="flex w-full transform items-center justify-center gap-1 rounded-xl bg-green-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-green-700 hover:shadow-lg active:scale-95 lg:w-auto"
+                        <!-- Pagination Controls -->
+                        <div v-if="totalPages > 1" class="flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-4 mt-4">
+                            <span class="text-xs text-gray-500">
+                                Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }} sampai {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} dari {{ filteredOrders.length }} pesanan
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="prevPage" 
+                                    :disabled="currentPage === 1"
+                                    class="rounded-lg border px-3 py-1.5 text-xs font-bold transition-all"
+                                    :class="currentPage === 1 ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-[#D4A373] text-[#3B2314] border-[#D4A373] hover:bg-[#FAEDCD] shadow-sm'"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="2.5"
-                                        stroke="currentColor"
-                                        class="h-4 w-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
-                                        />
-                                    </svg>
-                                    Tandai Selesai
+                                    Sebelumnya
                                 </button>
-
-                                <span
-                                    v-if="order.status === 'completed'"
-                                    class="flex items-center gap-1.5 rounded-xl bg-green-100 px-4 py-2 text-xs font-black tracking-wider text-green-800 uppercase select-none"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="2.5"
-                                        stroke="currentColor"
-                                        class="h-4 w-4 text-green-700"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="m4.5 12.75 6 6 9-13.5"
-                                        />
-                                    </svg>
-                                    Selesai Dikerjakan
+                                <span class="text-xs font-bold text-[#3B2314]">
+                                    Halaman {{ currentPage }} dari {{ totalPages }}
                                 </span>
+                                <button 
+                                    @click="nextPage" 
+                                    :disabled="currentPage === totalPages"
+                                    class="rounded-lg border px-3 py-1.5 text-xs font-bold transition-all"
+                                    :class="currentPage === totalPages ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-[#D4A373] text-[#3B2314] border-[#D4A373] hover:bg-[#FAEDCD] shadow-sm'"
+                                >
+                                    Selanjutnya
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -972,7 +884,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="showProofModal"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                 @click.self="showProofModal = false"
             >
                 <div
@@ -1040,6 +952,166 @@ onUnmounted(() => {
                             class="rounded-xl bg-[#3B2314] px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#25150c] active:scale-95"
                         >
                             Tutup Detail
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+        <!-- Modal Detail Pesanan -->
+        <Transition
+            enter-active-class="ease-out duration-300 transition"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="ease-in duration-200 transition"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div
+                v-if="showDetailModal"
+                class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                @click.self="closeDetailModal"
+            >
+                <div class="animate-scale-in relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between border-b p-5">
+                        <div>
+                            <h3 class="flex items-center gap-1.5 text-lg font-black text-[#3B2314]">
+                                Detail Pesanan #{{ selectedOrder?.id }}
+                            </h3>
+                            <div class="text-xs font-medium text-gray-500 mt-1 flex flex-col gap-0.5">
+                                <p>Waktu Masuk: {{ selectedOrder?.time }} WIB</p>
+                                <p>Nomor Meja: <span class="font-bold text-gray-700">{{ selectedOrder?.table }}</span> <span v-if="selectedOrder?.type" class="text-gray-400">({{ selectedOrder?.type }})</span></p>
+                            </div>
+                        </div>
+                        <button
+                            @click="closeDetailModal"
+                            class="text-gray-400 transition hover:text-gray-600 rounded-full hover:bg-gray-100 p-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="overflow-y-auto p-6 space-y-6 flex-1">
+                        
+                        <!-- Info Pelanggan & Pembayaran -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                                <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase">Data Pelanggan</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-500">NAMA</p>
+                                        <p class="text-sm font-bold text-gray-800">{{ selectedOrder?.name }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-500">NO WHATSAPP</p>
+                                        <p class="text-sm font-bold text-gray-800">{{ selectedOrder?.customer_phone || '-' }}</p>
+                                    </div>
+                                    <div v-if="selectedOrder?.notes">
+                                        <p class="text-[10px] font-bold text-gray-500">CATATAN BARISTA</p>
+                                        <p class="text-sm font-bold text-amber-600">"{{ selectedOrder.notes }}"</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                                <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase">Info Pembayaran</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[10px] font-bold text-gray-500">METODE</p>
+                                        <span class="rounded-md bg-white px-2 py-1 text-[10px] font-bold border shadow-sm">
+                                            {{ selectedOrder?.payment_method === 'qris_tokopay' ? 'Tokopay QRIS' : selectedOrder?.payment_method === 'qris_manual' ? 'QRIS Manual' : 'Bayar Kasir' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[10px] font-bold text-gray-500">STATUS</p>
+                                        <span class="rounded-md px-2 py-1 text-[10px] font-bold shadow-sm"
+                                            :class="selectedOrder?.payment_status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200'">
+                                            {{ selectedOrder?.payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR' }}
+                                        </span>
+                                    </div>
+                                    <div v-if="selectedOrder?.payment_proof" class="pt-2 mt-2 border-t border-gray-200">
+                                        <p class="text-[10px] font-bold text-gray-500 mb-2">BUKTI TRANSFER</p>
+                                        <button @click="openProofModal(selectedOrder.payment_proof)" class="w-full rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition flex items-center justify-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                            Lihat Bukti Transfer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Daftar Pesanan -->
+                        <div>
+                            <h4 class="mb-3 text-xs font-black tracking-widest text-gray-400 uppercase border-b pb-2">Item Pesanan</h4>
+                            <div class="space-y-3">
+                                <div v-for="(item, idx) in selectedOrder?.items" :key="idx" class="flex justify-between items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                                    <div class="flex gap-3">
+                                        <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3B2314] text-xs font-black text-white">
+                                            {{ item.quantity }}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-800">{{ item.name }}</p>
+                                            <p v-if="item.notes" class="text-[13px] font-semibold text-gray-800 italic mt-0.5">Catatan: {{ item.notes }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-bold text-gray-700 whitespace-nowrap">
+                                        Rp {{ (item.price * item.quantity).toLocaleString('id-ID') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        
+                        <!-- Rincian Harga -->
+                        <div class="rounded-2xl border border-[#D4A373]/30 bg-[#FAEDCD]/30 p-4">
+                            <div v-if="selectedOrder?.discount_amount > 0" class="flex justify-between text-sm mb-2 text-gray-600">
+                                <span>Subtotal</span>
+                                <span>Rp {{ (selectedOrder.total + selectedOrder.discount_amount).toLocaleString('id-ID') }}</span>
+                            </div>
+                            <div v-if="selectedOrder?.discount_amount > 0" class="flex justify-between text-sm mb-2 text-emerald-600">
+                                <span>Voucher ({{ selectedOrder.voucher_code }})</span>
+                                <span>- Rp {{ selectedOrder.discount_amount.toLocaleString('id-ID') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-[#D4A373]/20">
+                                <span class="text-sm font-black text-gray-800">Total Akhir</span>
+                                <span class="text-xl font-black text-[#3B2314]">Rp {{ selectedOrder?.total?.toLocaleString('id-ID') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer / Actions -->
+                    <div class="border-t bg-gray-50 p-5 flex justify-end gap-3 rounded-b-3xl">
+                        <button
+                            @click="closeDetailModal"
+                            class="rounded-xl bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-300 transition shadow-sm"
+                        >
+                            Tutup
+                        </button>
+                        
+                        <button
+                            v-if="selectedOrder?.status === 'pending'"
+                            @click="acceptOrder(selectedOrder.id)"
+                            class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            Terima Pesanan
+                        </button>
+
+                        <button
+                            v-if="selectedOrder?.status === 'processing'"
+                            @click="completeOrder(selectedOrder.id)"
+                            class="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-green-700 hover:shadow-lg active:scale-95"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                            </svg>
+                            Tandai Selesai
                         </button>
                     </div>
                 </div>
