@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 
@@ -13,7 +13,7 @@ const props = defineProps({
 
 const isQrZoomed = ref(false);
 
-const form = ref({
+const form = useForm({
     customer_name: '',
     customer_phone: '',
     order_type: 'dine_in',
@@ -21,6 +21,8 @@ const form = ref({
     cart_items: [],
     payment_proof: null,
     notes: '',
+    voucher_code: '',
+    discount_amount: 0,
 });
 
 let originalBgColor = '';
@@ -29,7 +31,7 @@ onMounted(() => {
     const savedCart = localStorage.getItem('zunoi_preview_cart');
 
     if (savedCart) {
-        form.value.cart_items = JSON.parse(savedCart);
+        form.cart_items = JSON.parse(savedCart);
     }
 
     originalBgColor = document.documentElement.style.backgroundColor;
@@ -85,7 +87,7 @@ const removeVoucher = () => {
 };
 
 const cartTotal = computed(() => {
-    return form.value.cart_items.reduce(
+    return form.cart_items.reduce(
         (total, item) => total + item.price * item.quantity,
         0,
     );
@@ -106,7 +108,7 @@ const appliedPromotionsList = computed(() => {
 
     // Map cart items by product id for easy lookup
     const cartMap = {};
-    form.value.cart_items.forEach((item) => {
+    form.cart_items.forEach((item) => {
         const prodId = parseInt(item.id);
 
         if (!cartMap[prodId]) {
@@ -284,11 +286,11 @@ const triggerToast = (message, type = 'success') => {
 };
 
 const handleFileChange = (e) => {
-    form.value.payment_proof = e.target.files[0];
+    form.payment_proof = e.target.files[0];
 };
 
 const submitOrder = () => {
-    form.value.post('/order/store-cashier', {
+    form.post('/order/store-cashier', {
         onSuccess: () => {
             localStorage.removeItem('zunoi_preview_cart');
         },
@@ -316,20 +318,20 @@ const recalculateVoucher = async () => {
 };
 
 const increaseQuantity = (index) => {
-    form.value.cart_items[index].quantity++;
+    form.cart_items[index].quantity++;
     localStorage.setItem(
         'zunoi_preview_cart',
-        JSON.stringify(form.value.cart_items),
+        JSON.stringify(form.cart_items),
     );
     recalculateVoucher();
 };
 
 const decreaseQuantity = (index) => {
-    if (form.value.cart_items[index].quantity > 1) {
-        form.value.cart_items[index].quantity--;
+    if (form.cart_items[index].quantity > 1) {
+        form.cart_items[index].quantity--;
         localStorage.setItem(
             'zunoi_preview_cart',
-            JSON.stringify(form.value.cart_items),
+            JSON.stringify(form.cart_items),
         );
         recalculateVoucher();
     } else {
@@ -338,10 +340,10 @@ const decreaseQuantity = (index) => {
 };
 
 const removeCartItem = (index) => {
-    form.value.cart_items.splice(index, 1);
+    form.cart_items.splice(index, 1);
     localStorage.setItem(
         'zunoi_preview_cart',
-        JSON.stringify(form.value.cart_items),
+        JSON.stringify(form.cart_items),
     );
     recalculateVoucher();
 };
@@ -1198,8 +1200,9 @@ const submitPreviewOrder = () => {
                         <!-- Main Button -->
                         <button
                             type="submit"
+                            @click.prevent="submitOrder"
                             class="shine-effect relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#25150B] p-3.5 pl-5"
-                            :disabled="form.cart_items.length === 0"
+                            :disabled="form.cart_items.length === 0 || form.processing"
                         >
                             <!-- Dark Brown Bottom-Right Radial Gradient -->
                             <div
@@ -1211,6 +1214,7 @@ const submitPreviewOrder = () => {
                                 class="relative z-10 flex items-center gap-2.5"
                             >
                                 <svg
+                                    v-if="!form.processing"
                                     xmlns="http://www.w3.org/2000/svg"
                                     fill="none"
                                     viewBox="0 0 24 24"
@@ -1226,7 +1230,7 @@ const submitPreviewOrder = () => {
                                 </svg>
                                 <span
                                     class="text-xs font-black tracking-wider text-[#FAEDCD] uppercase"
-                                    >Bayar Sekarang</span
+                                    >{{ form.processing ? 'Memproses...' : 'Bayar Sekarang' }}</span
                                 >
                             </div>
                             <div

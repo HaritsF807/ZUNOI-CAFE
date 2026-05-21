@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendFonnteMessageJob;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -14,6 +15,7 @@ use App\Services\FonnteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 
 class OrderController extends Controller
@@ -27,13 +29,13 @@ class OrderController extends Controller
             'order_type' => 'required|in:dine_in,takeaway',
             'payment_method' => 'required|in:cashier,qris_tokopay,qris_manual',
             'cart_items' => 'required|array',
-            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'payment_proof' => 'nullable|string|max:1000',
             'notes' => 'nullable|string',
         ]);
 
         if ($validated['payment_method'] === 'qris_manual') {
             $request->validate([
-                'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'payment_proof' => 'required|string|max:1000',
             ]);
         }
 
@@ -41,6 +43,13 @@ class OrderController extends Controller
         if (! $tableId) {
             return back()->with('error', 'Sesi meja tidak valid.');
         }
+
+        // Rate Limiter: Cegah klik ganda / spam dalam 5 detik per IP
+        $rateLimitKey = 'checkout_spam_' . $request->ip();
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            return back()->with('error', 'Terlalu banyak permintaan. Harap tunggu 5 detik.');
+        }
+        RateLimiter::hit($rateLimitKey, 5);
 
         // Hitung total harga
         $totalPrice = 0;
@@ -74,14 +83,18 @@ class OrderController extends Controller
             $finalPrice = 0;
         }
 
-        // Simpan bukti pembayaran ke database sebagai Base64 jika ada
-        $proofUrl = null;
-        if ($request->hasFile('payment_proof')) {
-            $file = $request->file('payment_proof');
-            $imageData = file_get_contents($file->getRealPath());
-            $base64 = base64_encode($imageData);
-            $proofUrl = 'data:'.$file->getMimeType().';base64,'.$base64;
+        // Pengecekan Duplikasi Pesanan (Double Order) dalam 10 detik terakhir
+        $recentDuplicate = Order::where('customer_phone', $validated['customer_phone'])
+            ->where('total_price', $finalPrice)
+            ->where('created_at', '>=', now()->subSeconds(10))
+            ->first();
+
+        if ($recentDuplicate) {
+            return redirect()->route('order.success', ['secure_key' => $recentDuplicate->secure_key]);
         }
+
+        // Ambil URL bukti pembayaran langsung dari Frontend (Cloudinary)
+        $proofUrl = $request->input('payment_proof');
 
         // Buat Order Induk
         $order = Order::create([
@@ -210,9 +223,21 @@ class OrderController extends Controller
 
         $order->save();
 
-        // Kirim WhatsApp Notifikasi Perubahan Status via Fonnte
+        return response()->json([
+            'success' => true,
+            'message' => 'Status pesanan berhasil diperbarui!',
+            'order' => $order,
+            'old_status' => $oldStatus,
+        ]);
+    }
+
+    // Endpoint rahasia untuk dipanggil dari Frontend secara background
+    public function sendFonnteNotification(Request $request, $id)
+    {
+        $order = Order::with('items.product')->findOrFail($id);
+        $oldStatus = $request->input('old_status');
+
         try {
-            $fonnte = new FonnteService;
             if ($order->order_status === 'processing' && $oldStatus !== 'processing') {
                 $itemList = '';
                 foreach ($order->items as $item) {
@@ -284,7 +309,7 @@ class OrderController extends Controller
                                 '🧾 *Struk/Invoice Online:* '.url("/order/success/{$order->secure_key}")."\n\n".
                                 '*Barista Zunoi sedang memproses pesanan Anda dengan penuh cinta!* Mohon tunggu sejenak, kami akan memberikan notifikasi setelah pesanan Anda selesai disiapkan. ☕💛';
                 }
-                $fonnte->sendMessage($order->customer_phone, $message);
+                \App\Jobs\SendFonnteMessageJob::dispatchSync($order->customer_phone, $message);
             } elseif ($order->order_status === 'completed' && $oldStatus !== 'completed') {
                 $itemList = '';
                 foreach ($order->items as $item) {
@@ -328,17 +353,13 @@ class OrderController extends Controller
                            "{$deliveryInstruction}\n\n".
                            'Terima kasih banyak telah memesan di Zunoi Caffe. Semoga hari Anda menyenangkan dan penuh energi positif! ☕💛';
 
-                $fonnte->sendMessage($order->customer_phone, $message);
+                \App\Jobs\SendFonnteMessageJob::dispatchSync($order->customer_phone, $message);
             }
         } catch (\Exception $e) {
-            Log::error('Gagal kirim WA update status: '.$e->getMessage());
+            Log::error('Gagal kirim WA background Fonnte: '.$e->getMessage());
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Status pesanan berhasil diperbarui!',
-            'order' => $order,
-        ]);
+        return response()->json(['success' => true]);
     }
 
     // Halaman sukses sederhana
@@ -398,6 +419,16 @@ class OrderController extends Controller
             'voucher_code' => 'nullable|string',
         ]);
 
+        // Rate Limiter untuk Kasir
+        $rateLimitKey = 'cashier_checkout_' . $request->ip();
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Harap tunggu 5 detik sebelum membuat pesanan baru (Anti-Spam).'
+            ], 429);
+        }
+        RateLimiter::hit($rateLimitKey, 5);
+
         // Hitung total harga
         $totalPrice = 0;
         foreach ($validated['cart_items'] as $item) {
@@ -428,6 +459,20 @@ class OrderController extends Controller
         $finalPrice = $totalPrice - $discountAmount - $promoDiscountAmount;
         if ($finalPrice < 0) {
             $finalPrice = 0;
+        }
+
+        // Pengecekan Duplikasi Pesanan untuk Kasir
+        $recentDuplicate = Order::where('customer_name', $validated['customer_name'])
+            ->where('total_price', $finalPrice)
+            ->where('created_at', '>=', now()->subSeconds(10))
+            ->first();
+
+        if ($recentDuplicate) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesanan ini sudah dibuat beberapa detik yang lalu.',
+                'order' => $recentDuplicate->load(['table', 'items.product']),
+            ]);
         }
 
         // Tentukan status awal

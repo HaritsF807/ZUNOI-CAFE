@@ -36,5 +36,22 @@ export default defineConfig({
     },
     server: {
         host: '127.0.0.1',
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('apexcharts') || id.includes('vue3-apexcharts')) {
+                            return 'vendor-charts';
+                        }
+                        if (id.includes('vue') || id.includes('@inertiajs') || id.includes('axios')) {
+                            return 'vendor-core';
+                        }
+                        return 'vendor';
+                    }
+                }
+            }
+        }
     }
 });

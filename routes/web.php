@@ -17,6 +17,7 @@ use App\Models\Setting;
 use App\Models\Table;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Features;
 
@@ -36,26 +37,32 @@ Route::get('/scan-required', function () {
 
 Route::middleware(['verify_table_session'])->group(function () {
     Route::get('/order', function () {
-        $products = Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
-            return [
-                'id' => $p->id,
-                'category_id' => $p->category_id,
-                'name' => $p->name,
-                'price' => (int) $p->price,
-                'description' => $p->description,
-                'image' => $p->image,
-                'is_available' => (bool) $p->is_available,
-                'category' => $p->category,
-                'additions' => $p->assignedAddons->map(function ($a) {
-                    return [
-                        'name' => $a->addon_name,
-                        'price' => (int) $a->extra_price,
-                    ];
-                }),
-            ];
+        $products = Cache::remember('menu_products', 60 * 5, function () {
+            return Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'category_id' => $p->category_id,
+                    'name' => $p->name,
+                    'price' => (int) $p->price,
+                    'description' => $p->description,
+                    'image' => $p->image,
+                    'is_available' => (bool) $p->is_available,
+                    'category' => $p->category,
+                    'additions' => $p->assignedAddons->map(function ($a) {
+                        return [
+                            'name' => $a->addon_name,
+                            'price' => (int) $a->extra_price,
+                        ];
+                    })->toArray(),
+                ];
+            })->toArray();
         });
-        $categories = Category::orderBy('name', 'asc')->get();
-        $banners = Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $categories = Cache::remember('menu_categories', 60 * 5, function () {
+            return Category::orderBy('name', 'asc')->get()->toArray();
+        });
+        $banners = Cache::remember('menu_banners', 60 * 5, function () {
+            return Banner::where('is_active', true)->orderBy('created_at', 'desc')->get()->toArray();
+        });
 
         return inertia('Customer/MenuList', [
             'products' => $products,
@@ -65,10 +72,14 @@ Route::middleware(['verify_table_session'])->group(function () {
     })->name('order.index');
 
     Route::get('/checkout', function () {
-        $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
-        $promotions = Promotion::where('is_active', true)
-            ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
-            ->get();
+        $qrisUrl = Cache::remember('qris_manual_url', 60 * 60, function () {
+            return Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        });
+        $promotions = Cache::remember('active_promotions', 60 * 5, function () {
+            return Promotion::where('is_active', true)
+                ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
+                ->get();
+        });
 
         return inertia('Customer/Cart', [
             'qris_manual_url' => $qrisUrl,
@@ -105,26 +116,32 @@ Route::middleware(['auth'])->group(function () {
     })->name('table.management');
 
     Route::get('/dashboard/menu-preview', function () {
-        $products = Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
-            return [
-                'id' => $p->id,
-                'category_id' => $p->category_id,
-                'name' => $p->name,
-                'price' => (int) $p->price,
-                'description' => $p->description,
-                'image' => $p->image,
-                'is_available' => (bool) $p->is_available,
-                'category' => $p->category,
-                'additions' => $p->assignedAddons->map(function ($a) {
-                    return [
-                        'name' => $a->addon_name,
-                        'price' => (int) $a->extra_price,
-                    ];
-                }),
-            ];
+        $products = Cache::remember('menu_products', 60 * 5, function () {
+            return Product::with(['category', 'assignedAddons'])->get()->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'category_id' => $p->category_id,
+                    'name' => $p->name,
+                    'price' => (int) $p->price,
+                    'description' => $p->description,
+                    'image' => $p->image,
+                    'is_available' => (bool) $p->is_available,
+                    'category' => $p->category,
+                    'additions' => $p->assignedAddons->map(function ($a) {
+                        return [
+                            'name' => $a->addon_name,
+                            'price' => (int) $a->extra_price,
+                        ];
+                    }),
+                ];
+            });
         });
-        $categories = Category::orderBy('name', 'asc')->get();
-        $banners = Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $categories = Cache::remember('menu_categories', 60 * 5, function () {
+            return Category::orderBy('name', 'asc')->get();
+        });
+        $banners = Cache::remember('menu_banners', 60 * 5, function () {
+            return Banner::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        });
 
         return inertia('MenuPreview', [
             'products' => $products,
@@ -134,10 +151,14 @@ Route::middleware(['auth'])->group(function () {
     })->name('menu.preview');
 
     Route::get('/dashboard/menu-preview/checkout', function () {
-        $qrisUrl = Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
-        $promotions = Promotion::where('is_active', true)
-            ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
-            ->get();
+        $qrisUrl = Cache::remember('qris_manual_url', 60 * 60, function () {
+            return Setting::getValue('qris_manual_url', 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+        });
+        $promotions = Cache::remember('active_promotions', 60 * 5, function () {
+            return Promotion::where('is_active', true)
+                ->with(['buyProduct', 'bundlingProduct', 'getProduct'])
+                ->get();
+        });
 
         return inertia('MenuPreviewCheckout', [
             'qris_manual_url' => $qrisUrl,
@@ -195,6 +216,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/api/orders/live', [OrderController::class, 'liveOrders']);
     Route::patch('/api/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::post('/api/orders/{id}/send-notification', [OrderController::class, 'sendFonnteNotification']);
 
     // Manajemen Meja
     Route::get('/api/tables', function () {

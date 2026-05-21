@@ -31,7 +31,13 @@ onMounted(() => {
     const savedCart = localStorage.getItem('zunoi_cart');
 
     if (savedCart) {
-        form.cart_items = JSON.parse(savedCart);
+        try {
+            form.cart_items = JSON.parse(savedCart);
+        } catch (e) {
+            console.error('Failed to parse cart:', e);
+            form.cart_items = [];
+            localStorage.removeItem('zunoi_cart');
+        }
     }
 
     originalBgColor = document.documentElement.style.backgroundColor;
@@ -55,6 +61,7 @@ const appliedVoucher = ref(null);
 const discountAmount = ref(0);
 const voucherError = ref('');
 const isCheckingVoucher = ref(false);
+const isUploading = ref(false);
 
 const applyVoucher = async () => {
     if (!voucherCodeInput.value.trim()) {
@@ -286,7 +293,31 @@ const handleFileChange = (e) => {
     form.payment_proof = e.target.files[0];
 };
 
-const submitOrder = () => {
+const submitOrder = async () => {
+    // Jika ada file bukti pembayaran, upload ke Cloudinary dulu
+    if (form.payment_proof instanceof File) {
+        isUploading.value = true;
+        try {
+            const formData = new FormData();
+            formData.append('file', form.payment_proof);
+            formData.append('upload_preset', 'jdza9roi');
+            
+            const cloudName = 'dzjlyszv3';
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+            
+            const uploadRes = await axios.post(uploadUrl, formData);
+            
+            // Set payment_proof menjadi URL hasil upload
+            form.payment_proof = uploadRes.data.secure_url;
+        } catch (error) {
+            console.error('Gagal mengunggah foto ke Cloudinary', error);
+            alert('Gagal mengunggah bukti pembayaran. Silakan coba lagi.');
+            isUploading.value = false;
+            return; // Batalkan submit order
+        }
+        isUploading.value = false;
+    }
+
     form.post('/order/store', {
         onSuccess: () => {
             localStorage.removeItem('zunoi_cart');
@@ -406,7 +437,10 @@ const editCartItem = (index) => {
         description: '',
     };
     selectedQuantity.value = item.quantity;
-    additions.value = getAdditionsForCartItem(item);
+    
+    // Construct additions structure based on what was saved
+    const sourceAdditions = item.additions || [];
+    additions.value = sourceAdditions.map(a => ({...a}));
     isModalOpen.value = true;
 };
 
@@ -1172,7 +1206,7 @@ const saveCartItem = () => {
                         <button
                             type="submit"
                             class="shine-effect relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[13px] bg-[#25150B] p-3.5 pl-5"
-                            :disabled="form.cart_items.length === 0"
+                            :disabled="form.cart_items.length === 0 || isUploading"
                         >
                             <!-- Dark Brown Bottom-Right Radial Gradient -->
                             <div
@@ -1198,8 +1232,8 @@ const saveCartItem = () => {
                                     />
                                 </svg>
                                 <span
-                                    class="text-xs font-black tracking-wider text-[#FAEDCD] uppercase"
-                                    >Bayar Sekarang</span
+                                    class="text-sm font-black tracking-wide text-[#FAEDCD]"
+                                    >{{ isUploading ? 'Mengunggah...' : 'Bayar Sekarang' }}</span
                                 >
                             </div>
                             <div
@@ -1487,12 +1521,16 @@ const saveCartItem = () => {
                         
                         <div class="flex flex-col gap-3">
                             <button 
-                                @click="() => { showConfirmModal = false; submitOrder(); }"
-                                class="w-full rounded-xl bg-[#3B2314] py-3.5 text-sm font-black text-[#FAEDCD] transition hover:bg-[#2A180E]"
+                                @click="submitOrder"
+                                :disabled="form.processing"
+                                :class="form.processing ? 'bg-[#3B2314]/70 cursor-not-allowed' : 'bg-[#3B2314] hover:bg-[#2A180E]'"
+                                class="w-full rounded-xl py-3.5 text-sm font-black text-[#FAEDCD] transition"
                             >
-                                Ya, Sudah Sesuai
+                                <span v-if="form.processing">Memproses...</span>
+                                <span v-else>Ya, Sudah Sesuai</span>
                             </button>
                             <button 
+                                v-if="!form.processing"
                                 @click="showConfirmModal = false"
                                 class="w-full rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50"
                             >

@@ -294,16 +294,34 @@ const submitForm = async () => {
     isSubmitting.value = true;
 
     try {
+        let finalImageUrl = croppedImageSrc.value;
+
+        // Jika diawali data:image, berarti ada crop baru, upload ke Cloudinary
+        if (croppedImageSrc.value.startsWith('data:image')) {
+            const uploadData = new FormData();
+            uploadData.append('file', croppedImageSrc.value);
+            uploadData.append('upload_preset', 'jdza9roi');
+            
+            const cloudName = 'dzjlyszv3';
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+            
+            try {
+                const uploadRes = await axios.post(uploadUrl, uploadData);
+                finalImageUrl = uploadRes.data.secure_url;
+            } catch (error) {
+                console.error('Cloudinary upload failed', error);
+                triggerToast('Gagal mengunggah banner ke Cloudinary.', 'error');
+                isSubmitting.value = false;
+                return;
+            }
+        }
+
         const payload = {
             title: form.value.title,
             description: form.value.description,
             is_active: form.value.is_active ? 1 : 0,
+            image_url: finalImageUrl,
         };
-
-        // If it starts with data:image, it means a new crop was generated
-        if (croppedImageSrc.value.startsWith('data:image')) {
-            payload.image_data = croppedImageSrc.value;
-        }
 
         let response;
 

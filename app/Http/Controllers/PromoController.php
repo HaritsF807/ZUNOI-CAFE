@@ -8,6 +8,7 @@ use App\Models\Promotion;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -164,69 +165,23 @@ class PromoController extends Controller
         ]);
     }
 
-    // Save a new promo banner
     public function storePromo(Request $request)
     {
         $validated = $request->validate([
             'title' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'is_active' => 'required|boolean',
-            'image_data' => 'nullable|string', // Base64 cropped image
-            'image_file' => 'nullable|image|max:5120', // Raw fallback file upload
+            'image_url' => 'required|string', // URL dari Cloudinary
         ]);
 
-        $imageUrl = null;
-
-        // Process Base64 cropped image first
-        if (! empty($validated['image_data'])) {
-            $imageData = $validated['image_data'];
-
-            // Extract file extension and base64 string
-            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                $imageDecoded = substr($imageData, strpos($imageData, ',') + 1);
-                $imageDecoded = base64_decode($imageDecoded);
-
-                $ext = strtolower($type[1]); // png, jpeg, webp, etc.
-                if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                    $ext = 'jpg';
-                }
-
-                $filename = time().'_'.Str::random(10).'.'.$ext;
-
-                if (! file_exists(public_path('uploads/promos'))) {
-                    mkdir(public_path('uploads/promos'), 0755, true);
-                }
-
-                file_put_contents(public_path('uploads/promos/'.$filename), $imageDecoded);
-                $imageUrl = '/uploads/promos/'.$filename;
-            }
-        }
-        // Fallback to raw file upload if no base64 was sent
-        elseif ($request->hasFile('image_file')) {
-            $file = $request->file('image_file');
-            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
-
-            if (! file_exists(public_path('uploads/promos'))) {
-                mkdir(public_path('uploads/promos'), 0755, true);
-            }
-
-            $file->move(public_path('uploads/promos'), $filename);
-            $imageUrl = '/uploads/promos/'.$filename;
-        }
-
-        if (! $imageUrl) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gambar banner promo wajib diunggah!',
-            ], 422);
-        }
-
         $banner = Banner::create([
-            'image_url' => $imageUrl,
+            'image_url' => $validated['image_url'],
             'title' => $validated['title'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'],
         ]);
+
+        Cache::forget('menu_banners');
 
         return response()->json([
             'success' => true,
@@ -235,7 +190,6 @@ class PromoController extends Controller
         ]);
     }
 
-    // Update an existing promo banner
     public function updatePromo(Request $request, $id)
     {
         $banner = Banner::findOrFail($id);
@@ -244,68 +198,17 @@ class PromoController extends Controller
             'title' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'is_active' => 'required|boolean',
-            'image_data' => 'nullable|string', // Base64 cropped image
-            'image_file' => 'nullable|image|max:5120',
+            'image_url' => 'required|string', // URL dari Cloudinary
         ]);
 
-        $imageUrl = $banner->image_url;
-
-        // Process Base64 cropped image first
-        if (! empty($validated['image_data'])) {
-            $imageData = $validated['image_data'];
-
-            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                $imageDecoded = substr($imageData, strpos($imageData, ',') + 1);
-                $imageDecoded = base64_decode($imageDecoded);
-
-                $ext = strtolower($type[1]);
-                if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                    $ext = 'jpg';
-                }
-
-                $filename = time().'_'.Str::random(10).'.'.$ext;
-
-                if (! file_exists(public_path('uploads/promos'))) {
-                    mkdir(public_path('uploads/promos'), 0755, true);
-                }
-
-                file_put_contents(public_path('uploads/promos/'.$filename), $imageDecoded);
-
-                // Delete old image file
-                $oldPath = public_path($banner->image_url);
-                if (file_exists($oldPath) && is_file($oldPath)) {
-                    @unlink($oldPath);
-                }
-
-                $imageUrl = '/uploads/promos/'.$filename;
-            }
-        }
-        // Fallback to raw file upload
-        elseif ($request->hasFile('image_file')) {
-            $file = $request->file('image_file');
-            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
-
-            if (! file_exists(public_path('uploads/promos'))) {
-                mkdir(public_path('uploads/promos'), 0755, true);
-            }
-
-            $file->move(public_path('uploads/promos'), $filename);
-
-            // Delete old image file
-            $oldPath = public_path($banner->image_url);
-            if (file_exists($oldPath) && is_file($oldPath)) {
-                @unlink($oldPath);
-            }
-
-            $imageUrl = '/uploads/promos/'.$filename;
-        }
-
         $banner->update([
-            'image_url' => $imageUrl,
+            'image_url' => $validated['image_url'],
             'title' => $validated['title'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'],
         ]);
+
+        Cache::forget('menu_banners');
 
         return response()->json([
             'success' => true,
@@ -314,18 +217,13 @@ class PromoController extends Controller
         ]);
     }
 
-    // Delete a promo banner
     public function deletePromo($id)
     {
         $banner = Banner::findOrFail($id);
 
-        // Delete image file
-        $imagePath = public_path($banner->image_url);
-        if (file_exists($imagePath) && is_file($imagePath)) {
-            @unlink($imagePath);
-        }
-
         $banner->delete();
+
+        Cache::forget('menu_banners');
 
         return response()->json([
             'success' => true,
@@ -410,6 +308,8 @@ class PromoController extends Controller
     {
         $promotion = Promotion::findOrFail($id);
         $promotion->delete();
+
+        Cache::forget('active_promotions');
 
         return response()->json([
             'success' => true,

@@ -59,6 +59,7 @@ const handleConfirmYes = () => {
 };
 
 // Image Source Selector & Files
+const isUploadingProduct = ref(false);
 const imageInputType = ref('file'); // 'file' or 'url'
 const productImageFile = ref(null);
 const productImagePreview = ref(null);
@@ -249,11 +250,34 @@ const saveProduct = async () => {
         !productForm.value.category_id
     ) {
         triggerToast('Mohon isi field wajib (Nama, Harga, Kategori)!', 'error');
-
         return;
     }
 
+    isUploadingProduct.value = true;
+
     try {
+        let finalImageUrl = productForm.value.image || '';
+
+        // Jika upload via file, kirim ke Cloudinary dulu
+        if (imageInputType.value === 'file' && productImageFile.value) {
+            const uploadData = new FormData();
+            uploadData.append('file', productImageFile.value);
+            uploadData.append('upload_preset', 'jdza9roi');
+            
+            const cloudName = 'dzjlyszv3';
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+            
+            try {
+                const uploadRes = await axios.post(uploadUrl, uploadData);
+                finalImageUrl = uploadRes.data.secure_url;
+            } catch (error) {
+                console.error('Cloudinary upload failed', error);
+                triggerToast('Gagal mengunggah foto ke Cloudinary.', 'error');
+                isUploadingProduct.value = false;
+                return;
+            }
+        }
+
         const formData = new FormData();
         formData.append('category_id', productForm.value.category_id);
         formData.append('name', productForm.value.name);
@@ -263,25 +287,13 @@ const saveProduct = async () => {
             'is_available',
             productForm.value.is_available ? '1' : '0',
         );
-
-        if (imageInputType.value === 'file') {
-            if (productImageFile.value) {
-                formData.append('image_file', productImageFile.value);
-            } else if (isEditingProduct.value && productForm.value.image) {
-                formData.append('image', productForm.value.image);
-            }
-        } else {
-            formData.append('image', productForm.value.image || '');
-        }
+        formData.append('image', finalImageUrl);
 
         if (isEditingProduct.value) {
             formData.append('_method', 'PUT');
             const response = await axios.post(
                 `/api/products/${productForm.value.id}`,
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                },
+                formData
             );
 
             if (response.data.success) {
@@ -293,9 +305,7 @@ const saveProduct = async () => {
                 syncData();
             }
         } else {
-            const response = await axios.post('/api/products', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            const response = await axios.post('/api/products', formData);
 
             if (response.data.success) {
                 triggerToast('Produk berhasil ditambahkan!', 'success');
@@ -309,6 +319,8 @@ const saveProduct = async () => {
             'Gagal menyimpan produk. Periksa kembali inputan Anda.',
             'error',
         );
+    } finally {
+        isUploadingProduct.value = false;
     }
 };
 
@@ -1693,10 +1705,11 @@ const paginatedProducts = computed(() => {
                 </button>
                 <button
                     @click="saveProduct"
-                    class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95"
+                    :disabled="isUploadingProduct || isSyncingAddons"
+                    class="flex items-center gap-2 rounded-xl bg-[#3B2314] px-6 py-2.5 text-xs font-black text-[#FAEDCD] shadow-md transition hover:bg-[#25150c] hover:shadow-lg active:scale-95 disabled:opacity-70"
                 >
                     <svg
-                        v-if="isSyncingAddons"
+                        v-if="isUploadingProduct || isSyncingAddons"
                         class="h-3 w-3 animate-spin text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -1716,7 +1729,7 @@ const paginatedProducts = computed(() => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                     </svg>
-                    Simpan Menu & Add-ons
+                    {{ isUploadingProduct ? 'Mengunggah Foto...' : 'Simpan Menu & Add-ons' }}
                 </button>
             </div>
         </div>

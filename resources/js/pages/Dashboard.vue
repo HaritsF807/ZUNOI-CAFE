@@ -17,6 +17,7 @@ const orders = ref([]);
 const activeStaff = ref([]);
 const tables = ref([]);
 const newTableName = ref('');
+const isUpdatingStatus = ref(false); // Lock polling during optimistic updates
 
 // Tab aktif untuk filter pesanan: 'all', 'pending', 'processing', 'completed'
 const currentTab = ref('all');
@@ -72,6 +73,9 @@ const closeDetailModal = () => {
 // Sistem Polling API
 let pollInterval;
 const fetchOrders = async () => {
+    // Jangan overwrite state jika sedang ada optimistic update
+    if (isUpdatingStatus.value) return;
+
     try {
         const response = await axios.get('/api/orders/live');
         orders.value = response.data.orders;
@@ -108,42 +112,93 @@ const addTable = async () => {
 
 // Update status pesanan secara RIIL ke database
 const acceptOrder = async (id) => {
+    // 1. Optimistic Update (Ubah UI seketika)
+    isUpdatingStatus.value = true;
+    const orderIndex = orders.value.findIndex(o => o.id === id);
+    let originalStatus = null;
+    
+    if (orderIndex !== -1) {
+        originalStatus = orders.value[orderIndex].status;
+        orders.value[orderIndex].status = 'processing'; // Langsung pindah tab
+        triggerToast(`Pesanan #${id} langsung diproses!`, 'success');
+        
+        if (showDetailModal.value) {
+            closeDetailModal();
+        }
+    }
+
     try {
+        // 2. Kirim ke server di latar belakang
         const response = await axios.patch(`/api/orders/${id}/status`, {
             order_status: 'processing',
         });
 
         if (response.data.success) {
-            fetchOrders();
-            triggerToast(`Pesanan #${id} berhasil diterima!`, 'success');
-
-            if (showDetailModal.value) {
-closeDetailModal();
-}
+            // 3. Trigger Fonnte WhatsApp diam-diam di background (Browser yg kerja)
+            axios.post(`/api/orders/${id}/send-notification`, {
+                old_status: response.data.old_status
+            }).catch(() => {});
+            
+            // Biarkan fetchOrders() dijalankan oleh polling reguler (interval 3 detik)
+            // agar tidak menyebabkan double re-render yang terasa lambat.
+        } else {
+            throw new Error('Server menolak update');
         }
     } catch (error) {
         console.error('Gagal menerima pesanan', error);
-        triggerToast('Gagal memperbarui status pesanan.', 'error');
+        
+        // 4. Auto-Rollback jika server gagal
+        if (orderIndex !== -1 && originalStatus) {
+            orders.value[orderIndex].status = originalStatus;
+        }
+        triggerToast('Server gagal memproses. Pesanan dikembalikan.', 'error');
+    } finally {
+        isUpdatingStatus.value = false;
+        fetchOrders(true); // Sync dengan server setelah update selesai
     }
 };
 
 const completeOrder = async (id) => {
+    // 1. Optimistic Update (Ubah UI seketika)
+    isUpdatingStatus.value = true;
+    const orderIndex = orders.value.findIndex(o => o.id === id);
+    let originalStatus = null;
+    
+    if (orderIndex !== -1) {
+        originalStatus = orders.value[orderIndex].status;
+        orders.value[orderIndex].status = 'completed'; // Langsung pindah tab
+        triggerToast(`Pesanan #${id} langsung diselesaikan!`, 'success');
+        
+        if (showDetailModal.value) {
+            closeDetailModal();
+        }
+    }
+
     try {
+        // 2. Kirim ke server di latar belakang
         const response = await axios.patch(`/api/orders/${id}/status`, {
             order_status: 'completed',
         });
 
         if (response.data.success) {
-            fetchOrders();
-            triggerToast(`Pesanan #${id} ditandai sebagai selesai!`, 'success');
-
-            if (showDetailModal.value) {
-closeDetailModal();
-}
+            // 3. Trigger Fonnte WhatsApp diam-diam di background
+            axios.post(`/api/orders/${id}/send-notification`, {
+                old_status: response.data.old_status
+            }).catch(() => {});
+        } else {
+            throw new Error('Server menolak update');
         }
     } catch (error) {
         console.error('Gagal menyelesaikan pesanan', error);
-        triggerToast('Gagal memperbarui status pesanan.', 'error');
+        
+        // 4. Auto-Rollback jika server gagal
+        if (orderIndex !== -1 && originalStatus) {
+            orders.value[orderIndex].status = originalStatus;
+        }
+        triggerToast('Server gagal memproses. Pesanan dikembalikan.', 'error');
+    } finally {
+        isUpdatingStatus.value = false;
+        fetchOrders(true);
     }
 };
 

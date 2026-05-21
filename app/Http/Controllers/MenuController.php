@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAddon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -56,12 +57,14 @@ class MenuController extends Controller
     public function syncProductAddons(Request $request, $id)
     {
         $validated = $request->validate([
-            'addon_ids' => 'required|array',
+            'addon_ids' => 'present|array',
             'addon_ids.*' => 'exists:product_addons,id',
         ]);
 
         $product = Product::findOrFail($id);
         $product->assignedAddons()->sync($validated['addon_ids']);
+
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
@@ -89,6 +92,8 @@ class MenuController extends Controller
             'slug' => Str::slug($validated['name']),
         ]);
 
+        Cache::forget('menu_categories');
+
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil ditambahkan!',
@@ -108,6 +113,8 @@ class MenuController extends Controller
             'slug' => Str::slug($validated['name']),
         ]);
 
+        Cache::forget('menu_categories');
+
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil diperbarui!',
@@ -119,6 +126,9 @@ class MenuController extends Controller
     {
         $category = Category::findOrFail($id);
         $category->delete(); // cascades and deletes products in the category if constrained
+
+        Cache::forget('menu_categories');
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
@@ -142,19 +152,6 @@ class MenuController extends Controller
 
         $imageUrl = $validated['image'] ?? 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=300&auto=format&fit=crop';
 
-        if ($request->hasFile('image_file')) {
-            $file = $request->file('image_file');
-            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
-
-            // Buat direktori jika belum ada
-            if (! file_exists(public_path('uploads/products'))) {
-                mkdir(public_path('uploads/products'), 0777, true);
-            }
-
-            $file->move(public_path('uploads/products'), $filename);
-            $imageUrl = '/uploads/products/'.$filename;
-        }
-
         $product = Product::create([
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
@@ -163,6 +160,8 @@ class MenuController extends Controller
             'image' => $imageUrl,
             'is_available' => $validated['is_available'] ?? true,
         ]);
+
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
@@ -187,19 +186,6 @@ class MenuController extends Controller
 
         $imageUrl = $validated['image'] ?? $product->image;
 
-        if ($request->hasFile('image_file')) {
-            $file = $request->file('image_file');
-            $filename = time().'_'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
-
-            // Buat direktori jika belum ada
-            if (! file_exists(public_path('uploads/products'))) {
-                mkdir(public_path('uploads/products'), 0777, true);
-            }
-
-            $file->move(public_path('uploads/products'), $filename);
-            $imageUrl = '/uploads/products/'.$filename;
-        }
-
         $product->update([
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
@@ -208,6 +194,8 @@ class MenuController extends Controller
             'image' => $imageUrl,
             'is_available' => $validated['is_available'] ?? true,
         ]);
+
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
@@ -221,6 +209,8 @@ class MenuController extends Controller
         $product = Product::findOrFail($id);
         $product->delete();
 
+        Cache::forget('menu_products');
+
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil dihapus!',
@@ -232,6 +222,8 @@ class MenuController extends Controller
         $product = Product::findOrFail($id);
         $product->is_available = ! $product->is_available;
         $product->save();
+
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
@@ -255,6 +247,8 @@ class MenuController extends Controller
             'extra_price' => $validated['extra_price'],
             'category' => $validated['category'],
         ]);
+
+        Cache::forget('menu_products');
 
         return response()->json([
             'success' => true,
