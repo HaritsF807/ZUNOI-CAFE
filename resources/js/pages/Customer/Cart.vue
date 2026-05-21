@@ -110,7 +110,10 @@ const taxTotal = computed(() => {
     return 0;
 });
 
-const activePromotions = computed(() => props.promotions || []);
+const activePromotions = computed(() => {
+    if (!props.promotions) return [];
+    return Array.isArray(props.promotions) ? props.promotions : Object.values(props.promotions);
+});
 
 const appliedPromotionsList = computed(() => {
     const list = [];
@@ -1079,6 +1082,7 @@ const saveCartItem = () => {
                         >
                             <input
                                 type="radio"
+                                name="payment_method"
                                 v-model="form.payment_method"
                                 value="qris_tokopay"
                                 class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
@@ -1098,6 +1102,7 @@ const saveCartItem = () => {
                             <div class="flex items-center gap-3">
                                 <input
                                     type="radio"
+                                    name="payment_method"
                                     v-model="form.payment_method"
                                     value="qris_manual"
                                     class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
@@ -1178,6 +1183,7 @@ const saveCartItem = () => {
                         >
                             <input
                                 type="radio"
+                                name="payment_method"
                                 v-model="form.payment_method"
                                 value="cashier"
                                 class="text-[#3B2314] accent-[#3B2314] focus:ring-[#3B2314]"
