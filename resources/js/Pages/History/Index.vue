@@ -10,13 +10,17 @@ const props = defineProps<{
     filters: {
         start_date?: string;
         end_date?: string;
+        search?: string;
+        preset?: string;
     };
 }>();
 
 // Tab State
 const activeTab = ref<'pembelian' | 'pembayaran'>('pembelian');
 
-// Date Filter State
+// Search and Filter State
+const searchQuery = ref(props.filters.search || '');
+const activePreset = ref<'today' | 'last7' | 'thisMonth' | null>((props.filters.preset as any) || null);
 const startDate = ref(props.filters.start_date || '');
 const endDate = ref(props.filters.end_date || '');
 const dateRange = ref<[Date, Date] | null>(null);
@@ -25,6 +29,7 @@ const isMounted = ref(false);
 watch(dateRange, (newVal, oldVal) => {
     // Only apply if it's a complete range (2 dates) or cleared (null)
     if ((newVal && newVal.length === 2) || newVal === null) {
+        if (newVal === null) activePreset.value = null;
         applyFilter();
     }
 });
@@ -78,7 +83,9 @@ const applyFilter = () => {
 
     router.get('/dashboard/history', {
         start_date: startDate.value,
-        end_date: endDate.value
+        end_date: endDate.value,
+        search: searchQuery.value,
+        preset: activePreset.value
     }, { preserveState: true, replace: true });
 };
 
@@ -89,6 +96,7 @@ const formatDateLocal = (date: Date) => {
 };
 
 const setPreset = (preset: 'today' | 'last7' | 'thisMonth') => {
+    activePreset.value = preset;
     const today = new Date();
     
     if (preset === 'today') {
@@ -106,6 +114,8 @@ const setPreset = (preset: 'today' | 'last7' | 'thisMonth') => {
 };
 
 const clearFilter = () => {
+    activePreset.value = null;
+    searchQuery.value = '';
     dateRange.value = null;
     startDate.value = '';
     endDate.value = '';
@@ -171,9 +181,9 @@ const getStatusLabel = (status: string) => {
                 <div class="w-full md:w-auto flex-1">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Pilih Cepat</label>
                     <div class="flex flex-wrap gap-2">
-                        <button @click="setPreset('today')" class="px-4 py-2 text-xs font-bold rounded-xl bg-[#FAEDCD] text-[#3B2314] hover:bg-[#D4A373] hover:text-white transition">Hari Ini</button>
-                        <button @click="setPreset('last7')" class="px-4 py-2 text-xs font-bold rounded-xl bg-[#FAEDCD] text-[#3B2314] hover:bg-[#D4A373] hover:text-white transition">7 Hari Terakhir</button>
-                        <button @click="setPreset('thisMonth')" class="px-4 py-2 text-xs font-bold rounded-xl bg-[#FAEDCD] text-[#3B2314] hover:bg-[#D4A373] hover:text-white transition">Bulan Ini</button>
+                        <button @click="setPreset('today')" :class="['px-4 py-2 text-xs font-bold rounded-xl transition', activePreset === 'today' ? 'bg-[#D4A373] text-white' : 'bg-[#3B2314] text-white hover:bg-[#D4A373]']">Hari Ini</button>
+                        <button @click="setPreset('last7')" :class="['px-4 py-2 text-xs font-bold rounded-xl transition', activePreset === 'last7' ? 'bg-[#D4A373] text-white' : 'bg-[#3B2314] text-white hover:bg-[#D4A373]']">7 Hari Terakhir</button>
+                        <button @click="setPreset('thisMonth')" :class="['px-4 py-2 text-xs font-bold rounded-xl transition', activePreset === 'thisMonth' ? 'bg-[#D4A373] text-white' : 'bg-[#3B2314] text-white hover:bg-[#D4A373]']">Bulan Ini</button>
                     </div>
                 </div>
 
@@ -186,7 +196,8 @@ const getStatusLabel = (status: string) => {
                             v-model="dateRange" 
                             range 
                             :enable-time-picker="false" 
-                            :multi-calendars="true" 
+                            :multi-calendars="false" 
+                            :max-date="new Date()"
                             format="dd MMM yyyy"
                             input-class-name="!bg-white !border-gray-300 !rounded-xl !text-sm !font-semibold !text-gray-700 !px-4 !py-2.5 shadow-sm hover:!border-[#D4A373] focus:!ring-[#D4A373] focus:!border-[#D4A373]"
                             placeholder="Pilih Tanggal Mulai - Selesai"
@@ -209,9 +220,11 @@ const getStatusLabel = (status: string) => {
                 </div>
             </div>
             <!-- Clear Filter Indicator -->
-            <div v-if="filters.start_date || filters.end_date" class="border-t border-gray-100 pt-3 flex items-center justify-between">
+            <div v-if="filters.start_date || filters.end_date || filters.search" class="border-t border-gray-100 pt-3 flex items-center justify-between">
                 <p class="text-xs font-medium text-gray-500">
-                    Menampilkan data dari <span class="font-bold text-[#3B2314]">{{ displayFormatDate(filters.start_date!) }}</span> - <span class="font-bold text-[#3B2314]">{{ displayFormatDate(filters.end_date!) }}</span>
+                    <span v-if="filters.start_date && filters.end_date">Menampilkan data dari <span class="font-bold text-[#3B2314]">{{ displayFormatDate(filters.start_date!) }}</span> - <span class="font-bold text-[#3B2314]">{{ displayFormatDate(filters.end_date!) }}</span></span>
+                    <span v-if="(filters.start_date && filters.end_date) && filters.search"> | </span>
+                    <span v-if="filters.search">Pencarian: <span class="font-bold text-[#3B2314]">"{{ filters.search }}"</span></span>
                 </p>
                 <button @click="clearFilter" class="px-3 py-1 text-xs font-bold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition inline-flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -223,20 +236,36 @@ const getStatusLabel = (status: string) => {
         <!-- Main Content Box -->
         <div class="bg-white rounded-2xl shadow-sm border border-[#D4A373]/20 overflow-hidden">
             
-            <!-- Tabs -->
-            <div class="flex border-b border-gray-100 bg-gray-50/50">
-                <button 
-                    @click="activeTab = 'pembelian'" 
-                    :class="['px-6 py-4 text-sm font-bold border-b-2 transition-all duration-300', activeTab === 'pembelian' ? 'border-[#3B2314] text-[#3B2314] bg-white' : 'border-transparent text-gray-500 hover:bg-[#FAEDCD]/30 hover:text-[#3B2314] hover:border-[#D4A373]/30']"
-                >
-                    Riwayat Pembelian (Sales)
-                </button>
-                <button 
-                    @click="activeTab = 'pembayaran'" 
-                    :class="['px-6 py-4 text-sm font-bold border-b-2 transition-all duration-300', activeTab === 'pembayaran' ? 'border-[#3B2314] text-[#3B2314] bg-white' : 'border-transparent text-gray-500 hover:bg-[#FAEDCD]/30 hover:text-[#3B2314] hover:border-[#D4A373]/30']"
-                >
-                    Riwayat Pembayaran (Payments)
-                </button>
+            <!-- Tabs and Search -->
+            <div class="flex flex-col md:flex-row justify-between md:items-center border-b border-gray-100 bg-gray-50/50 pr-0 md:pr-4">
+                <div class="flex overflow-x-auto hide-scrollbar">
+                    <button 
+                        @click="activeTab = 'pembelian'" 
+                        :class="['px-6 py-4 text-sm font-bold border-b-2 transition-all duration-300 whitespace-nowrap', activeTab === 'pembelian' ? 'border-[#3B2314] text-[#3B2314] bg-white' : 'border-transparent text-gray-500 hover:bg-[#FAEDCD]/30 hover:text-[#3B2314] hover:border-[#D4A373]/30']"
+                    >
+                        Riwayat Pembelian (Sales)
+                    </button>
+                    <button 
+                        @click="activeTab = 'pembayaran'" 
+                        :class="['px-6 py-4 text-sm font-bold border-b-2 transition-all duration-300 whitespace-nowrap', activeTab === 'pembayaran' ? 'border-[#3B2314] text-[#3B2314] bg-white' : 'border-transparent text-gray-500 hover:bg-[#FAEDCD]/30 hover:text-[#3B2314] hover:border-[#D4A373]/30']"
+                    >
+                        Riwayat Pembayaran (Payments)
+                    </button>
+                </div>
+                <div class="p-3 md:p-0">
+                    <div class="relative">
+                        <input 
+                            v-model="searchQuery" 
+                            @keyup.enter="applyFilter"
+                            type="text" 
+                            :placeholder="activeTab === 'pembelian' ? 'Cari No. Pesanan / Pelanggan...' : 'Cari ID Transaksi...'" 
+                            class="w-full md:w-72 pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-[#D4A373] focus:border-[#D4A373] outline-none transition-colors"
+                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             <!-- Table Riwayat Pembelian -->
@@ -371,7 +400,7 @@ const getStatusLabel = (status: string) => {
                 <!-- Body -->
                 <div class="p-6 overflow-y-auto bg-gray-50 flex-1">
                     <!-- Customer & Order Info -->
-                    <div class="grid grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="grid grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-300 shadow-sm">
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Pelanggan / Meja</p>
                             <p class="text-sm font-bold text-[#3B2314]">{{ selectedOrder.customer_name }}</p>
@@ -397,8 +426,8 @@ const getStatusLabel = (status: string) => {
 
                     <!-- Order Items -->
                     <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Daftar Pesanan</h4>
-                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-                        <div v-for="(item, index) in selectedOrder.items" :key="index" class="p-4 border-b border-gray-50 last:border-0 flex justify-between gap-4">
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-sm overflow-hidden mb-6">
+                        <div v-for="(item, index) in selectedOrder.items" :key="index" class="p-4 border-b border-gray-200 last:border-0 flex justify-between gap-4">
                             <div class="flex-1">
                                 <p class="text-sm font-bold text-gray-800">{{ item.quantity }}x {{ item.name }}</p>
                                 <!-- Addons -->
@@ -420,13 +449,13 @@ const getStatusLabel = (status: string) => {
                     </div>
                     
                     <!-- Notes (Order Level) -->
-                    <div v-if="selectedOrder.notes" class="mb-6 bg-[#FAEDCD]/30 border border-[#D4A373]/30 p-3 rounded-xl">
-                        <p class="text-[10px] font-bold text-[#D4A373] uppercase tracking-wider mb-1">Catatan Pesanan</p>
-                        <p class="text-sm text-[#3B2314]">{{ selectedOrder.notes }}</p>
+                    <div v-if="selectedOrder.notes" class="mb-6 bg-white border border-gray-300 p-4 rounded-xl shadow-sm">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Catatan Pesanan</p>
+                        <p class="text-sm font-bold text-gray-800">{{ selectedOrder.notes }}</p>
                     </div>
 
                     <!-- Payment Summary -->
-                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-sm p-4">
                         <div class="space-y-2 text-sm text-gray-600">
                             <div class="flex justify-between">
                                 <span>Subtotal</span>

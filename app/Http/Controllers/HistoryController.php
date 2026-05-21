@@ -20,6 +20,18 @@ class HistoryController extends Controller
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }
 
+        // Apply Search Filter
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                // Search by order ID or customer name.
+                // We use removing 'TRX-' or '#' prefix just in case user types it.
+                $cleanSearch = str_replace(['TRX-', '#'], '', $search);
+                $q->where('id', 'like', "%{$cleanSearch}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
+            });
+        }
+
         // Pagination
         $orders = $query->paginate(15)->withQueryString();
 
