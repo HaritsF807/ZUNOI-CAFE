@@ -80,7 +80,7 @@ const filteredProducts = computed(() => {
     }
 
     return props.products.filter(
-        (product) => product.category_id === selectedCategoryId.value,
+        (product) => String(product.category_id) === String(selectedCategoryId.value),
     );
 });
 
