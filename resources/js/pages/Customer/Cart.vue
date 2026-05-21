@@ -373,6 +373,7 @@ const getAdditionsForCartItem = (item) => {
 
 const editingIndex = ref(-1);
 const isModalOpen = ref(false);
+const showConfirmModal = ref(false);
 const selectedProduct = ref(null);
 const selectedQuantity = ref(1);
 const additions = ref([]);
@@ -477,7 +478,7 @@ const saveCartItem = () => {
             >
                 <Link
                     :href="'/order'"
-                    class="shrink-0 transform rounded-lg bg-[#FAEDCD] p-2 text-[#3B2314] transition hover:scale-105 active:scale-95"
+                    class="shrink-0 transform rounded-lg bg-[#FAEDCD] p-2 text-[#3B2314] transition hover:bg-[#F3E6D8]"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -507,7 +508,7 @@ const saveCartItem = () => {
             class="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 pb-24 sm:px-6 lg:px-8"
         >
             <form
-                @submit.prevent="submitOrder"
+                @submit.prevent="showConfirmModal = true"
                 class="grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-6"
             >
                 <!-- Left Column: Order Type, Customer Details, Order Details, Notes -->
@@ -689,7 +690,7 @@ const saveCartItem = () => {
                                                             )
                                                         "
                                                         type="button"
-                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-75"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E]"
                                                     >
                                                         <span
                                                             class="text-xs leading-none font-black"
@@ -708,7 +709,7 @@ const saveCartItem = () => {
                                                             )
                                                         "
                                                         type="button"
-                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E] active:scale-75"
+                                                        class="flex h-5 w-5 items-center justify-center rounded-md bg-[#3B2314] text-[#FAEDCD] shadow-sm transition hover:bg-[#2A180E]"
                                                     >
                                                         <span
                                                             class="text-xs leading-none font-black"
@@ -750,7 +751,7 @@ const saveCartItem = () => {
                                         <button
                                             @click="editCartItem(index)"
                                             type="button"
-                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-[#D4A373] hover:bg-[#FAEDCD] hover:text-[#D4A373] active:scale-95"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-[#D4A373] hover:bg-[#FAEDCD] hover:text-[#D4A373]"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -770,7 +771,7 @@ const saveCartItem = () => {
                                         <button
                                             @click="removeCartItem(index)"
                                             type="button"
-                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 active:scale-95"
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-500"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -839,7 +840,7 @@ const saveCartItem = () => {
                                         isCheckingVoucher ||
                                         !voucherCodeInput.trim()
                                     "
-                                    class="rounded-xl bg-[#3B2314] px-4 py-2 text-xs font-black text-[#FAEDCD] transition hover:bg-[#2A180E] active:scale-95 disabled:opacity-50"
+                                    class="rounded-xl bg-[#3B2314] px-4 py-2 text-xs font-black text-[#FAEDCD] transition hover:bg-[#2A180E] disabled:opacity-50"
                                 >
                                     {{
                                         isCheckingVoucher
@@ -851,7 +852,7 @@ const saveCartItem = () => {
                                     v-else
                                     @click="removeVoucher"
                                     type="button"
-                                    class="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-95"
+                                    class="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-600 transition hover:bg-red-100"
                                 >
                                     Hapus
                                 </button>
@@ -1155,7 +1156,7 @@ const saveCartItem = () => {
 
                     <!-- Animated Border Wrapper -->
                     <div
-                        class="relative overflow-hidden rounded-2xl p-[3px] shadow-[0_5px_20px_rgba(21,11,5,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-95"
+                        class="relative overflow-hidden rounded-2xl p-[3px] shadow-[0_5px_20px_rgba(21,11,5,0.6)] transition-all duration-300"
                         :class="
                             form.cart_items.length === 0
                                 ? 'cursor-not-allowed opacity-50'
@@ -1238,7 +1239,7 @@ const saveCartItem = () => {
                     <button
                         type="button"
                         @click="isQrZoomed = false"
-                        class="absolute -top-3 -right-3 rounded-full bg-red-600 p-2 text-white shadow-lg transition hover:scale-105 active:scale-95"
+                        class="absolute -top-3 -right-3 rounded-full bg-red-600 p-2 text-white shadow-lg transition hover:bg-red-700"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1302,7 +1303,7 @@ const saveCartItem = () => {
                             <button
                                 type="button"
                                 @click="closeSelectionModal"
-                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70 active:scale-75"
+                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70"
                             >
                                 <svg
                                     class="h-4 w-4"
@@ -1453,9 +1454,49 @@ const saveCartItem = () => {
                             <button
                                 type="button"
                                 @click="saveCartItem"
-                                class="rounded-xl bg-[#3B2314] px-8 py-3 text-center text-[14px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                                class="rounded-xl bg-[#3B2314] px-8 py-3 text-center text-[14px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E]"
                             >
                                 Simpan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
+        <!-- Confirmation Modal -->
+        <Transition name="modal-slide">
+            <div v-if="showConfirmModal" class="fixed inset-0 z-[60] flex items-center justify-center">
+                <!-- Backdrop -->
+                <div @click="showConfirmModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+                
+                <!-- Modal Box -->
+                <div class="relative z-10 w-11/12 max-w-sm rounded-[2rem] bg-white p-6 shadow-2xl overflow-hidden">
+                    <!-- Decor -->
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#D4A373]/10 blur-xl"></div>
+                    <div class="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[#3B2314]/5 blur-xl"></div>
+                    
+                    <div class="relative text-center">
+                        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAEDCD] text-[#3B2314]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-xl font-black text-[#3B2314]">Konfirmasi Pesanan</h3>
+                        <p class="mb-6 text-sm font-medium text-gray-500">Apakah semua pesanan dan informasi Anda sudah sesuai?</p>
+                        
+                        <div class="flex flex-col gap-3">
+                            <button 
+                                @click="() => { showConfirmModal = false; submitOrder(); }"
+                                class="w-full rounded-xl bg-[#3B2314] py-3.5 text-sm font-black text-[#FAEDCD] transition hover:bg-[#2A180E]"
+                            >
+                                Ya, Sudah Sesuai
+                            </button>
+                            <button 
+                                @click="showConfirmModal = false"
+                                class="w-full rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-bold text-gray-500 transition hover:bg-gray-50"
+                            >
+                                Belum, Cek Lagi
                             </button>
                         </div>
                     </div>
@@ -1496,8 +1537,8 @@ const saveCartItem = () => {
         #1e1008 100%
     );
     background-size: 200% 100%;
-    animation: border-flow 8s linear infinite;
-    opacity: 0.9;
+    animation: border-flow 15s linear infinite;
+    opacity: 0.4;
 }
 
 @keyframes border-flow {
@@ -1607,13 +1648,13 @@ const saveCartItem = () => {
 /* Modal Slide up/down transition */
 .modal-slide-enter-active,
 .modal-slide-leave-active {
-    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.3s ease-out;
 }
 .modal-slide-enter-active .relative,
 .modal-slide-leave-active .relative {
     transition:
-        transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
-        opacity 0.5s ease;
+        transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.3s ease;
 }
 
 .modal-slide-enter-from {

@@ -1,6 +1,9 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { onMounted, onUnmounted, computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+
+const countdown = ref(30);
+let timer = null;
 
 const props = defineProps({
     order: Object,
@@ -19,10 +22,20 @@ let originalBgColor = '';
 onMounted(() => {
     originalBgColor = document.documentElement.style.backgroundColor;
     document.documentElement.style.backgroundColor = '#3B2314';
+
+    timer = setInterval(() => {
+        if (countdown.value > 0) {
+            countdown.value--;
+        } else {
+            clearInterval(timer);
+            router.visit('/order');
+        }
+    }, 1000);
 });
 
 onUnmounted(() => {
     document.documentElement.style.backgroundColor = originalBgColor;
+    if (timer) clearInterval(timer);
 });
 </script>
 
@@ -87,7 +100,7 @@ onUnmounted(() => {
                         <h2
                             class="text-lg font-black tracking-tight text-[#3B2314]"
                         >
-                            Pesanan Terkirim!
+                            Pesanan Sukses, Mohon Tunggu...
                         </h2>
                         <p class="mt-0.5 text-[10px] font-bold text-gray-400">
                             ID PESANAN: #{{ order.id }}
@@ -146,13 +159,19 @@ onUnmounted(() => {
                         >
                     </div>
 
-                    <!-- Back to Menu Button -->
-                    <Link
-                        :href="'/order'"
-                        class="block w-full rounded-xl bg-[#3B2314] py-4 text-center text-xs font-black tracking-wider text-[#FAEDCD] uppercase shadow-md transition hover:scale-[1.02] active:scale-95"
-                    >
-                        Kembali ke Menu Utama
-                    </Link>
+                    <div class="text-center">
+                        <p class="mb-3 text-xs font-bold text-gray-500">
+                            Terima kasih telah memesan!<br/>
+                            Otomatis kembali dalam <span class="text-[#D4A373]">{{ countdown }}</span> detik.
+                        </p>
+                        <!-- Back to Menu Button -->
+                        <Link
+                            :href="'/order'"
+                            class="block w-full rounded-xl bg-[#3B2314] py-4 text-center text-xs font-black tracking-wider text-[#FAEDCD] uppercase shadow-md transition hover:scale-[1.02] active:scale-95"
+                        >
+                            Kembali ke Menu Utama
+                        </Link>
+                    </div>
                 </div>
 
                 <!-- Right Column: Receipt Invoice Details -->
@@ -329,8 +348,8 @@ onUnmounted(() => {
         #1e1008 100%
     );
     background-size: 200% 100%;
-    animation: border-flow 8s linear infinite;
-    opacity: 0.9;
+    animation: border-flow 15s linear infinite;
+    opacity: 0.4;
 }
 
 @keyframes border-flow {

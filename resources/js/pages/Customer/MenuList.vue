@@ -321,15 +321,14 @@ const addSelectionToCart = () => {
                                 v-if="product.is_available"
                                 class="relative flex h-8 items-center justify-end"
                             >
-                                <!-- 'Pilih' / 'Pilih Lagi' Button -->
                                 <button
                                     @click.stop="openSelectionModal(product)"
                                     :disabled="!product.is_available"
                                     class="rounded-xl px-4 py-1.5 text-xs font-black transition-all duration-300"
                                     :class="
                                         getCartItemQuantity(product.id) > 0
-                                            ? 'bg-[#3B2314] text-white shadow-md hover:bg-[#2A180E] active:scale-95'
-                                            : 'border border-[#D4A373]/30 bg-white text-[#3B2314] shadow-sm hover:border-[#D4A373]/50 hover:bg-[#D4A373]/10 active:scale-95'
+                                            ? 'bg-[#3B2314] text-white shadow-md hover:bg-[#2A180E]'
+                                            : 'border border-[#D4A373]/30 bg-white text-[#3B2314] shadow-sm hover:border-[#D4A373]/50 hover:bg-[#D4A373]/10'
                                     "
                                 >
                                     {{
@@ -359,10 +358,9 @@ const addSelectionToCart = () => {
         <div
             class="pointer-events-none fixed right-0 bottom-4 left-0 z-50 flex flex-col items-center justify-end px-6 md:bottom-16"
         >
-            <!-- Main Floating Cart Button -->
             <Link
                 :href="'/checkout'"
-                class="glass-glossy-btn pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl px-6 py-4 font-black text-[#FAEDCD] transition-all duration-300 hover:scale-105 active:scale-95 md:max-w-md lg:max-w-lg"
+                class="glass-glossy-btn pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl px-6 py-4 font-black text-[#FAEDCD] transition-all duration-300 md:max-w-md lg:max-w-lg"
             >
                 <span class="flex items-center gap-2 text-sm">
                     <svg
@@ -415,11 +413,10 @@ const addSelectionToCart = () => {
                     <div class="flex-1 overflow-y-auto">
                         <!-- Top Section -->
                         <div class="p-8 pb-4">
-                            <!-- Back Button -->
                             <button
                                 type="button"
                                 @click="closeSelectionModal"
-                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70 active:scale-75"
+                                class="mb-4 flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-white/40 bg-white/50 px-3.5 text-[#3B2314] shadow-sm backdrop-blur-md transition-all duration-300 ease-out hover:bg-white/70"
                             >
                                 <svg
                                     class="h-4 w-4"
@@ -583,7 +580,7 @@ const addSelectionToCart = () => {
                             <button
                                 type="button"
                                 @click="addSelectionToCart"
-                                class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-center text-[13px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E] active:scale-95"
+                                class="rounded-xl bg-[#3B2314] px-5 py-2.5 text-center text-[13px] leading-tight font-bold text-[#FAEDCD] shadow-md transition hover:bg-[#2A180E]"
                             >
                                 Masukkan Ke<br />Keranjang
                             </button>
@@ -632,35 +629,7 @@ const addSelectionToCart = () => {
     z-index: 1;
 }
 
-/* Sweeping glossy light beam sheen */
-.glass-glossy-btn::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(
-        to right,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.22) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    transform: translate3d(-180%, 0, 0) skewX(-25deg);
-    pointer-events: none;
-    z-index: 2;
-    will-change: transform;
-    animation: btn-shine 6s infinite ease-in-out;
-}
-
-.glass-glossy-btn:hover {
-    border-color: rgba(250, 237, 205, 0.45);
-    box-shadow:
-        0 10px 35px 0 rgba(59, 35, 20, 0.55),
-        inset 0 0 10px 0 rgba(255, 255, 255, 0.35),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3);
-}
+/* Removed btn-shine animation for a lighter UI */
 
 .glass-header {
     position: sticky;
@@ -692,8 +661,8 @@ const addSelectionToCart = () => {
         #1e1008 100%
     );
     background-size: 200% 100%;
-    animation: border-flow 8s linear infinite;
-    opacity: 0.9;
+    animation: border-flow 15s linear infinite;
+    opacity: 0.4;
 }
 
 @keyframes border-flow {
@@ -752,17 +721,7 @@ const addSelectionToCart = () => {
     }
 }
 
-@keyframes btn-shine {
-    0% {
-        transform: translate3d(-180%, 0, 0) skewX(-25deg);
-    }
-    12% {
-        transform: translate3d(180%, 0, 0) skewX(-25deg);
-    }
-    100% {
-        transform: translate3d(180%, 0, 0) skewX(-25deg);
-    }
-}
+/* Removed btn-shine keyframes */
 
 /* Category Filter Glassmorphism styles */
 .glass-filter-btn-active {
@@ -878,13 +837,13 @@ const addSelectionToCart = () => {
 /* Modal Slide up/down transition */
 .modal-slide-enter-active,
 .modal-slide-leave-active {
-    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.3s ease-out;
 }
 .modal-slide-enter-active .relative,
 .modal-slide-leave-active .relative {
     transition:
-        transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
-        opacity 0.5s ease;
+        transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.3s ease;
 }
 
 .modal-slide-enter-from {
