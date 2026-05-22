@@ -613,6 +613,11 @@ const submitPromoDealForm = async () => {
             is_active: promoDealForm.value.is_active ? 1 : 0,
         };
 
+        if (payload.type === 'buy_get') {
+            payload.discount_type = 'free';
+            payload.discount_value = 0;
+        }
+
         let response;
 
         if (isEditingPromoDeal.value) {
@@ -2154,7 +2159,7 @@ const togglePromoDealStatus = async (promo) => {
                     </div>
 
                     <!-- Grid: Tipe Potongan & Nilai Potongan -->
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div v-if="promoDealForm.type === 'bundling'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label
                                 class="mb-1 block text-xs font-bold text-gray-700"
