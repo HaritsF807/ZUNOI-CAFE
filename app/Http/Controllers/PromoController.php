@@ -259,6 +259,8 @@ class PromoController extends Controller
         // Load relationships
         $promotion->load(['buyProduct', 'bundlingProduct', 'getProduct']);
 
+        Cache::forget('active_promotions');
+
         return response()->json([
             'success' => true,
             'message' => 'Promo baru berhasil ditambahkan!',
@@ -295,6 +297,8 @@ class PromoController extends Controller
 
         // Load relationships
         $promotion->load(['buyProduct', 'bundlingProduct', 'getProduct']);
+
+        Cache::forget('active_promotions');
 
         return response()->json([
             'success' => true,
